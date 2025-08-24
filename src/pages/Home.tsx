@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthContext';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
+import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 
 export default function Home() {
   return (
@@ -117,7 +118,24 @@ function HomeContent() {
         </button>
       </header>
       <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
-        <h1 className="text-2xl font-bold mb-6">Start a New Submission</h1>
+        {/* Hero / Intro */}
+        <section className="mb-8 rounded-lg border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 p-6">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            Retrocession Data Hub
+          </h1>
+          <p className="mt-3 max-w-3xl text-gray-700 dark:text-gray-300">
+            A focused workspace for capturing and validating treaty data for retro programmes. Build submissions
+            across Property and Casualty, autosave your progress, and seamlessly hand off structured data for
+            downstream analysis and template generation.
+          </p>
+          <ul className="mt-4 grid gap-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-5">
+            <li>Capture headers, EPI summaries, treaty statistics (Prop/Non‑Prop), and loss lists.</li>
+            <li>Debounced autosave, resume where you left off, and submit when ready.</li>
+            <li>Secure access and storage powered by Supabase authentication.</li>
+          </ul>
+        </section>
+
+        <h2 className="text-xl font-bold mb-4">Start a New Submission</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6">
           {/* Left: LoB cards */}
@@ -183,8 +201,9 @@ function HomeContent() {
                 <button
                   className="px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-black"
                   onClick={() => {
-                    const firstTab = 'data-requirements';
-                    navigate(`/wizard/${s.line_of_business.toLowerCase()}/${s.id}/${firstTab}`);
+                    const lobKey = s.line_of_business.toLowerCase() as LobKey;
+                    const firstTab = getFirstTabKey(lobKey);
+                    navigate(`/wizard/${lobKey}/${s.id}/${firstTab}`);
                   }}
                 >
                   Resume
