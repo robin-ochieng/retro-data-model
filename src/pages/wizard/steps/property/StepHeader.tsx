@@ -85,59 +85,61 @@ export default function StepHeader() {
     setLastSaved(new Date());
   });
 
-  if (loading) return <div>Loading…</div>;
+  if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
 
   return (
-    <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Name of Company" error={errors.name_of_company?.message}>
-        <input className="input" {...register('name_of_company')} />
-      </Field>
-      <Field label="Country" error={errors.country?.message}>
-        <input className="input" {...register('country')} />
-      </Field>
-      <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
-        <input className="input" {...register('currency_std_units')} />
-      </Field>
-      <Field label="Munich RE Client Manager">
-        <input className="input" {...register('munich_re_client_manager')} />
-      </Field>
-      <Field label="Munich RE Underwriter">
-        <input className="input" {...register('munich_re_underwriter')} />
-      </Field>
-      <Field label="Inception Date" hint="e.g., 01/01/2022" error={errors.inception_date?.message}>
-        <input className="input" type="date" {...register('inception_date')} />
-      </Field>
-      <Field label="Expiry Date" hint="e.g., 31/12/2022" error={errors.expiry_date?.message}>
-        <input className="input" type="date" {...register('expiry_date')} />
-      </Field>
-      <Field label="Claims Period">
-        <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
-      </Field>
-      <Field label="Class of Business">
-        <input className="input" {...register('class_of_business')} />
-      </Field>
-      <Field label="Line/s of Business">
-        <input className="input" {...register('lines_of_business')} />
-      </Field>
-      <Field label="Treaty Type">
-        <input className="input" {...register('treaty_type')} />
-      </Field>
-      <div className="md:col-span-2">
-        <Field label="Additional Comments">
-          <textarea className="input min-h-[90px]" {...register('additional_comments')} />
+    <div className="rounded-xl border shadow-sm p-4 sm:p-6">
+      <form className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <Field label="Name of Company" error={errors.name_of_company?.message}>
+          <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Acme Insurance Ltd." {...register('name_of_company')} />
         </Field>
-      </div>
-      <div className="md:col-span-2 flex justify-end text-sm text-gray-500">
-        {error ? <span className="text-red-600">{error}</span> : lastSaved ? `Saved at ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}
-      </div>
-    </form>
+        <Field label="Country" error={errors.country?.message}>
+          <input className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Kenya" {...register('country')} />
+        </Field>
+        <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
+          <input className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., USD" {...register('currency_std_units')} />
+        </Field>
+        <Field label="Munich RE Client Manager">
+          <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
+        </Field>
+        <Field label="Munich RE Underwriter">
+          <input className="input" placeholder="Optional" {...register('munich_re_underwriter')} />
+        </Field>
+        <Field label="Inception Date" hint="e.g., 01/01/2022" error={errors.inception_date?.message}>
+          <input className={`input ${errors.inception_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('inception_date')} />
+        </Field>
+        <Field label="Expiry Date" hint="e.g., 31/12/2022" error={errors.expiry_date?.message}>
+          <input className={`input ${errors.expiry_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('expiry_date')} />
+        </Field>
+        <Field label="Claims Period">
+          <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
+        </Field>
+        <Field label="Class of Business">
+          <input className="input" placeholder="e.g., Property" {...register('class_of_business')} />
+        </Field>
+        <Field label="Line/s of Business">
+          <input className="input" placeholder="e.g., Industrial Risks, Commercial" {...register('lines_of_business')} />
+        </Field>
+        <Field label="Treaty Type">
+          <input className="input" placeholder="e.g., Quota Share, Surplus, XL" {...register('treaty_type')} />
+        </Field>
+        <div className="md:col-span-2">
+          <Field label="Additional Comments">
+            <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+          </Field>
+        </div>
+        <div className="md:col-span-2 flex justify-end text-sm text-gray-500">
+          {error ? <span className="text-red-600">{error}</span> : lastSaved ? `Saved at ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}
+        </div>
+      </form>
+    </div>
   );
 }
 
 function Field({ label, children, error, hint }: { label: string; children: React.ReactNode; error?: string; hint?: string }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium mb-1">{label}</span>
+      <span className="block text-sm font-medium mb-1 text-gray-800 dark:text-gray-200">{label}</span>
       {children}
       {hint && <div className="text-xs text-gray-500 mt-1">{hint}</div>}
       {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
