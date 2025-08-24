@@ -35,6 +35,7 @@ export default function StepLargeLossList() {
     notes: '',
   }]);
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
+  const [additionalComments, setAdditionalComments] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -60,16 +61,34 @@ export default function StepLargeLossList() {
         } as Row));
         setRows(mapped);
       }
+      // Load comments from sheet_blobs
+      const cm = await supabase
+        .from('sheet_blobs')
+        .select('payload')
+        .eq('submission_id', submissionId)
+        .eq('sheet_name', 'Large Loss List')
+        .maybeSingle();
+      if (!cm.error && cm.data?.payload?.additional_comments) {
+        setAdditionalComments(String(cm.data.payload.additional_comments));
+      }
     })();
     return () => { mounted = false; };
   }, [submissionId]);
 
-  useAutosave(rows, async (value) => {
+  useAutosave({ rows, additionalComments }, async (value) => {
     if (!submissionId) return;
+    // Save rows
     await supabase.from('large_loss_list').delete().eq('submission_id', submissionId);
-    if (value.length) {
-      await supabase.from('large_loss_list').insert(value.map(v => ({ ...v, submission_id: submissionId })));
+    if (value.rows.length) {
+      await supabase.from('large_loss_list').insert(value.rows.map((v: any) => ({ ...v, submission_id: submissionId })));
     }
+    // Save comments
+    await supabase
+      .from('sheet_blobs')
+      .upsert(
+        [{ submission_id: submissionId, sheet_name: 'Large Loss List', payload: { additional_comments: value.additionalComments ?? '' } }],
+        { onConflict: 'submission_id,sheet_name' }
+      );
   });
 
   const columns = useMemo(() => [
@@ -130,6 +149,12 @@ export default function StepLargeLossList() {
         onRemoveRow={onRemoveRow}
         errors={errors}
       />
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
+        <label className="block">
+          <span className="block text-sm font-medium mb-1">Additional Comments</span>
+          <textarea className="input" placeholder="Any notes or guidance for this submission…" value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} />
+        </label>
+      </div>
     </div>
   );
 }

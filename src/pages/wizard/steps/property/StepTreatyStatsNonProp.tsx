@@ -25,6 +25,7 @@ const FormSchema = z.object({
   overall: z.array(RowSchema).default([]),
   cat_layer1: z.array(RowSchema).default([]),
   cat_layer2: z.array(RowSchema).default([]),
+  additional_comments: z.string().optional().default(''),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -51,7 +52,7 @@ export default function StepTreatyStatsNonProp() {
 
   const { control, register, reset, watch } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { overall: [blankRow], cat_layer1: [blankRow], cat_layer2: [blankRow] },
+    defaultValues: { overall: [blankRow], cat_layer1: [blankRow], cat_layer2: [blankRow], additional_comments: '' },
   });
   const overall = useFieldArray({ control, name: 'overall' });
   const cat1 = useFieldArray({ control, name: 'cat_layer1' });
@@ -131,6 +132,12 @@ export default function StepTreatyStatsNonProp() {
   {renderTable('XL: All Layers (Overall)', 'overall', overall)}
   {renderTable('Cat XL: Layer 1', 'cat_layer1', cat1)}
   {renderTable('Cat XL: Layer 2', 'cat_layer2', cat2)}
+      <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
+        <label className="block">
+          <span className="block text-sm font-medium mb-1">Additional Comments</span>
+          <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+        </label>
+      </div>
     </div>
   );
 }

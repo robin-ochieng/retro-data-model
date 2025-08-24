@@ -1,0 +1,185 @@
+{
+  "lob": "property",
+  "tabs": [
+    {
+      "tabKey": "header",
+      "sheetName": "Header",
+      "storage": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "name_of_company": "string",
+            "country": "string",
+            "currency_std_units": "string",
+            "munich_re_client_manager": "string?",
+            "munich_re_underwriter": "string?",
+            "inception_date": "string",
+            "expiry_date": "string",
+            "claims_period": "string?",
+            "class_of_business": "string?",
+            "lines_of_business": "string?",
+            "treaty_type": "string?",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "storage": [
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {
+            "programme": "string",
+            "estimate_type": "string",
+            "period_label": "string?",
+            "epi_value": "number",
+            "currency": "string"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "gwp_split": [
+              {
+                "section": "string",
+                "premium": "number"
+              }
+            ],
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "storage": [
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {
+            "uw_year": "number",
+            "written_premium": "number",
+            "earned_premium": "number",
+            "commission_amount": "number",
+            "commission_pct": "number",
+            "profit_commission": "number",
+            "total_commission": "number",
+            "paid_losses": "number",
+            "os_losses": "number",
+            "incurred_losses": "number",
+            "loss_ratio": "number",
+            "uw_profit": "number"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-non-prop",
+      "sheetName": "Treaty Statistics_Non-Prop",
+      "storage": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "overall": [
+              {
+                "treaty_year": "number?",
+                "limit": "number",
+                "excess": "number",
+                "gnrpi": "number",
+                "premium_rate": "number",
+                "minimum_premium": "number",
+                "earned_premium": "number",
+                "reinstatement_premium": "number",
+                "paid_losses": "number",
+                "os_losses": "number",
+                "incurred_losses": "number",
+                "balance": "number?"
+              }
+            ],
+            "cat_layer1": [
+              {
+                "treaty_year": "number?",
+                "limit": "number",
+                "excess": "number",
+                "gnrpi": "number",
+                "premium_rate": "number",
+                "minimum_premium": "number",
+                "earned_premium": "number",
+                "reinstatement_premium": "number",
+                "paid_losses": "number",
+                "os_losses": "number",
+                "incurred_losses": "number",
+                "balance": "number?"
+              }
+            ],
+            "cat_layer2": [
+              {
+                "treaty_year": "number?",
+                "limit": "number",
+                "excess": "number",
+                "gnrpi": "number",
+                "premium_rate": "number",
+                "minimum_premium": "number",
+                "earned_premium": "number",
+                "reinstatement_premium": "number",
+                "paid_losses": "number",
+                "os_losses": "number",
+                "incurred_losses": "number",
+                "balance": "number?"
+              }
+            ],
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "storage": [
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {
+            "loss_date": "string?",
+            "uw_year": "number?",
+            "insured": "string?",
+            "cause_of_loss": "string?",
+            "gross_sum_insured": "number",
+            "gross_incurred": "number",
+            "paid_to_date": "number",
+            "gross_outstanding": "number",
+            "currency": "string",
+            "notes": "string?"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
+  ]
+}

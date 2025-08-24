@@ -1,0 +1,152 @@
+{
+  "lob": "Property",
+  "generatedAt": "2025-08-24T02:17:19.054Z",
+  "tabs": [
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "insert"
+        }
+      ]
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "insert"
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        }
+      ]
+    }
+  ]
+}

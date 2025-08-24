@@ -18,6 +18,7 @@ const GwpsSchema = z.object({ section: z.string().min(1, 'Required'), premium: z
 const FormSchema = z.object({
   rows: z.array(RowSchema),
   gwp_split: z.array(GwpsSchema).optional(),
+  additional_comments: z.string().optional().default(''),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -40,7 +41,7 @@ export default function StepEpiSummary() {
     watch,
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { rows: defaultRows, gwp_split: [] },
+    defaultValues: { rows: defaultRows, gwp_split: [], additional_comments: '' },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
   const { fields: gwpFields, append: gwpAppend, remove: gwpRemove } = useFieldArray({ control, name: 'gwp_split' });
@@ -70,8 +71,13 @@ export default function StepEpiSummary() {
         .eq('submission_id', submissionId)
         .eq('sheet_name', 'EPI Summary')
         .maybeSingle();
-      if (!gwp.error && gwp.data?.payload?.gwp_split) {
-        reset(curr => ({ ...curr, gwp_split: gwp.data!.payload!.gwp_split as any }));
+      if (!gwp.error && gwp.data?.payload) {
+        const payload = gwp.data.payload as any;
+        reset(curr => ({
+          ...curr,
+          gwp_split: payload.gwp_split ?? [],
+          additional_comments: payload.additional_comments ?? '',
+        }));
       }
     }
     loadRows();
@@ -92,10 +98,11 @@ export default function StepEpiSummary() {
     }
     // Save GWP Split to sheet_blobs
     const gwp = values.gwp_split ?? [];
+    const additional_comments = values.additional_comments ?? '';
     const up = await supabase
       .from('sheet_blobs')
       .upsert(
-        [{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp } }],
+        [{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments } }],
         { onConflict: 'submission_id,sheet_name' }
       );
     if (up.error) { setSaveError(up.error.message); return; }
@@ -235,6 +242,18 @@ export default function StepEpiSummary() {
             Add Section
           </button>
         </div>
+      </div>
+
+      {/* Additional Comments */}
+      <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
+        <label className="block">
+          <span className="block text-sm font-medium mb-1">Additional Comments</span>
+          <textarea
+            className="input"
+            placeholder="Any notes or guidance for this submission…"
+            {...register('additional_comments')}
+          />
+        </label>
       </div>
     </form>
   );

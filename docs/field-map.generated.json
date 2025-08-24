@@ -1,0 +1,88 @@
+{
+  "lob": "property",
+  "tabs": [
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "storage": [
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "storage": [
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "storage": [
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        }
+      ]
+    }
+  ]
+}

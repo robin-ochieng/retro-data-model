@@ -1,0 +1,20 @@
+{
+  "lob": "property",
+  "tabs": [
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "excelColumns": {}
+    }
+  ]
+}

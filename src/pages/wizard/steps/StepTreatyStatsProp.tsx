@@ -23,7 +23,7 @@ const RowSchema = z.object({
 });
 
 type Row = z.infer<typeof RowSchema>;
-const FormSchema = z.object({ rows: z.array(RowSchema) });
+const FormSchema = z.object({ rows: z.array(RowSchema), additional_comments: z.string().optional().default('') });
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepTreatyStatsProp() {
@@ -31,7 +31,7 @@ export default function StepTreatyStatsProp() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { control, register, reset, formState, watch } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { rows: [{ uw_year: new Date().getFullYear(), written_premium: 0 } as Row] },
+    defaultValues: { rows: [{ uw_year: new Date().getFullYear(), written_premium: 0 } as Row], additional_comments: '' },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
 
@@ -61,7 +61,14 @@ export default function StepTreatyStatsProp() {
           loss_ratio: Number(d.loss_ratio) || 0,
           uw_profit: Number(d.uw_profit) || 0,
         } as Row));
-        reset({ rows: mapped });
+        // Load any comments from sheet_blobs
+        const cm = await supabase
+          .from('sheet_blobs')
+          .select('payload')
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', 'Treaty Statistics_Prop')
+          .maybeSingle();
+        reset({ rows: mapped, additional_comments: (!cm.error && cm.data?.payload?.additional_comments) ? String(cm.data.payload.additional_comments) : '' });
       }
     })();
     return () => { mounted = false; };
@@ -69,14 +76,24 @@ export default function StepTreatyStatsProp() {
 
   // Autosave rows using watched values
   const watchedRows = watch('rows');
-  useAutosave(watchedRows, async (value) => {
+  useAutosave(watch(), async (formVal) => {
     if (!submissionId) return;
+    // Save rows
     await supabase.from('treaty_stats_prop').delete().eq('submission_id', submissionId);
+    const value = formVal.rows ?? [];
     if (value.length) {
       await supabase
         .from('treaty_stats_prop')
         .insert(value.map((v: any) => ({ ...v, submission_id: submissionId })));
     }
+    // Save comments to sheet_blobs
+    const additional_comments = formVal.additional_comments ?? '';
+    await supabase
+      .from('sheet_blobs')
+      .upsert(
+        [{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Prop', payload: { additional_comments } }],
+        { onConflict: 'submission_id,sheet_name' }
+      );
     setLastSaved(new Date());
   }, 900);
 
@@ -152,6 +169,12 @@ export default function StepTreatyStatsProp() {
           Add Year
         </button>
         <span className="text-gray-500 text-sm">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'All changes are autosaved'}</span>
+      </div>
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
+        <label className="block">
+          <span className="block text-sm font-medium mb-1">Additional Comments</span>
+          <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+        </label>
       </div>
     </div>
   );

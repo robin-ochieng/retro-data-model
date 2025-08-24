@@ -1,0 +1,175 @@
+{
+  "lob": "Property",
+  "generatedAt": "2025-08-24T00:00:00.000Z",
+  "tabs": [
+    {
+      "tabKey": "header",
+      "sheetName": "Header",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "name_of_company": "string",
+            "country": "string",
+            "currency_std_units": "string",
+            "munich_re_client_manager": "string?",
+            "munich_re_underwriter": "string?",
+            "inception_date": "string",
+            "expiry_date": "string",
+            "claims_period": "string?",
+            "class_of_business": "string?",
+            "lines_of_business": "string?",
+            "treaty_type": "string?",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "op": "deleteInsert",
+          "deleteWhere": ["submission_id = :submissionId"],
+          "insertAugment": { "submission_id": ":submissionId" },
+          "rowShape": {
+            "programme": "string",
+            "estimate_type": "string",
+            "period_label": "string?",
+            "epi_value": "number",
+            "currency": "string"
+          },
+          "dbColumnsExtra": ["period_start?", "period_end?"],
+          "notes": "period_start/period_end exist in DB but are not populated by the form"
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "gwp_split": [
+              { "section": "string", "premium": "number" }
+            ],
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "autosave": { "strategy": "debounced", "ms": 900 },
+      "operations": [
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": ["submission_id = :submissionId"],
+          "insertAugment": { "submission_id": ":submissionId" },
+          "rowShape": {
+            "uw_year": "number",
+            "written_premium": "number",
+            "earned_premium": "number",
+            "commission_amount": "number",
+            "commission_pct": "number",
+            "profit_commission": "number",
+            "total_commission": "number",
+            "paid_losses": "number",
+            "os_losses": "number",
+            "incurred_losses": "number",
+            "loss_ratio": "number",
+            "uw_profit": "number"
+          },
+          "constraints": { "unique": ["submission_id", "uw_year"] }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "treaty-stats-non-prop",
+      "sheetName": "Treaty Statistics_Non-Prop",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "overall": [
+              {
+                "treaty_year": "number?",
+                "limit": "number",
+                "excess": "number",
+                "gnrpi": "number",
+                "premium_rate": "number",
+                "minimum_premium": "number",
+                "earned_premium": "number",
+                "reinstatement_premium": "number",
+                "paid_losses": "number",
+                "os_losses": "number",
+                "incurred_losses": "number",
+                "balance": "number?"
+              }
+            ],
+            "cat_layer1": ["same as overall"],
+            "cat_layer2": ["same as overall"],
+            "additional_comments": "string?"
+          },
+          "notes": "Although a treaty_stats_nonprop table exists in DB, the app currently persists Non-Prop to sheet_blobs as a single payload."
+        }
+      ]
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": ["submission_id = :submissionId"],
+          "insertAugment": { "submission_id": ":submissionId" },
+          "rowShape": {
+            "loss_date": "string?",
+            "uw_year": "number?",
+            "insured": "string?",
+            "cause_of_loss": "string?",
+            "gross_sum_insured": "number",
+            "gross_incurred": "number",
+            "paid_to_date": "number",
+            "gross_outstanding": "number",
+            "currency": "string",
+            "notes": "string?"
+          },
+          "notes": "Legacy DB columns (cause, gross_amount, net_amount, ...) exist but the app uses the newer columns shown here."
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": { "additional_comments": "string?" }
+        }
+      ]
+    }
+  ]
+}
