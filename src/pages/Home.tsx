@@ -256,6 +256,16 @@ function HomeContent() {
           </div>
         </section>
       </main>
+      {/* Footer */}
+      <footer className="w-full mt-auto border-t bg-white/70 dark:bg-gray-900/60 backdrop-blur">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+          <span>© {new Date().getFullYear()} Kenbright Re</span>
+          <span className="inline-flex items-center gap-1">
+            <span className="opacity-80">Powered by</span>
+            <strong className="font-semibold">Kenbright AI</strong>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
