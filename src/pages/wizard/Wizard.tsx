@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import { useParams, NavLink, Outlet, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import StepIntro from './steps/StepIntro';
@@ -7,11 +7,33 @@ import Logo from '../../components/Logo';
 import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, propertyTabs, SheetTab } from '../../config/lobConfig';
 import StepTreatyStatsProp from './steps/StepTreatyStatsProp';
 import StepLargeLossList from './steps/StepLargeLossList';
+import CasualtyLargeLossList from './steps/casualty/StepLargeLossList';
 import StepSubmit from './steps/StepSubmit';
 import { supabase } from '../../lib/supabase';
 import { generateExcel } from '../../lib/generateExcel';
 import StepHeader from './steps/property/StepHeader';
+import CasualtyStepHeader from './steps/casualty/StepHeader';
+import CasualtyTreatyStatsProp from './steps/casualty/StepTreatyStatsProp';
+import CasualtyTreatyStatsPropCC from './steps/casualty/StepTreatyStatsPropCC';
+import CasualtyTreatyStatsNonProp from './steps/casualty/StepTreatyStatsNonProp';
+import StepRateDevelopment from './steps/casualty/StepRateDevelopment';
+import StepRateDevelopmentMotor from './steps/casualty/StepRateDevelopmentMotor';
+import StepMaxUwLimitDevelopment from './steps/casualty/StepMaxUwLimitDevelopment';
+import StepNumberOfRisksDevelopment from './steps/casualty/StepNumberOfRisksDevelopment';
 import StepTreatyStatsNonProp from './steps/property/StepTreatyStatsNonProp';
+import StepUwLimit from './steps/property/StepUwLimit';
+import StepRiskProfile from './steps/property/StepRiskProfile';
+import CasualtyRiskProfile from './steps/casualty/StepRiskProfile';
+import StepCatLossList from './steps/property/StepCatLossList';
+import StepLargeLossTriangulation from './steps/property/StepLargeLossTriangulation';
+import StepTriangulation from './steps/property/StepTriangulation';
+import StepCrestaZoneControl from './steps/property/StepCrestaZoneControl';
+import StepTop20Risks from './steps/property/StepTop20Risks';
+import StepClimateExposure from './steps/property/StepClimateExposure';
+import CasualtyLargeLossTriangulation from './steps/casualty/StepLargeLossTriangulation';
+import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriangulation';
+import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
+import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
 
 export default function Wizard() {
   return (
@@ -128,8 +150,50 @@ function WizardShell() {
                     <StepTreatyStatsProp />
                   ) : t.component === 'TreatyStatsNonProp' ? (
                     <StepTreatyStatsNonProp />
+                  ) : t.component === 'UwLimit' ? (
+                    <StepUwLimit />
+                  ) : t.component === 'RiskProfile' ? (
+                    <StepRiskProfile />
+                  ) : t.component === 'CasualtyRiskProfile' ? (
+                    <CasualtyRiskProfile />
                   ) : t.component === 'LargeLossList' ? (
                     <StepLargeLossList />
+                  ) : t.component === 'CasualtyLargeLossList' ? (
+                    <CasualtyLargeLossList />
+                  ) : t.component === 'CasualtyLargeLossTriangulation' ? (
+                    <CasualtyLargeLossTriangulation />
+                  ) : t.component === 'CasualtyAggregateTriangulation' ? (
+                    <CasualtyAggregateTriangulation />
+                  ) : t.component === 'CasualtyCatLossTriangulation' ? (
+                    <CasualtyCatLossTriangulation />
+                  ) : t.component === 'CasualtyMotorFleetList' ? (
+                    <CasualtyMotorFleetList />
+                  ) : t.component === 'CatLossList' ? (
+                    <StepCatLossList />
+                  ) : t.component === 'LargeLossTriangulation' ? (
+                    <StepLargeLossTriangulation />
+                  ) : t.component === 'Triangulation' ? (
+                    <StepTriangulation />
+                  ) : t.component === 'CrestaZoneControl' ? (
+                    <StepCrestaZoneControl />
+                  ) : t.component === 'Top20Risks' ? (
+                    <StepTop20Risks />
+                  ) : t.component === 'ClimateExposure' ? (
+                    <StepClimateExposure />
+                  ) : t.component === 'CasualtyTreatyStatsProp' ? (
+                    <CasualtyTreatyStatsProp />
+                  ) : t.component === 'CasualtyTreatyStatsPropCC' ? (
+                    <CasualtyTreatyStatsPropCC />
+                  ) : t.component === 'CasualtyTreatyStatsNonProp' ? (
+                    <CasualtyTreatyStatsNonProp />
+                  ) : t.component === 'CasualtyRateDevelopment' ? (
+                    <StepRateDevelopment />
+                  ) : t.component === 'CasualtyRateDevelopmentMotor' ? (
+                    <StepRateDevelopmentMotor />
+                  ) : t.component === 'CasualtyMaxUwLimitDev' ? (
+                    <StepMaxUwLimitDevelopment />
+                  ) : t.component === 'CasualtyNumberOfRisksDev' ? (
+                    <StepNumberOfRisksDevelopment />
                   ) : t.component === 'Submit' ? (
                     <StepSubmit />
                   ) : (

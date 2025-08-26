@@ -204,7 +204,7 @@ function HomeContent() {
               value={client}
               onChange={e => setClient(e.target.value)}
               disabled={loading}
-              placeholder="Acme Insurance Co."
+              placeholder="Munich Re"
             />
             <label className="block mb-2 font-medium" htmlFor="year">Year</label>
             <input

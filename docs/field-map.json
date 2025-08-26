@@ -181,5 +181,83 @@
         }
       ]
     }
+    ,
+    {
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
+      "storage": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "max_uw_limit": "number",
+            "max_uw_limit_currency": "string",
+            "per_risk_limit": "number",
+            "per_event_limit": "number",
+            "retention": "number",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "tabKey": "risk-profile",
+      "sheetName": "Risk Profile",
+      "storage": [
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {
+            "segment": "string (gross|net)",
+            "band_label": "string?",
+            "exposure": "number",
+            "premium": "number",
+            "claims": "number",
+            "frequency": "number",
+            "severity": "number"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "retention": "number",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "tabKey": "cat-loss-list",
+      "sheetName": "Cat Loss List",
+      "storage": [
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {
+            "event_date": "string?",
+            "event_name": "string?",
+            "uw_year": "number?",
+            "gross_incurred": "number",
+            "paid_to_date": "number",
+            "gross_outstanding": "number",
+            "currency": "string",
+            "notes": "string?"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": ["submission_id", "sheet_name"],
+          "payloadSchema": {
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
   ]
 }

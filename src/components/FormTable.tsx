@@ -17,6 +17,12 @@ type FormTableProps<T> = {
   onRemoveRow?: (idx: number) => void;
   errors?: Record<number, Partial<Record<keyof T, string>>>;
   actions?: React.ReactNode;
+  footerRender?: React.ReactNode;
+  onPaste?: () => void;
+  onImportCsv?: () => void;
+  onExportCsv?: () => void;
+  isSaving?: boolean;
+  lastSavedAt?: Date | null;
 };
 
 export function FormTable<T extends Record<string, any>>({
@@ -27,9 +33,37 @@ export function FormTable<T extends Record<string, any>>({
   onRemoveRow,
   errors,
   actions,
+  footerRender,
+  onPaste,
+  onImportCsv,
+  onExportCsv,
+  isSaving,
+  lastSavedAt,
 }: FormTableProps<T>) {
   return (
     <div className="overflow-x-auto">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex gap-2">
+          {onPaste && (
+            <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={onPaste}>
+              Paste from Excel
+            </button>
+          )}
+          {onImportCsv && (
+            <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={onImportCsv}>
+              Import CSV
+            </button>
+          )}
+          {onExportCsv && (
+            <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={onExportCsv}>
+              Export CSV
+            </button>
+          )}
+        </div>
+        <div className="text-xs text-gray-500">
+          {isSaving ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosave ready'}
+        </div>
+      </div>
       <table className="min-w-full table-auto border rounded">
         <thead className="bg-gray-100 dark:bg-gray-700">
           <tr>
@@ -82,6 +116,15 @@ export function FormTable<T extends Record<string, any>>({
             </tr>
           ))}
         </tbody>
+        {footerRender && (
+          <tfoot>
+            <tr>
+              <td colSpan={(columns?.length ?? 0) + ((onAddRow || onRemoveRow || actions) ? 1 : 0)} className="px-2 py-2 bg-gray-50 dark:bg-gray-900">
+                {footerRender}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
       {onAddRow && (
         <div className="flex justify-between items-center mt-4">

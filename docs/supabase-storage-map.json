@@ -171,5 +171,93 @@
         }
       ]
     }
+    ,
+    {
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "max_uw_limit": "number",
+            "max_uw_limit_currency": "string",
+            "per_risk_limit": "number",
+            "per_event_limit": "number",
+            "retention": "number",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "tabKey": "risk-profile",
+      "sheetName": "Risk Profile",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": ["submission_id = :submissionId"],
+          "insertAugment": { "submission_id": ":submissionId" },
+          "rowShape": {
+            "segment": "string (gross|net)",
+            "band_label": "string?",
+            "exposure": "number",
+            "premium": "number",
+            "claims": "number",
+            "frequency": "number",
+            "severity": "number"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": {
+            "retention": "number",
+            "additional_comments": "string?"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "tabKey": "cat-loss-list",
+      "sheetName": "Cat Loss List",
+      "autosave": { "strategy": "debounced" },
+      "operations": [
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": ["submission_id = :submissionId"],
+          "insertAugment": { "submission_id": ":submissionId" },
+          "rowShape": {
+            "event_date": "string?",
+            "event_name": "string?",
+            "uw_year": "number?",
+            "gross_incurred": "number",
+            "paid_to_date": "number",
+            "gross_outstanding": "number",
+            "currency": "string",
+            "notes": "string?"
+          }
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": ["submission_id", "sheet_name"],
+          "payloadShape": { "additional_comments": "string?" }
+        }
+      ]
+    }
   ]
 }

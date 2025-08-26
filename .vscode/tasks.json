@@ -1,23 +1,54 @@
 {
-  "$schema": "https://json.schemastore.org/tasks.json",
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Vite: dev",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
-      "isBackground": true,
-      "group": "build",
-      "problemMatcher": ["$tsc"]
-    },
-    {
-      "label": "Vite: build",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "build"],
-      "group": "build",
-      "problemMatcher": ["$tsc"]
-    }
-  ]
+	"$schema": "https://json.schemastore.org/tasks.json",
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Vite: dev",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true,
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Vite: build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Vite: dev",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"isBackground": true,
+			"group": "build"
+		}
+	]
 }

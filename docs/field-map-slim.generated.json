@@ -15,6 +15,58 @@
       "tabKey": "treaty-stats-prop",
       "sheetName": "Treaty Statistics_Prop",
       "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosslist",
+      "sheetName": "Unknown",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "additional_comments": "Additional Comments"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Unknown",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "exposures": "Exposures"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "stepcrestazonecontrol",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "steplargelosstriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "steptriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
     }
   ]
 }

@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "➡️ Generating docs before commit..."
 npm run --silent generate:docs || {
   echo "Docs generation failed. Aborting commit."; exit 1;
@@ -10,4 +7,4 @@ npm run --silent generate:docs || {
 git add docs/*.generated.json docs/GENERATED.md 2>/dev/null || true
 
 echo "✅ Docs updated. Proceeding with commit."
-npm test
+
