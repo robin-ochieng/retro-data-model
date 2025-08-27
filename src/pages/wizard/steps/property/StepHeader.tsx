@@ -99,10 +99,10 @@ export default function StepHeader() {
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
           <input className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., USD" {...register('currency_std_units')} />
         </Field>
-        <Field label="Munich RE Client Manager">
+        <Field label="Client Manager">
           <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
         </Field>
-        <Field label="Munich RE Underwriter">
+        <Field label="Underwriter">
           <input className="input" placeholder="Optional" {...register('munich_re_underwriter')} />
         </Field>
         <Field label="Inception Date" hint="e.g., 01/01/2022" error={errors.inception_date?.message}>
