@@ -93,7 +93,7 @@ export default function StepHeader() {
     resolver: zodResolver(Schema),
     defaultValues: {
       name_of_company: '',
-      country: '',
+  country: 'Kenya',
       currency_std_units: '',
       munich_re_client_manager: '',
       munich_re_underwriter: '',
@@ -155,7 +155,6 @@ export default function StepHeader() {
           <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             {...register('country')}
-            defaultValue=""
           >
             <option value="" disabled>
               Select a country
