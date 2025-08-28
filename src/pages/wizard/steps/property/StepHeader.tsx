@@ -6,6 +6,64 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 
+// Allowed countries for dropdown (African countries)
+const COUNTRIES = [
+  'Algeria',
+  'Angola',
+  'Benin',
+  'Botswana',
+  'Burkina Faso',
+  'Burundi',
+  'Cabo Verde',
+  'Cameroon',
+  'Central African Republic',
+  'Chad',
+  'Comoros',
+  'Congo',
+  'Democratic Republic of the Congo',
+  'Djibouti',
+  'Egypt',
+  'Equatorial Guinea',
+  'Eritrea',
+  'Eswatini',
+  'Ethiopia',
+  'Gabon',
+  'Gambia',
+  'Ghana',
+  'Guinea',
+  'Guinea-Bissau',
+  'Ivory Coast',
+  'Kenya',
+  'Lesotho',
+  'Liberia',
+  'Libya',
+  'Madagascar',
+  'Malawi',
+  'Mali',
+  'Mauritania',
+  'Mauritius',
+  'Morocco',
+  'Mozambique',
+  'Namibia',
+  'Niger',
+  'Nigeria',
+  'Rwanda',
+  'Sao Tome and Principe',
+  'Senegal',
+  'Seychelles',
+  'Sierra Leone',
+  'Somalia',
+  'South Africa',
+  'South Sudan',
+  'Sudan',
+  'Tanzania',
+  'Togo',
+  'Tunisia',
+  'Uganda',
+  'Zambia',
+  'Zimbabwe',
+];
+
 const Schema = z.object({
   name_of_company: z.string().min(1, 'Required'),
   country: z.string().min(1, 'Required'),
@@ -94,7 +152,20 @@ export default function StepHeader() {
           <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Munich RE" {...register('name_of_company')} />
         </Field>
         <Field label="Country" error={errors.country?.message}>
-          <input className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Kenya" {...register('country')} />
+          <select
+            className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+            {...register('country')}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Select a country
+            </option>
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
           <input className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., USD" {...register('currency_std_units')} />
