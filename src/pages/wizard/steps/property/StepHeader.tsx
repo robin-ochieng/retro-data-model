@@ -91,7 +91,7 @@ export default function StepHeader() {
     <div className="rounded-xl border shadow-sm p-4 sm:p-6">
       <form className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Name of Company" error={errors.name_of_company?.message}>
-          <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Acme Insurance Ltd." {...register('name_of_company')} />
+          <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Munich RE" {...register('name_of_company')} />
         </Field>
         <Field label="Country" error={errors.country?.message}>
           <input className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Kenya" {...register('country')} />

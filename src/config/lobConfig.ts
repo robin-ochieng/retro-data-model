@@ -39,7 +39,7 @@ export type SheetTab = {
 };
 
 export const propertyTabs: SheetTab[] = [
-  { key: 'header', label: 'Header', component: 'PropertyHeader' },
+  { key: 'header', label: 'Client Details', component: 'PropertyHeader' },
   { key: 'epi-summary', label: 'EPI Summary', table: 'epi_summary', component: 'EpiSummary' },
   { key: 'treaty-stats-prop', label: 'Treaty Statistics (Prop)', table: 'treaty_stats_prop', component: 'TreatyStatsProp' },
   { key: 'treaty-stats-nonprop', label: 'Treaty Statistics (Non-Prop)', component: 'TreatyStatsNonProp' },
@@ -57,7 +57,7 @@ export const propertyTabs: SheetTab[] = [
 ];
 
 export const casualtyTabs: SheetTab[] = [
-  { key: 'header', label: 'Header', component: 'PropertyHeader' },
+  { key: 'header', label: 'Client Details', component: 'PropertyHeader' },
   { key: 'epi-summary', label: 'EPI Summary', table: 'epi_summary', component: 'EpiSummary' },
   { key: 'treaty-statistics-prop', label: 'Treaty Statistics (Prop)', component: 'CasualtyTreatyStatsProp' },
   { key: 'treaty-statistics-propcc', label: 'Treaty Statistics (PropCC)', component: 'CasualtyTreatyStatsPropCC' },
