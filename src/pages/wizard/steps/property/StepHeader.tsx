@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+const OTHER = '__OTHER__';
 
 // Allowed countries for dropdown (African countries)
 const COUNTRIES = [
@@ -96,6 +97,15 @@ const CURRENCIES: { code: string; name: string }[] = [
   { code: 'MYR', name: 'Malaysian Ringgit' },
   { code: 'PHP', name: 'Philippine Peso' },
   { code: 'EGP', name: 'Egyptian Pound' },
+];
+
+// Treaty Types
+const TREATY_TYPES = [
+  'Quota Share Treaty',
+  'Surplus Treaty',
+  'Facultative Obligatory',
+  'Excess of Loss (XL) Treaty',
+  'Stop Loss Treaty',
 ];
 
 // Classes of Business and dependent Lines of Business
@@ -276,6 +286,18 @@ export default function StepHeader() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass]);
+  // Derived select values to support 'Other' option
+  const countrySelectValue = COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : '');
+  const currencySelectValue = CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : '');
+  const classSelectValue = (CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) ? values.class_of_business : (values.class_of_business ? OTHER : '');
+  const linesList: string[] =
+    selectedClass && (CLASSES_OF_BUSINESS as readonly string[]).includes(selectedClass)
+      ? (LINES_BY_CLASS as Record<string, string[] | undefined>)[selectedClass] ?? []
+      : [];
+  const linesSelectValue = linesList.includes(values.lines_of_business ?? '')
+    ? (values.lines_of_business ?? '')
+    : (values.lines_of_business ? OTHER : '');
+  const treatySelectValue = TREATY_TYPES.includes(values.treaty_type ?? '') ? (values.treaty_type ?? '') : (values.treaty_type ? OTHER : '');
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
@@ -301,7 +323,15 @@ export default function StepHeader() {
         <Field label="Country" error={errors.country?.message}>
           <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
-            {...register('country')}
+            value={countrySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+                setValue('country', '');
+              } else {
+                setValue('country', v);
+              }
+            }}
           >
             <option value="" disabled>
               Select a country
@@ -311,12 +341,24 @@ export default function StepHeader() {
                 {c}
               </option>
             ))}
+            <option value={OTHER}>Other…</option>
           </select>
+          {(countrySelectValue === OTHER || (!COUNTRIES.includes(values.country) && values.country)) && (
+            <input className="input mt-2" placeholder="Enter other country" {...register('country')} />
+          )}
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
           <select
             className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
-            {...register('currency_std_units')}
+            value={currencySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+                setValue('currency_std_units', '');
+              } else {
+                setValue('currency_std_units', v);
+              }
+            }}
           >
             <option value="" disabled>
               Select a currency
@@ -324,7 +366,11 @@ export default function StepHeader() {
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>{`${c.code} — ${c.name}`}</option>
             ))}
+            <option value={OTHER}>Other…</option>
           </select>
+          {(currencySelectValue === OTHER || (!CURRENCIES.some(c => c.code === values.currency_std_units) && values.currency_std_units)) && (
+            <input className="input mt-2" placeholder="Enter other currency (code or name)" {...register('currency_std_units')} />
+          )}
         </Field>
         <Field label="Client Manager">
           <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
@@ -342,27 +388,80 @@ export default function StepHeader() {
           <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
         </Field>
         <Field label="Class of Business">
-          <select className="input" {...register('class_of_business')}>
+          <select
+            className="input"
+            value={classSelectValue}
+            onChange={(e) => {
+              const v = e.target.value as string;
+              if (v === OTHER) {
+                setValue('class_of_business', '');
+              } else {
+                setValue('class_of_business', v);
+              }
+            }}
+          >
             <option value="" disabled>
               Select a class
             </option>
             {CLASSES_OF_BUSINESS.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
+            <option value={OTHER}>Other…</option>
           </select>
+          {(classSelectValue === OTHER || (!(CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) && values.class_of_business)) && (
+            <input className="input mt-2" placeholder="Enter other class" {...register('class_of_business')} />
+          )}
         </Field>
         <Field label="Line/s of Business">
-          <select className="input" {...register('lines_of_business')} disabled={!selectedClass}>
+          <select
+            className="input"
+            value={linesSelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+                setValue('lines_of_business', '');
+              } else {
+                setValue('lines_of_business', v);
+              }
+            }}
+            disabled={!selectedClass || classSelectValue === OTHER}
+          >
             <option value="" disabled>
-              {selectedClass ? 'Select a line' : 'Select a class first'}
+              {selectedClass && classSelectValue !== OTHER ? 'Select a line' : 'Select a class first'}
             </option>
-            {(selectedClass ? LINES_BY_CLASS[selectedClass] : []).map((l) => (
+            {linesList.map((l) => (
               <option key={l} value={l}>{l}</option>
             ))}
+            {selectedClass && classSelectValue !== OTHER && <option value={OTHER}>Other…</option>}
           </select>
+          {((linesSelectValue === OTHER) || (values.lines_of_business && !linesList.includes(values.lines_of_business ?? ''))) && (
+            <input className="input mt-2" placeholder="Enter other line" {...register('lines_of_business')} />
+          )}
         </Field>
         <Field label="Treaty Type">
-          <input className="input" placeholder="e.g., Quota Share, Surplus, XL" {...register('treaty_type')} />
+          <select
+            className="input"
+            value={treatySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+                setValue('treaty_type', '');
+              } else {
+                setValue('treaty_type', v);
+              }
+            }}
+          >
+            <option value="" disabled>
+              Select a treaty type
+            </option>
+            {TREATY_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+            <option value={OTHER}>Other…</option>
+          </select>
+          {(treatySelectValue === OTHER || (!TREATY_TYPES.includes(values.treaty_type ?? '') && values.treaty_type)) && (
+            <input className="input mt-2" placeholder="Enter other treaty type" {...register('treaty_type')} />
+          )}
         </Field>
         <div className="md:col-span-2">
           <Field label="Additional Comments">
