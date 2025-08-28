@@ -98,6 +98,110 @@ const CURRENCIES: { code: string; name: string }[] = [
   { code: 'EGP', name: 'Egyptian Pound' },
 ];
 
+// Classes of Business and dependent Lines of Business
+const CLASSES_OF_BUSINESS = [
+  'Property',
+  'Casualty / Liability',
+  'Marine & Aviation',
+  'Life',
+  'Health / Medical',
+  'Agriculture',
+  'Motor',
+  'Engineering',
+  'Financial Lines',
+  'Specialty Risks',
+  'Energy / Oil & Gas',
+  'Credit & Surety',
+  'Travel',
+  'Workers’ Compensation',
+  'Miscellaneous',
+] as const;
+
+const LINES_BY_CLASS: Record<(typeof CLASSES_OF_BUSINESS)[number], string[]> = {
+  'Property': [
+    'Industrial Risks',
+    'Commercial Property',
+    'Residential / Homeowners',
+    'Catastrophe (NatCat)',
+    'Fire & Allied Perils',
+  ],
+  'Casualty / Liability': [
+    'General Liability',
+    'Professional Indemnity',
+    'Directors & Officers (D&O)',
+    'Employers’ Liability',
+    'Product Liability',
+  ],
+  'Marine & Aviation': [
+    'Marine Cargo',
+    'Marine Hull',
+    'Aviation Hull',
+    'Aviation Liability',
+    'Offshore Energy',
+  ],
+  'Life': [
+    'Term Life',
+    'Whole Life',
+    'Endowment',
+    'Group Life',
+    'Annuities',
+  ],
+  'Health / Medical': [
+    'Individual Health',
+    'Group Health',
+    'Critical Illness',
+    'Disability Income',
+  ],
+  'Agriculture': [
+    'Crop Insurance',
+    'Livestock',
+    'Weather Index',
+  ],
+  'Motor': [
+    'Private Motor',
+    'Commercial Motor',
+    'Motor Third-Party Liability (MTPL)',
+  ],
+  'Engineering': [
+    'Contractors All Risks (CAR)',
+    'Erection All Risks (EAR)',
+    'Machinery Breakdown',
+    'Electronic Equipment',
+  ],
+  'Financial Lines': [
+    'Bankers Blanket Bond (BBB)',
+    'Cyber Risk',
+    'Trade Credit',
+    'Surety Bonds',
+  ],
+  'Specialty Risks': [
+    'Political Risk',
+    'Terrorism',
+    'Event Cancellation',
+  ],
+  'Energy / Oil & Gas': [
+    'Upstream Energy',
+    'Downstream Energy',
+    'Renewables',
+  ],
+  'Credit & Surety': [
+    'Credit Insurance',
+    'Surety Bonds',
+  ],
+  'Travel': [
+    'Travel Insurance',
+    'Assistance Services',
+  ],
+  'Workers’ Compensation': [
+    'Employers’ Liability',
+    'Occupational Injury',
+  ],
+  'Miscellaneous': [
+    'Pet Insurance',
+    'Other Niche Covers',
+  ],
+};
+
 const Schema = z.object({
   name_of_company: z.string().min(1, 'Required'),
   country: z.string().min(1, 'Required'),
@@ -123,19 +227,19 @@ export default function StepHeader() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors }, watch } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
     defaultValues: {
       name_of_company: '',
   country: 'Kenya',
-      currency_std_units: '',
+  currency_std_units: 'USD',
       munich_re_client_manager: '',
       munich_re_underwriter: '',
       inception_date: '',
       expiry_date: '',
       claims_period: '',
-      class_of_business: '',
-      lines_of_business: '',
+  class_of_business: '',
+  lines_of_business: '',
       treaty_type: '',
       additional_comments: '',
     },
@@ -163,6 +267,15 @@ export default function StepHeader() {
   }, [submissionId, reset]);
 
   const values = watch();
+  const selectedClass = values.class_of_business as (typeof CLASSES_OF_BUSINESS)[number] | '';
+  // Ensure lines of business resets if the current selection no longer matches the selected class
+  useEffect(() => {
+    const lines = selectedClass ? LINES_BY_CLASS[selectedClass] ?? [] : [];
+    if (values.lines_of_business && !lines.includes(values.lines_of_business)) {
+      setValue('lines_of_business', '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClass]);
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
@@ -229,10 +342,24 @@ export default function StepHeader() {
           <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
         </Field>
         <Field label="Class of Business">
-          <input className="input" placeholder="e.g., Property" {...register('class_of_business')} />
+          <select className="input" {...register('class_of_business')}>
+            <option value="" disabled>
+              Select a class
+            </option>
+            {CLASSES_OF_BUSINESS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Line/s of Business">
-          <input className="input" placeholder="e.g., Industrial Risks, Commercial" {...register('lines_of_business')} />
+          <select className="input" {...register('lines_of_business')} disabled={!selectedClass}>
+            <option value="" disabled>
+              {selectedClass ? 'Select a line' : 'Select a class first'}
+            </option>
+            {(selectedClass ? LINES_BY_CLASS[selectedClass] : []).map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Treaty Type">
           <input className="input" placeholder="e.g., Quota Share, Surplus, XL" {...register('treaty_type')} />
