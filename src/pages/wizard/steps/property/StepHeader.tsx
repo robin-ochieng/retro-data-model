@@ -236,6 +236,12 @@ export default function StepHeader() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track when user explicitly chose "Other" for each select
+  const [countryIsOther, setCountryIsOther] = useState(false);
+  const [currencyIsOther, setCurrencyIsOther] = useState(false);
+  const [classIsOther, setClassIsOther] = useState(false);
+  const [linesIsOther, setLinesIsOther] = useState(false);
+  const [treatyIsOther, setTreatyIsOther] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -286,18 +292,37 @@ export default function StepHeader() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass]);
+  // Keep "Other" flags in sync when data is loaded or edited programmatically
+  useEffect(() => {
+    setCountryIsOther(!!values.country && !COUNTRIES.includes(values.country));
+  }, [values.country]);
+  useEffect(() => {
+    setCurrencyIsOther(!!values.currency_std_units && !CURRENCIES.some(c => c.code === values.currency_std_units));
+  }, [values.currency_std_units]);
+  useEffect(() => {
+    setClassIsOther(!!values.class_of_business && !(CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any));
+  }, [values.class_of_business]);
+  useEffect(() => {
+    const linesListLocal = selectedClass && (CLASSES_OF_BUSINESS as readonly string[]).includes(selectedClass)
+      ? (LINES_BY_CLASS as Record<string, string[] | undefined>)[selectedClass] ?? []
+      : [];
+    setLinesIsOther(!!values.lines_of_business && !linesListLocal.includes(values.lines_of_business));
+  }, [values.lines_of_business, selectedClass]);
+  useEffect(() => {
+    setTreatyIsOther(!!values.treaty_type && !TREATY_TYPES.includes(values.treaty_type));
+  }, [values.treaty_type]);
   // Derived select values to support 'Other' option
-  const countrySelectValue = COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : '');
-  const currencySelectValue = CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : '');
-  const classSelectValue = (CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) ? values.class_of_business : (values.class_of_business ? OTHER : '');
+  const countrySelectValue = countryIsOther ? OTHER : (COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : ''));
+  const currencySelectValue = currencyIsOther ? OTHER : (CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : ''));
+  const classSelectValue = classIsOther ? OTHER : ((CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) ? values.class_of_business : (values.class_of_business ? OTHER : ''));
   const linesList: string[] =
     selectedClass && (CLASSES_OF_BUSINESS as readonly string[]).includes(selectedClass)
       ? (LINES_BY_CLASS as Record<string, string[] | undefined>)[selectedClass] ?? []
       : [];
-  const linesSelectValue = linesList.includes(values.lines_of_business ?? '')
+  const linesSelectValue = linesIsOther ? OTHER : (linesList.includes(values.lines_of_business ?? '')
     ? (values.lines_of_business ?? '')
-    : (values.lines_of_business ? OTHER : '');
-  const treatySelectValue = TREATY_TYPES.includes(values.treaty_type ?? '') ? (values.treaty_type ?? '') : (values.treaty_type ? OTHER : '');
+    : (values.lines_of_business ? OTHER : ''));
+  const treatySelectValue = treatyIsOther ? OTHER : (TREATY_TYPES.includes(values.treaty_type ?? '') ? (values.treaty_type ?? '') : (values.treaty_type ? OTHER : ''));
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
@@ -321,15 +346,17 @@ export default function StepHeader() {
           <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Munich RE" {...register('name_of_company')} />
         </Field>
         <Field label="Country" error={errors.country?.message}>
-          <select
+      <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={countrySelectValue}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
-                setValue('country', '');
+        setCountryIsOther(true);
+        setValue('country', '');
               } else {
-                setValue('country', v);
+        setCountryIsOther(false);
+        setValue('country', v);
               }
             }}
           >
@@ -343,20 +370,22 @@ export default function StepHeader() {
             ))}
             <option value={OTHER}>Other…</option>
           </select>
-          {(countrySelectValue === OTHER || (!COUNTRIES.includes(values.country) && values.country)) && (
+          {(countrySelectValue === OTHER || countryIsOther) && (
             <input className="input mt-2" placeholder="Enter other country" {...register('country')} />
           )}
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
-          <select
+      <select
             className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={currencySelectValue}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
-                setValue('currency_std_units', '');
+        setCurrencyIsOther(true);
+        setValue('currency_std_units', '');
               } else {
-                setValue('currency_std_units', v);
+        setCurrencyIsOther(false);
+        setValue('currency_std_units', v);
               }
             }}
           >
@@ -368,7 +397,7 @@ export default function StepHeader() {
             ))}
             <option value={OTHER}>Other…</option>
           </select>
-          {(currencySelectValue === OTHER || (!CURRENCIES.some(c => c.code === values.currency_std_units) && values.currency_std_units)) && (
+          {(currencySelectValue === OTHER || currencyIsOther) && (
             <input className="input mt-2" placeholder="Enter other currency (code or name)" {...register('currency_std_units')} />
           )}
         </Field>
@@ -388,15 +417,17 @@ export default function StepHeader() {
           <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
         </Field>
         <Field label="Class of Business">
-          <select
+      <select
             className="input"
             value={classSelectValue}
             onChange={(e) => {
               const v = e.target.value as string;
               if (v === OTHER) {
-                setValue('class_of_business', '');
+        setClassIsOther(true);
+        setValue('class_of_business', '');
               } else {
-                setValue('class_of_business', v);
+        setClassIsOther(false);
+        setValue('class_of_business', v);
               }
             }}
           >
@@ -408,20 +439,22 @@ export default function StepHeader() {
             ))}
             <option value={OTHER}>Other…</option>
           </select>
-          {(classSelectValue === OTHER || (!(CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) && values.class_of_business)) && (
+      {(classSelectValue === OTHER || classIsOther) && (
             <input className="input mt-2" placeholder="Enter other class" {...register('class_of_business')} />
           )}
         </Field>
         <Field label="Line/s of Business">
-          <select
+      <select
             className="input"
             value={linesSelectValue}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
-                setValue('lines_of_business', '');
+        setLinesIsOther(true);
+        setValue('lines_of_business', '');
               } else {
-                setValue('lines_of_business', v);
+        setLinesIsOther(false);
+        setValue('lines_of_business', v);
               }
             }}
             disabled={!selectedClass || classSelectValue === OTHER}
@@ -434,20 +467,22 @@ export default function StepHeader() {
             ))}
             {selectedClass && classSelectValue !== OTHER && <option value={OTHER}>Other…</option>}
           </select>
-          {((linesSelectValue === OTHER) || (values.lines_of_business && !linesList.includes(values.lines_of_business ?? ''))) && (
+      {(classIsOther || linesIsOther || (values.lines_of_business && !linesList.includes(values.lines_of_business ?? ''))) && (
             <input className="input mt-2" placeholder="Enter other line" {...register('lines_of_business')} />
           )}
         </Field>
         <Field label="Treaty Type">
-          <select
+      <select
             className="input"
             value={treatySelectValue}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
-                setValue('treaty_type', '');
+        setTreatyIsOther(true);
+        setValue('treaty_type', '');
               } else {
-                setValue('treaty_type', v);
+        setTreatyIsOther(false);
+        setValue('treaty_type', v);
               }
             }}
           >
@@ -459,7 +494,7 @@ export default function StepHeader() {
             ))}
             <option value={OTHER}>Other…</option>
           </select>
-          {(treatySelectValue === OTHER || (!TREATY_TYPES.includes(values.treaty_type ?? '') && values.treaty_type)) && (
+          {(treatySelectValue === OTHER || treatyIsOther) && (
             <input className="input mt-2" placeholder="Enter other treaty type" {...register('treaty_type')} />
           )}
         </Field>
