@@ -64,6 +64,40 @@ const COUNTRIES = [
   'Zimbabwe',
 ];
 
+// Supported currencies shown as a dropdown (value stored as 3-letter code)
+const CURRENCIES: { code: string; name: string }[] = [
+  { code: 'USD', name: 'United States Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'GBP', name: 'British Pound Sterling' },
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'CAD', name: 'Canadian Dollar' },
+  { code: 'CHF', name: 'Swiss Franc' },
+  { code: 'CNY', name: 'Chinese Yuan Renminbi' },
+  { code: 'HKD', name: 'Hong Kong Dollar' },
+  { code: 'NZD', name: 'New Zealand Dollar' },
+  { code: 'SEK', name: 'Swedish Krona' },
+  { code: 'NOK', name: 'Norwegian Krone' },
+  { code: 'SGD', name: 'Singapore Dollar' },
+  { code: 'KRW', name: 'South Korean Won' },
+  { code: 'INR', name: 'Indian Rupee' },
+  { code: 'MXN', name: 'Mexican Peso' },
+  { code: 'BRL', name: 'Brazilian Real' },
+  { code: 'ZAR', name: 'South African Rand' },
+  { code: 'TRY', name: 'Turkish Lira' },
+  { code: 'RUB', name: 'Russian Ruble' },
+  { code: 'AED', name: 'United Arab Emirates Dirham' },
+  { code: 'SAR', name: 'Saudi Riyal' },
+  { code: 'ILS', name: 'Israeli Shekel' },
+  { code: 'THB', name: 'Thai Baht' },
+  { code: 'IDR', name: 'Indonesian Rupiah' },
+  { code: 'PLN', name: 'Polish Zloty' },
+  { code: 'DKK', name: 'Danish Krone' },
+  { code: 'MYR', name: 'Malaysian Ringgit' },
+  { code: 'PHP', name: 'Philippine Peso' },
+  { code: 'EGP', name: 'Egyptian Pound' },
+];
+
 const Schema = z.object({
   name_of_company: z.string().min(1, 'Required'),
   country: z.string().min(1, 'Required'),
@@ -167,7 +201,17 @@ export default function StepHeader() {
           </select>
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
-          <input className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., USD" {...register('currency_std_units')} />
+          <select
+            className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+            {...register('currency_std_units')}
+          >
+            <option value="" disabled>
+              Select a currency
+            </option>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{`${c.code} — ${c.name}`}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Client Manager">
           <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
