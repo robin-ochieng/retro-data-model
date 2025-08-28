@@ -1,22 +1,36 @@
 # Features
 
-- Renamed tab “Header” to “Client Details” (Property and Casualty).
-- Updated site title to “Retrocession Hub”.
-- Client Details: Country field is a dropdown with African countries; default set to Kenya; supports “Other”.
-- Client Details: Currency (in std. units) is a dropdown using ISO codes; default set to USD; supports “Other”.
-- Client Details: Class of Business is a dropdown; Line/s of Business is a dependent dropdown based on the selected class; supports “Other”.
-- Client Details: Treaty Type is a dropdown with common treaty types; supports “Other”.
-- Added wizard steps for Property and Casualty lines of business.
-- Added Paste Modal and table usability improvements.
-- Added Excel templates under Resources.
-\n+// Additional capabilities
-- Supabase-backed persistence with idempotent upserts to sheet_blobs and automatic autosave across wizard steps.
-- Schema-driven validation using Zod with react-hook-form resolver and inline error surfacing.
-- Authentication and route-guarding via Supabase session with ProtectedRoute to enforce gated access.
-- Modular wizard architecture with per-LoB tab registry (config-driven), deep-linkable routes, and state continuity.
-- Property workflow coverage: EPI Summary, Treaty Statistics (Prop/Non-Prop), UW Limit, Risk Profile, Large Loss List, Large Loss Triangulation, Triangulation, Cresta Zone Control, Top 20 Risks, Climate Exposure.
-- Casualty workflow coverage: Treaty Statistics (Prop/PropCC/Non-Prop), Rate Development (incl. Motor), Max UW Limit Development, Number of Risks Development, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, Motor Fleet List.
-- Bulk data ingestion via CSV paste with client-side parsing utilities and chunked save for large payloads.
-- Excel export scaffolding to support downstream reporting and handoff (generateExcel).
-- Responsive, accessible UI built with Tailwind CSS and semantic form patterns; consistent input styling and contextual hints.
-- DX enhancements: Vite + HMR, npm tasks for dev/build, automated documentation generation on pre-commit.
+- Branding and navigation
+	- Renamed the “Header” tab to “Client Details” for both Property and Casualty.
+	- Updated the site title to “Retrocession Hub”.
+
+- Client Details (data capture)
+	- Country dropdown with African countries; default to Kenya; “Other” free‑text fallback.
+	- Currency dropdown using ISO 4217 codes; default to USD; “Other” free‑text fallback.
+	- Class of Business dropdown with dependent Line(s) of Business; “Other” free‑text fallback; line options auto‑reset on class change.
+	- Treaty Type dropdown with common treaty taxonomies; “Other” free‑text fallback.
+	- Inline validation with descriptive error surfacing.
+
+- Workflows
+	- Property: EPI Summary, Treaty Statistics (Prop/Non‑Prop), UW Limit, Risk Profile, Large Loss List, Large Loss Triangulation, Triangulation, Cresta Zone Control, Top 20 Risks, Climate Exposure.
+	- Casualty: Treaty Statistics (Prop/PropCC/Non‑Prop), Rate Development (incl. Motor), Max UW Limit Development, Number of Risks Development, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, Motor Fleet List.
+
+- Data persistence and autosave
+	- Supabase‑backed persistence with idempotent upserts to sheet_blobs per step.
+	- Transparent autosave across wizard steps with save‑time indicator.
+	- Bulk ingestion via CSV paste with client‑side parsing and chunked saves for large payloads.
+	- Excel export scaffolding for downstream reporting.
+	- Excel templates available under Resources for standardized inputs.
+
+- Security and routing
+	- Authentication via Supabase session; gated access with ProtectedRoute.
+	- Deep‑linkable routes per tab with state continuity across steps.
+
+- UI/UX
+	- Responsive, accessible UI with Tailwind CSS and consistent form patterns.
+	- Paste Modal and table usability enhancements for high‑volume data entry.
+
+- Developer experience
+	- Vite + HMR development workflow; npm tasks for dev/build.
+	- Config‑driven, per‑LoB tab registry for extensibility.
+	- Automated documentation generation on pre‑commit.
