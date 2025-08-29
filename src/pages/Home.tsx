@@ -124,16 +124,25 @@ function HomeContent() {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col">
       <header className="w-full sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/60 bg-white dark:bg-gray-900 border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Logo />
-        <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
-          {`Welcome, ${displayName ?? user?.email ?? ''}`}
-        </span>
-        <button
-          className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-          onClick={signOut}
-        >
-          Sign out
-        </button>
+          <Logo />
+          <div className="flex items-center gap-4">
+            <a
+              href="/help"
+              className="text-sm text-blue-700 dark:text-blue-400 hover:underline"
+              title="Help & User Guide"
+            >
+              Help
+            </a>
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+              {`Welcome, ${displayName ?? user?.email ?? ''}`}
+            </span>
+            <button
+              className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
       <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
