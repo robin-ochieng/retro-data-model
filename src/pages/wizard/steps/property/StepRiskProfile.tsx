@@ -4,6 +4,7 @@ import { z } from 'zod';
 import FormTable from '../../../../components/FormTable';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import PasteModal from '../../../../components/PasteModal';
 
 // Column schema matching the Excel screenshots
 const BandSchema = z.object({
@@ -41,6 +42,7 @@ const defaultRow: Band = {
 
 export default function StepRiskProfile() {
   const { submissionId } = useParams();
+  type Section = 'gross_pml' | 'gross_turnover' | 'net_pml' | 'net_turnover';
   const [state, setState] = useState<State>({
     gross_pml: [defaultRow],
     gross_turnover: [defaultRow],
@@ -49,6 +51,7 @@ export default function StepRiskProfile() {
     retention: 0,
     additional_comments: '',
   });
+  const [pasteSection, setPasteSection] = useState<Section | null>(null);
   const [errors, setErrors] = useState<{
     gross_pml: Record<number, Partial<Record<keyof Band, string>>>;
     gross_turnover: Record<number, Partial<Record<keyof Band, string>>>;
@@ -242,12 +245,52 @@ export default function StepRiskProfile() {
   const netPmlTotals = useMemo(() => totals(state.net_pml), [state.net_pml]);
   const netTurnTotals = useMemo(() => totals(state.net_turnover), [state.net_turnover]);
 
+  // Paste helpers for banded tables
+  const toNumber = (s: string | undefined) => {
+    if (s == null) return 0;
+    const cleaned = String(s).replace(/[\s,]/g, '');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const maybeHasHeader = (cells: string[], expected: string[]) => {
+    const lc = (cells || []).map(c => String(c).trim().toLowerCase());
+    let hits = 0;
+    expected.forEach(e => { if (lc.some(c => c.includes(e))) hits += 1; });
+    return hits >= Math.max(2, Math.ceil(expected.length / 2));
+  };
+  const applyPaste = (which: Section, grid: string[][]) => {
+    if (!grid || grid.length === 0) return;
+    let start = 0;
+    const first = grid[0] ?? [];
+    if (maybeHasHeader(first, ['lower','upper','number','total','sum','premium','average','rate'])) start = 1;
+    const mapped: Band[] = grid.slice(start).map(r => ({
+      lower_limit: toNumber(r[0]),
+      upper_limit: toNumber(r[1]),
+      number_of_risk_items: toNumber(r[2]),
+      total_sum_insured_ex_vat: toNumber(r[3]),
+      total_annual_premiums_ex_vat: toNumber(r[4]),
+      average_sum_insured_ex_vat: toNumber(r[5]),
+      average_premium_ex_vat: toNumber(r[6]),
+      average_rate: toNumber(r[7]),
+    }));
+    const cleaned = mapped.filter(m => Object.values(m).some(v => Number(v) > 0));
+    setState(prev => ({ ...prev, [which]: cleaned.length ? cleaned : [defaultRow] }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">GROSS PROFILES (Net of Fac)</h3>
         <p className="text-xs text-gray-500 mb-3">Table 1: PML or Sum Insured</p>
-        <FormTable<Band> columns={bandColumns as any} rows={state.gross_pml} onChange={onChange('gross_pml')} onAddRow={onAddRow('gross_pml')} onRemoveRow={onRemoveRow('gross_pml')} errors={errors.gross_pml} />
+        <FormTable<Band>
+          columns={bandColumns as any}
+          rows={state.gross_pml}
+          onChange={onChange('gross_pml')}
+          onAddRow={onAddRow('gross_pml')}
+          onRemoveRow={onRemoveRow('gross_pml')}
+          errors={errors.gross_pml}
+          onPaste={() => setPasteSection('gross_pml')}
+        />
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {grossPmlTotals.number_of_risk_items.toLocaleString()}</span>
@@ -256,7 +299,15 @@ export default function StepRiskProfile() {
         </div>
         <hr className="my-4" />
         <p className="text-xs text-gray-500 mb-3">Table 2: Turnover amounts</p>
-        <FormTable<Band> columns={bandColumns as any} rows={state.gross_turnover} onChange={onChange('gross_turnover')} onAddRow={onAddRow('gross_turnover')} onRemoveRow={onRemoveRow('gross_turnover')} errors={errors.gross_turnover} />
+        <FormTable<Band>
+          columns={bandColumns as any}
+          rows={state.gross_turnover}
+          onChange={onChange('gross_turnover')}
+          onAddRow={onAddRow('gross_turnover')}
+          onRemoveRow={onRemoveRow('gross_turnover')}
+          errors={errors.gross_turnover}
+          onPaste={() => setPasteSection('gross_turnover')}
+        />
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {grossTurnTotals.number_of_risk_items.toLocaleString()}</span>
@@ -267,7 +318,15 @@ export default function StepRiskProfile() {
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">NET PROFILES</h3>
         <p className="text-xs text-gray-500 mb-3">Table 1: PML or Sum Insured</p>
-        <FormTable<Band> columns={bandColumns as any} rows={state.net_pml} onChange={onChange('net_pml')} onAddRow={onAddRow('net_pml')} onRemoveRow={onRemoveRow('net_pml')} errors={errors.net_pml} />
+        <FormTable<Band>
+          columns={bandColumns as any}
+          rows={state.net_pml}
+          onChange={onChange('net_pml')}
+          onAddRow={onAddRow('net_pml')}
+          onRemoveRow={onRemoveRow('net_pml')}
+          errors={errors.net_pml}
+          onPaste={() => setPasteSection('net_pml')}
+        />
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {netPmlTotals.number_of_risk_items.toLocaleString()}</span>
@@ -276,7 +335,15 @@ export default function StepRiskProfile() {
         </div>
         <hr className="my-4" />
         <p className="text-xs text-gray-500 mb-3">Table 2: Turnover amounts</p>
-        <FormTable<Band> columns={bandColumns as any} rows={state.net_turnover} onChange={onChange('net_turnover')} onAddRow={onAddRow('net_turnover')} onRemoveRow={onRemoveRow('net_turnover')} errors={errors.net_turnover} />
+        <FormTable<Band>
+          columns={bandColumns as any}
+          rows={state.net_turnover}
+          onChange={onChange('net_turnover')}
+          onAddRow={onAddRow('net_turnover')}
+          onRemoveRow={onRemoveRow('net_turnover')}
+          errors={errors.net_turnover}
+          onPaste={() => setPasteSection('net_turnover')}
+        />
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {netTurnTotals.number_of_risk_items.toLocaleString()}</span>
@@ -295,6 +362,12 @@ export default function StepRiskProfile() {
         </label>
         <div className="md:col-span-2 text-right text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
       </div>
+      <PasteModal
+        open={pasteSection !== null}
+        onClose={() => setPasteSection(null)}
+        onApply={(grid) => { if (pasteSection) applyPaste(pasteSection, grid); setPasteSection(null); }}
+        title="Paste from Excel — Risk Profile"
+      />
     </div>
   );
 }

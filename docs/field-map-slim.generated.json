@@ -44,11 +44,6 @@
       }
     },
     {
-      "tabKey": "stepcrestazonecontrol",
-      "sheetName": "Unknown",
-      "excelColumns": {}
-    },
-    {
       "tabKey": "steplargelosstriangulation",
       "sheetName": "Unknown",
       "excelColumns": {}
@@ -60,11 +55,6 @@
     },
     {
       "tabKey": "steptop20risks",
-      "sheetName": "Unknown",
-      "excelColumns": {}
-    },
-    {
-      "tabKey": "steptriangulation",
       "sheetName": "Unknown",
       "excelColumns": {}
     }

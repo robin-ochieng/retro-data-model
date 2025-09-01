@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { useAutosave } from '../../../hooks/useAutosave';
 import FormTable from '../../../components/FormTable';
+import PasteModal from '../../../components/PasteModal';
 import { z } from 'zod';
 
 const RowSchema = z.object({
@@ -33,6 +34,7 @@ export default function StepLargeLossList() {
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [additionalComments, setAdditionalComments] = useState<string>('');
   const [optionalCols, setOptionalCols] = useState<{ qs_cession?: boolean; net_of_proportional?: boolean; xol_payment?: boolean }>({});
+  const [showPaste, setShowPaste] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -173,6 +175,64 @@ export default function StepLargeLossList() {
   const onAddRow = () => setRows(prev => [...prev, { loss_id: prev.length + 1, uw_year: undefined, name: '', dol: undefined, type_of_loss: '', gross_sum_insured: 0, gross_incurred: 0, paid_to_date: 0, gross_outstanding: 0, fac_amount: 0, net_of_fac: 0, surplus_cession: 0, qs_cession: 0, net_of_proportional: 0, xol_payment: 0 }]);
   const onRemoveRow = (idx: number) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
 
+  // Paste helpers
+  const toNumber = (s: string | undefined) => {
+    if (s == null) return 0;
+    const cleaned = String(s).replace(/[\s,]/g, '');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const isYear = (s: string | undefined) => {
+    const n = toNumber(s);
+    const y = new Date().getFullYear() + 1; // allow next year too
+    return n >= 1900 && n <= y && String(s ?? '').trim().length >= 4;
+  };
+  const maybeHasHeader = (cells: string[] = [], expected: string[]) => {
+    const lc = cells.map((c) => String(c).trim().toLowerCase());
+    let hits = 0;
+    expected.forEach((e) => { if (lc.some((c) => c.includes(e))) hits += 1; });
+    return hits >= Math.max(2, Math.ceil(expected.length / 2));
+  };
+  const applyPaste = (grid: string[][]) => {
+    if (!grid || grid.length === 0) return;
+    let start = 0;
+    const first = grid[0] ?? [];
+    if (maybeHasHeader(first, ['uw','year','name','dol','type','gross','incurred','paid','outstanding','fac','net','surplus','qs','proportional','xol'])) start = 1;
+    // Detect if first column is a pasted loss id to offset columns
+    let cOffset = 0;
+    if (start === 1) {
+      const lc = first.map((c) => String(c).toLowerCase());
+      if (lc.some((c) => c.includes('loss') && c.includes('id'))) cOffset = 1;
+    } else if (grid.length > 0) {
+      const r0 = grid[0] ?? [];
+      if (!isYear(r0[0]) && isYear(r0[1])) cOffset = 1;
+    }
+    const mapped: Row[] = grid.slice(start).map((r, i) => ({
+      loss_id: i + 1,
+      uw_year: toNumber(r[cOffset + 0]) || undefined,
+      name: String(r[cOffset + 1] ?? '').trim(),
+      dol: String(r[cOffset + 2] ?? '').trim() || undefined,
+      type_of_loss: String(r[cOffset + 3] ?? '').trim(),
+      gross_sum_insured: toNumber(r[cOffset + 4]),
+      gross_incurred: toNumber(r[cOffset + 5]),
+      paid_to_date: toNumber(r[cOffset + 6]),
+      gross_outstanding: toNumber(r[cOffset + 7]),
+      fac_amount: toNumber(r[cOffset + 8]),
+      net_of_fac: toNumber(r[cOffset + 9]),
+      surplus_cession: toNumber(r[cOffset + 10]),
+      qs_cession: toNumber(r[cOffset + 11]),
+      net_of_proportional: toNumber(r[cOffset + 12]),
+      xol_payment: toNumber(r[cOffset + 13]),
+    }));
+    const cleaned = mapped.filter((m) => (
+      (m.uw_year && m.uw_year > 0) ||
+      (m.name && m.name.length > 0) ||
+      [m.gross_sum_insured, m.gross_incurred, m.paid_to_date, m.gross_outstanding, m.fac_amount, m.net_of_fac, m.surplus_cession, m.qs_cession, m.net_of_proportional, m.xol_payment]
+        .some((v) => Number(v) > 0)
+    ));
+    setRows(cleaned.length ? cleaned : [{ loss_id: 1, uw_year: undefined, name: '', dol: undefined, type_of_loss: '', gross_sum_insured: 0, gross_incurred: 0, paid_to_date: 0, gross_outstanding: 0, fac_amount: 0, net_of_fac: 0, surplus_cession: 0, qs_cession: 0, net_of_proportional: 0, xol_payment: 0 }]);
+  };
+
   const totals = useMemo(() => {
     return rows.reduce((acc, r) => ({
       gross_sum_insured: acc.gross_sum_insured + (r.gross_sum_insured || 0),
@@ -198,6 +258,7 @@ export default function StepLargeLossList() {
         onAddRow={onAddRow}
         onRemoveRow={onRemoveRow}
         errors={errors}
+        onPaste={() => setShowPaste(true)}
       />
       <div className="mt-3 text-sm text-gray-700 dark:text-gray-200">
         <strong>Totals:</strong>
@@ -212,12 +273,13 @@ export default function StepLargeLossList() {
         <span className="ml-3">Net of Proportional: {totals.net_of_proportional.toLocaleString()}</span>
         <span className="ml-3">XoL Payment: {totals.xol_payment.toLocaleString()}</span>
       </div>
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
+  <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
           <textarea className="input" placeholder="Any notes or guidance for this submission…" value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} />
         </label>
       </div>
+  <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyPaste} title="Paste from Excel — Large Loss List" />
     </div>
   );
 }

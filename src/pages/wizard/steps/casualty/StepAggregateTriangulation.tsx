@@ -14,15 +14,15 @@ import { parseCsv } from '../../../../utils/csv';
 
 type Grid = number[][]; // rows x devCols
 
-type SectionKey = 'written_premium' | 'number_of_losses' | 'paid_losses_1' | 'loss_reserves_1' | 'paid_losses_2' | 'loss_reserves_2';
+type SectionKey = 'written_premium' | 'number_of_losses' | 'paid_losses_1' | 'loss_reserves_1' | 'incurred_losses' | 'loss_reserves_2';
 
 const LABELS: Record<SectionKey, string> = {
   written_premium: 'Written Premium',
   number_of_losses: 'Number of Losses',
   paid_losses_1: 'Paid Losses',
   loss_reserves_1: 'Loss Reserves',
-  paid_losses_2: 'Paid Losses',
-  loss_reserves_2: 'Loss Reserves',
+  incurred_losses: 'Incurred Losses',
+  loss_reserves_2: 'W/I L/R in%'
 };
 
 export default function StepAggregateTriangulation() {
@@ -34,7 +34,7 @@ export default function StepAggregateTriangulation() {
     number_of_losses: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
     paid_losses_1: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
     loss_reserves_1: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
-    paid_losses_2: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
+    incurred_losses: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
     loss_reserves_2: Array(years.length).fill(0).map(() => new Array(10).fill(0)),
   });
   const [pasteOpenFor, setPasteOpenFor] = useState<SectionKey | null>(null);
@@ -140,7 +140,7 @@ export default function StepAggregateTriangulation() {
 
   return (
     <div className="space-y-8">
-      {(['written_premium','number_of_losses','paid_losses_1','loss_reserves_1','paid_losses_2','loss_reserves_2'] as SectionKey[]).map((sk) => (
+      {(['written_premium','number_of_losses','paid_losses_1','loss_reserves_1','incurred_losses','loss_reserves_2'] as SectionKey[]).map((sk) => (
         <Section key={sk} sk={sk} />
       ))}
 

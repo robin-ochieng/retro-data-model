@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+const OTHER = '__OTHER__';
 
 // Allowed countries for dropdown (African countries)
 const COUNTRIES = [
@@ -64,6 +65,153 @@ const COUNTRIES = [
   'Zimbabwe',
 ];
 
+// Supported currencies shown as a dropdown (value stored as 3-letter code)
+const CURRENCIES: { code: string; name: string }[] = [
+  { code: 'USD', name: 'United States Dollar' },
+  { code: 'EUR', name: 'Euro' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'GBP', name: 'British Pound Sterling' },
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'CAD', name: 'Canadian Dollar' },
+  { code: 'CHF', name: 'Swiss Franc' },
+  { code: 'CNY', name: 'Chinese Yuan Renminbi' },
+  { code: 'HKD', name: 'Hong Kong Dollar' },
+  { code: 'NZD', name: 'New Zealand Dollar' },
+  { code: 'SEK', name: 'Swedish Krona' },
+  { code: 'NOK', name: 'Norwegian Krone' },
+  { code: 'SGD', name: 'Singapore Dollar' },
+  { code: 'KRW', name: 'South Korean Won' },
+  { code: 'INR', name: 'Indian Rupee' },
+  { code: 'MXN', name: 'Mexican Peso' },
+  { code: 'BRL', name: 'Brazilian Real' },
+  { code: 'ZAR', name: 'South African Rand' },
+  { code: 'TRY', name: 'Turkish Lira' },
+  { code: 'RUB', name: 'Russian Ruble' },
+  { code: 'AED', name: 'United Arab Emirates Dirham' },
+  { code: 'SAR', name: 'Saudi Riyal' },
+  { code: 'ILS', name: 'Israeli Shekel' },
+  { code: 'THB', name: 'Thai Baht' },
+  { code: 'IDR', name: 'Indonesian Rupiah' },
+  { code: 'PLN', name: 'Polish Zloty' },
+  { code: 'DKK', name: 'Danish Krone' },
+  { code: 'MYR', name: 'Malaysian Ringgit' },
+  { code: 'PHP', name: 'Philippine Peso' },
+  { code: 'EGP', name: 'Egyptian Pound' },
+];
+
+// Treaty Types
+const TREATY_TYPES = [
+  'Quota Share Treaty',
+  'Surplus Treaty',
+  'Facultative Obligatory',
+  'Excess of Loss (XL) Treaty',
+  'Stop Loss Treaty',
+];
+
+// Classes of Business and dependent Lines of Business
+const CLASSES_OF_BUSINESS = [
+  'Property',
+  'Casualty / Liability',
+  'Marine & Aviation',
+  'Life',
+  'Health / Medical',
+  'Agriculture',
+  'Motor',
+  'Engineering',
+  'Financial Lines',
+  'Specialty Risks',
+  'Energy / Oil & Gas',
+  'Credit & Surety',
+  'Travel',
+  'Workers’ Compensation',
+  'Miscellaneous',
+] as const;
+
+const LINES_BY_CLASS: Record<(typeof CLASSES_OF_BUSINESS)[number], string[]> = {
+  'Property': [
+    'Industrial Risks',
+    'Commercial Property',
+    'Residential / Homeowners',
+    'Catastrophe (NatCat)',
+    'Fire & Allied Perils',
+  ],
+  'Casualty / Liability': [
+    'General Liability',
+    'Professional Indemnity',
+    'Directors & Officers (D&O)',
+    'Employers’ Liability',
+    'Product Liability',
+  ],
+  'Marine & Aviation': [
+    'Marine Cargo',
+    'Marine Hull',
+    'Aviation Hull',
+    'Aviation Liability',
+    'Offshore Energy',
+  ],
+  'Life': [
+    'Term Life',
+    'Whole Life',
+    'Endowment',
+    'Group Life',
+    'Annuities',
+  ],
+  'Health / Medical': [
+    'Individual Health',
+    'Group Health',
+    'Critical Illness',
+    'Disability Income',
+  ],
+  'Agriculture': [
+    'Crop Insurance',
+    'Livestock',
+    'Weather Index',
+  ],
+  'Motor': [
+    'Private Motor',
+    'Commercial Motor',
+    'Motor Third-Party Liability (MTPL)',
+  ],
+  'Engineering': [
+    'Contractors All Risks (CAR)',
+    'Erection All Risks (EAR)',
+    'Machinery Breakdown',
+    'Electronic Equipment',
+  ],
+  'Financial Lines': [
+    'Bankers Blanket Bond (BBB)',
+    'Cyber Risk',
+    'Trade Credit',
+    'Surety Bonds',
+  ],
+  'Specialty Risks': [
+    'Political Risk',
+    'Terrorism',
+    'Event Cancellation',
+  ],
+  'Energy / Oil & Gas': [
+    'Upstream Energy',
+    'Downstream Energy',
+    'Renewables',
+  ],
+  'Credit & Surety': [
+    'Credit Insurance',
+    'Surety Bonds',
+  ],
+  'Travel': [
+    'Travel Insurance',
+    'Assistance Services',
+  ],
+  'Workers’ Compensation': [
+    'Employers’ Liability',
+    'Occupational Injury',
+  ],
+  'Miscellaneous': [
+    'Pet Insurance',
+    'Other Niche Covers',
+  ],
+};
+
 const Schema = z.object({
   name_of_company: z.string().min(1, 'Required'),
   country: z.string().min(1, 'Required'),
@@ -88,20 +236,26 @@ export default function StepHeader() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track when user explicitly chose "Other" for each select
+  const [countryIsOther, setCountryIsOther] = useState(false);
+  const [currencyIsOther, setCurrencyIsOther] = useState(false);
+  const [classIsOther, setClassIsOther] = useState(false);
+  const [linesIsOther, setLinesIsOther] = useState(false);
+  const [treatyIsOther, setTreatyIsOther] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors }, watch } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
     defaultValues: {
       name_of_company: '',
-      country: '',
-      currency_std_units: '',
+  country: 'Kenya',
+  currency_std_units: 'USD',
       munich_re_client_manager: '',
       munich_re_underwriter: '',
       inception_date: '',
       expiry_date: '',
       claims_period: '',
-      class_of_business: '',
-      lines_of_business: '',
+  class_of_business: '',
+  lines_of_business: '',
       treaty_type: '',
       additional_comments: '',
     },
@@ -129,6 +283,46 @@ export default function StepHeader() {
   }, [submissionId, reset]);
 
   const values = watch();
+  const selectedClass = values.class_of_business as (typeof CLASSES_OF_BUSINESS)[number] | '';
+  // Ensure lines of business resets if the current selection no longer matches the selected class
+  useEffect(() => {
+    const lines = selectedClass ? LINES_BY_CLASS[selectedClass] ?? [] : [];
+    if (values.lines_of_business && !lines.includes(values.lines_of_business)) {
+      setValue('lines_of_business', '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClass]);
+  // Keep "Other" flags in sync when data is loaded or edited programmatically
+  useEffect(() => {
+    setCountryIsOther(!!values.country && !COUNTRIES.includes(values.country));
+  }, [values.country]);
+  useEffect(() => {
+    setCurrencyIsOther(!!values.currency_std_units && !CURRENCIES.some(c => c.code === values.currency_std_units));
+  }, [values.currency_std_units]);
+  useEffect(() => {
+    setClassIsOther(!!values.class_of_business && !(CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any));
+  }, [values.class_of_business]);
+  useEffect(() => {
+    const linesListLocal = selectedClass && (CLASSES_OF_BUSINESS as readonly string[]).includes(selectedClass)
+      ? (LINES_BY_CLASS as Record<string, string[] | undefined>)[selectedClass] ?? []
+      : [];
+    setLinesIsOther(!!values.lines_of_business && !linesListLocal.includes(values.lines_of_business));
+  }, [values.lines_of_business, selectedClass]);
+  useEffect(() => {
+    setTreatyIsOther(!!values.treaty_type && !TREATY_TYPES.includes(values.treaty_type));
+  }, [values.treaty_type]);
+  // Derived select values to support 'Other' option
+  const countrySelectValue = countryIsOther ? OTHER : (COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : ''));
+  const currencySelectValue = currencyIsOther ? OTHER : (CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : ''));
+  const classSelectValue = classIsOther ? OTHER : ((CLASSES_OF_BUSINESS as readonly string[]).includes(values.class_of_business as any) ? values.class_of_business : (values.class_of_business ? OTHER : ''));
+  const linesList: string[] =
+    selectedClass && (CLASSES_OF_BUSINESS as readonly string[]).includes(selectedClass)
+      ? (LINES_BY_CLASS as Record<string, string[] | undefined>)[selectedClass] ?? []
+      : [];
+  const linesSelectValue = linesIsOther ? OTHER : (linesList.includes(values.lines_of_business ?? '')
+    ? (values.lines_of_business ?? '')
+    : (values.lines_of_business ? OTHER : ''));
+  const treatySelectValue = treatyIsOther ? OTHER : (TREATY_TYPES.includes(values.treaty_type ?? '') ? (values.treaty_type ?? '') : (values.treaty_type ? OTHER : ''));
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
@@ -152,10 +346,19 @@ export default function StepHeader() {
           <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Munich RE" {...register('name_of_company')} />
         </Field>
         <Field label="Country" error={errors.country?.message}>
-          <select
+      <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
-            {...register('country')}
-            defaultValue=""
+            value={countrySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+        setCountryIsOther(true);
+        setValue('country', '');
+              } else {
+        setCountryIsOther(false);
+        setValue('country', v);
+              }
+            }}
           >
             <option value="" disabled>
               Select a country
@@ -165,10 +368,38 @@ export default function StepHeader() {
                 {c}
               </option>
             ))}
+            <option value={OTHER}>Other…</option>
           </select>
+          {(countrySelectValue === OTHER || countryIsOther) && (
+            <input className="input mt-2" placeholder="Enter other country" {...register('country')} />
+          )}
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
-          <input className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., USD" {...register('currency_std_units')} />
+      <select
+            className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+            value={currencySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+        setCurrencyIsOther(true);
+        setValue('currency_std_units', '');
+              } else {
+        setCurrencyIsOther(false);
+        setValue('currency_std_units', v);
+              }
+            }}
+          >
+            <option value="" disabled>
+              Select a currency
+            </option>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{`${c.code} — ${c.name}`}</option>
+            ))}
+            <option value={OTHER}>Other…</option>
+          </select>
+          {(currencySelectValue === OTHER || currencyIsOther) && (
+            <input className="input mt-2" placeholder="Enter other currency (code or name)" {...register('currency_std_units')} />
+          )}
         </Field>
         <Field label="Client Manager">
           <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
@@ -186,13 +417,86 @@ export default function StepHeader() {
           <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
         </Field>
         <Field label="Class of Business">
-          <input className="input" placeholder="e.g., Property" {...register('class_of_business')} />
+      <select
+            className="input"
+            value={classSelectValue}
+            onChange={(e) => {
+              const v = e.target.value as string;
+              if (v === OTHER) {
+        setClassIsOther(true);
+        setValue('class_of_business', '');
+              } else {
+        setClassIsOther(false);
+        setValue('class_of_business', v);
+              }
+            }}
+          >
+            <option value="" disabled>
+              Select a class
+            </option>
+            {CLASSES_OF_BUSINESS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+            <option value={OTHER}>Other…</option>
+          </select>
+      {(classSelectValue === OTHER || classIsOther) && (
+            <input className="input mt-2" placeholder="Enter other class" {...register('class_of_business')} />
+          )}
         </Field>
         <Field label="Line/s of Business">
-          <input className="input" placeholder="e.g., Industrial Risks, Commercial" {...register('lines_of_business')} />
+      <select
+            className="input"
+            value={linesSelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+        setLinesIsOther(true);
+        setValue('lines_of_business', '');
+              } else {
+        setLinesIsOther(false);
+        setValue('lines_of_business', v);
+              }
+            }}
+            disabled={!selectedClass || classSelectValue === OTHER}
+          >
+            <option value="" disabled>
+              {selectedClass && classSelectValue !== OTHER ? 'Select a line' : 'Select a class first'}
+            </option>
+            {linesList.map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+            {selectedClass && classSelectValue !== OTHER && <option value={OTHER}>Other…</option>}
+          </select>
+      {(classIsOther || linesIsOther || (values.lines_of_business && !linesList.includes(values.lines_of_business ?? ''))) && (
+            <input className="input mt-2" placeholder="Enter other line" {...register('lines_of_business')} />
+          )}
         </Field>
         <Field label="Treaty Type">
-          <input className="input" placeholder="e.g., Quota Share, Surplus, XL" {...register('treaty_type')} />
+      <select
+            className="input"
+            value={treatySelectValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === OTHER) {
+        setTreatyIsOther(true);
+        setValue('treaty_type', '');
+              } else {
+        setTreatyIsOther(false);
+        setValue('treaty_type', v);
+              }
+            }}
+          >
+            <option value="" disabled>
+              Select a treaty type
+            </option>
+            {TREATY_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+            <option value={OTHER}>Other…</option>
+          </select>
+          {(treatySelectValue === OTHER || treatyIsOther) && (
+            <input className="input mt-2" placeholder="Enter other treaty type" {...register('treaty_type')} />
+          )}
         </Field>
         <div className="md:col-span-2">
           <Field label="Additional Comments">

@@ -184,42 +184,6 @@
       ]
     },
     {
-      "tabKey": "stepcrestazonecontrol",
-      "sheetName": "Unknown",
-      "storage": [
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
       "tabKey": "steplargelosstriangulation",
       "sheetName": "Unknown",
       "storage": [
@@ -368,52 +332,6 @@
         {
           "type": "table",
           "table": "top_risks",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
-      "tabKey": "steptriangulation",
-      "sheetName": "Unknown",
-      "storage": [
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
           "rowSchema": {}
         }
       ]

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../lib/supabase';
 import { useAutosave } from '../../../hooks/useAutosave';
+import PasteModal from '../../../components/PasteModal';
 
 const RowSchema = z.object({
   programme: z.string().min(1, 'Required'),
@@ -32,11 +33,14 @@ export default function StepEpiSummary() {
   const { submissionId } = useParams();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [pasteEpiOpen, setPasteEpiOpen] = useState(false);
+  const [pasteGwpOpen, setPasteGwpOpen] = useState(false);
   const {
     control,
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty },
     watch,
   } = useForm<FormValues>({
@@ -109,10 +113,73 @@ export default function StepEpiSummary() {
     setLastSaved(new Date());
   });
 
+  // Helpers
+  const toNumber = (s: string | undefined) => {
+    if (!s) return 0;
+    const cleaned = s.replace(/[,\s]/g, '');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const maybeHasHeader = (cells: string[], expected: string[]) => {
+    const lc = cells.map((c) => c.trim().toLowerCase());
+    let hits = 0;
+    expected.forEach((e) => {
+      if (lc.some((c) => c.includes(e))) hits += 1;
+    });
+    return hits >= Math.max(2, Math.ceil(expected.length / 2));
+  };
+
+  // Apply pasted rows to EPI table
+  const applyEpiPaste = (rows: string[][]) => {
+    if (!rows || rows.length === 0) return;
+    let start = 0;
+  const first = rows[0] ?? [];
+  if (maybeHasHeader(first, ['programme', 'estimate', 'period', 'epi', 'currency'])) {
+      start = 1;
+    }
+    const mapped = rows
+      .slice(start)
+      .map((r) => ({
+        programme: (r[0] ?? '').trim(),
+        estimate_type: (r[1] ?? '').trim(),
+        period_label: (r[2] ?? '').trim(),
+        epi_value: toNumber((r[3] ?? '').trim()),
+        currency: (r[4] ?? 'USD').trim() || 'USD',
+      }))
+      .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value), r.currency].some((v) => (v ?? '').toString().trim() !== ''));
+    setValue('rows', mapped.length > 0 ? mapped : defaultRows, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  };
+
+  // Apply pasted rows to GWP Split table
+  const applyGwpPaste = (rows: string[][]) => {
+    if (!rows || rows.length === 0) return;
+    let start = 0;
+  const first = rows[0] ?? [];
+  if (maybeHasHeader(first, ['section', 'premium'])) start = 1;
+    const mapped = rows
+      .slice(start)
+      .map((r) => ({
+        section: (r[0] ?? '').trim(),
+        premium: toNumber((r[1] ?? '').trim()),
+      }))
+      .filter((r) => (r.section?.trim() || r.premium > 0));
+    setValue('gwp_split', mapped.length > 0 ? mapped : [{ section: '', premium: 0 }], { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  };
+
   return (
     <form className="space-y-6">
       <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
-        <h3 className="font-semibold mb-2">Premium Summary (EPI)</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold">Premium Summary (EPI)</h3>
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            onClick={() => setPasteEpiOpen(true)}
+          >
+            Paste from Excel
+          </button>
+        </div>
         <table className="min-w-full table-auto border rounded">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
@@ -204,7 +271,16 @@ export default function StepEpiSummary() {
 
       {/* GWP Split */}
       <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
-        <h3 className="font-semibold mb-2">GWP Split Per Section</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold">GWP Split Per Section</h3>
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            onClick={() => setPasteGwpOpen(true)}
+          >
+            Paste from Excel
+          </button>
+        </div>
         <table className="min-w-full table-auto border rounded">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
@@ -255,6 +331,19 @@ export default function StepEpiSummary() {
           />
         </label>
       </div>
+      {/* Paste Modals */}
+      <PasteModal
+        open={pasteEpiOpen}
+        onClose={() => setPasteEpiOpen(false)}
+        onApply={applyEpiPaste}
+        title="Paste from Excel — Premium Summary (EPI)"
+      />
+      <PasteModal
+        open={pasteGwpOpen}
+        onClose={() => setPasteGwpOpen(false)}
+        onApply={applyGwpPaste}
+        title="Paste from Excel — GWP Split"
+      />
     </form>
   );
 }
