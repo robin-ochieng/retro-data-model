@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
+import PasteModal from '../../../../components/PasteModal';
 
 const RowSchema = z.object({
   risk_code: z.string().optional().default(''),
@@ -19,6 +20,7 @@ export default function StepUwLimit() {
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [additionalComments, setAdditionalComments] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showPaste, setShowPaste] = useState(false);
 
   // Load existing sheet payload
   useEffect(() => {
@@ -75,11 +77,40 @@ export default function StepUwLimit() {
   const onAddRow = () => setRows(prev => [...prev, { risk_code: '', limit: '' }]);
   const onRemoveRow = (idx: number) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
 
+  // Paste helpers
+  const maybeHasHeader = (cells: string[], expected: string[]) => {
+    const lc = (cells || []).map(c => String(c).trim().toLowerCase());
+    let hits = 0;
+    expected.forEach(e => { if (lc.some(c => c.includes(e))) hits += 1; });
+    return hits >= Math.max(1, Math.ceil(expected.length / 3));
+  };
+  function applyGrid(grid: string[][]) {
+    if (!grid || grid.length === 0) return;
+    let start = 0;
+    const first = grid[0] ?? [];
+    if (maybeHasHeader(first, ['risk', 'code', 'limit'])) start = 1;
+    const mapped: Row[] = grid.slice(start).map(r => ({
+      risk_code: String(r[0] ?? '').trim(),
+      limit: String(r[1] ?? '').trim(),
+    }));
+    const cleaned = mapped.filter(m => (m.risk_code?.length ?? 0) > 0 || (m.limit?.length ?? 0) > 0);
+    setRows(cleaned.length ? cleaned : [{ risk_code: '', limit: '' }]);
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-3">UW Limit</h3>
-        <FormTable<Row> columns={columns as any} rows={rows} onChange={onChange} onAddRow={onAddRow} onRemoveRow={onRemoveRow} errors={errors} />
+        <FormTable<Row>
+          columns={columns as any}
+          rows={rows}
+          onChange={onChange}
+          onAddRow={onAddRow}
+          onRemoveRow={onRemoveRow}
+          errors={errors}
+          onPaste={() => setShowPaste(true)}
+          lastSavedAt={lastSaved}
+        />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <label className="block">
@@ -88,6 +119,7 @@ export default function StepUwLimit() {
         </label>
         <div className="text-right text-sm text-gray-500 mt-2">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
       </div>
+      <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste from Excel — UW Limit" />
     </div>
   );
 }

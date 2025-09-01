@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import PasteModal from '../../../../components/PasteModal';
 
 const RowSchema = z.object({
   treaty_year: z.number().int().nonnegative().optional(),
@@ -50,7 +51,9 @@ export default function StepTreatyStatsNonProp() {
   const { submissionId } = useParams();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const { control, register, reset, watch } = useForm<FormValues>({
+  const [pasteSection, setPasteSection] = useState<SectionName | null>(null);
+
+  const { control, register, reset, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: { overall: [blankRow], cat_layer1: [blankRow], cat_layer2: [blankRow], additional_comments: '' },
   });
@@ -87,9 +90,50 @@ export default function StepTreatyStatsNonProp() {
     if (!up.error) setLastSaved(new Date());
   });
 
+  // Paste helpers
+  const toNumber = (s: string | undefined) => {
+    if (s == null) return 0;
+    const cleaned = String(s).replace(/[\s,]/g, '');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const maybeHasHeader = (cells: string[], expected: string[]) => {
+    const lc = (cells || []).map((c) => String(c).trim().toLowerCase());
+    let hits = 0;
+    expected.forEach((e) => { if (lc.some((c) => c.includes(e))) hits += 1; });
+    return hits >= Math.max(2, Math.ceil(expected.length / 2));
+  };
+  const applyPaste = (section: SectionName, grid: string[][]) => {
+    if (!grid || grid.length === 0) return;
+    let start = 0;
+    const first = grid[0] ?? [];
+    if (maybeHasHeader(first, ['treaty','year','limit','excess','gnrpi','rate','minimum','earned','reinstatement','paid','os','incurred','balance'])) start = 1;
+    const mapped = grid.slice(start).map((r) => ({
+      treaty_year: toNumber(r[0]),
+      limit: toNumber(r[1]),
+      excess: toNumber(r[2]),
+      gnrpi: toNumber(r[3]),
+      premium_rate: toNumber(r[4]),
+      minimum_premium: toNumber(r[5]),
+      earned_premium: toNumber(r[6]),
+      reinstatement_premium: toNumber(r[7]),
+      paid_losses: toNumber(r[8]),
+      os_losses: toNumber(r[9]),
+      incurred_losses: toNumber(r[10]),
+      balance: toNumber(r[11]) || undefined,
+    }));
+  const cleaned = mapped.filter((m) => (m.treaty_year && m.treaty_year > 0) || Object.keys(m as Record<string, unknown>).some((k) => k !== 'treaty_year' && Number((m as any)[k] ?? 0) > 0));
+    setValue(section, (cleaned.length ? cleaned : [blankRow]) as any, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  };
+
   const renderTable = (title: string, name: SectionName, fa: ReturnType<typeof useFieldArray<FormValues>>) => (
     <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
-      <h3 className="font-semibold mb-2">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold">{title}</h3>
+        <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteSection(name)}>
+          Paste from Excel
+        </button>
+      </div>
       <table className="min-w-full table-auto border rounded">
         <thead className="bg-gray-100 dark:bg-gray-700">
           <tr>
@@ -138,6 +182,12 @@ export default function StepTreatyStatsNonProp() {
           <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
         </label>
       </div>
+      <PasteModal
+        open={pasteSection !== null}
+        onClose={() => setPasteSection(null)}
+        onApply={(grid) => { if (pasteSection) applyPaste(pasteSection, grid); setPasteSection(null); }}
+        title="Paste from Excel — Treaty Statistics (Non-Prop)"
+      />
     </div>
   );
 }

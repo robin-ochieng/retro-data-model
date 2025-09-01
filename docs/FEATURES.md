@@ -18,7 +18,7 @@
 - Data persistence and autosave
 	- Supabase‑backed persistence with idempotent upserts to sheet_blobs per step.
 	- Transparent autosave across wizard steps with save‑time indicator.
-	- Bulk ingestion via CSV paste with client‑side parsing and chunked saves for large payloads.
+	- Bulk ingestion via Paste from Excel (TSV/CSV) with header detection, tolerant numeric parsing, and chunked saves for large payloads.
 	- Excel export scaffolding for downstream reporting.
 	- Excel templates available under Resources for standardized inputs.
 
@@ -28,9 +28,32 @@
 
 - UI/UX
 	- Responsive, accessible UI with Tailwind CSS and consistent form patterns.
-	- Paste Modal and table usability enhancements for high‑volume data entry.
+	- Paste Modal and "Paste from Excel" actions across key tables for high‑volume data entry.
+		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel.
+		- Property: Treaty Statistics (Prop), Treaty Statistics (Non‑Prop), Large Loss List, Cat Loss List, UW Limit, Risk Profile, and Cresta Zone Control support paste from Excel.
+		- Casualty: Treaty Statistics (Prop, PropCC, Non‑Prop) and Rate Development (incl. Motor Specific) support paste from Excel.
+		- Header detection and flexible column mapping; numeric parsing tolerant of commas and spaces.
+		- Casualty Rate Development tabs: Import/Export CSV removed; Paste‑only for a cleaner UX.
+		- Label consistency: "Year" headers normalized to "UW Year" on Casualty Treaty Statistics (Prop, PropCC).
+		- Motor Specific table: widened first column to prevent U/W Year labels from being truncated.
+
+- Large Loss Triangulation (Property)
+	- UI mirrors Casualty: header list (per‑loss metadata) plus a multi‑row development grid with measure selector (Paid / Reserved / Incurred).
+	- Dynamic development columns (12‑month increments) with per‑column totals.
+	- Paste from Excel supported for both header rows and multi‑row grid.
+	- Persistence model:
+		- Core values saved to table `large_loss_triangle_values` by (loss_identifier, measure, dev_months).
+		- Extra header fields (date_of_loss, claim_no) saved to `sheet_blobs` under "Large Loss Triangulation (Property)".
+
+- Cresta Zone Control (Property)
+	- Five tables:
+		- Sum Insured (new, placed above Personal Lines): Zone Description + Gross/Net with totals.
+		- Personal Lines, Commercial Lines, Industrial, Engineering: each with category pairs (Gross/Net) per zone, plus totals.
+	- Paste from Excel on all five tables with header detection and tolerant numeric parsing.
+	- Autosaves the entire payload in `sheet_blobs` under "Cresta Zone Control (Property)".
 
 - Developer experience
 	- Vite + HMR development workflow; npm tasks for dev/build.
 	- Config‑driven, per‑LoB tab registry for extensibility.
 	- Automated documentation generation on pre‑commit.
+	- Git hygiene: ignore Excel lock/temp files to avoid accidental commits.

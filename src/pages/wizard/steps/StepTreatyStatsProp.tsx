@@ -6,6 +6,7 @@ import FormTable from '../../../components/FormTable';
 import { z } from 'zod';
 import { Path, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import PasteModal from '../../../components/PasteModal';
 
 const RowSchema = z.object({
   uw_year: z.number().int().nonnegative(),
@@ -29,7 +30,8 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StepTreatyStatsProp() {
   const { submissionId } = useParams();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const { control, register, reset, formState, watch } = useForm<FormValues>({
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const { control, register, reset, formState, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: { rows: [{ uw_year: new Date().getFullYear(), written_premium: 0 } as Row], additional_comments: '' },
   });
@@ -97,6 +99,47 @@ export default function StepTreatyStatsProp() {
     setLastSaved(new Date());
   }, 900);
 
+  // Paste helpers
+  const toNumber = (s: string | undefined) => {
+    if (s == null) return 0;
+    const cleaned = String(s).replace(/[,\s]/g, '');
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const maybeHasHeader = (cells: string[], expected: string[]) => {
+    const lc = cells.map((c) => c.trim().toLowerCase());
+    let hits = 0;
+    expected.forEach((e) => { if (lc.some((c) => c.includes(e))) hits += 1; });
+    return hits >= Math.max(2, Math.ceil(expected.length / 2));
+  };
+
+  const applyPaste = (rows: string[][]) => {
+    if (!rows || rows.length === 0) return;
+    let start = 0;
+    const first = rows[0] ?? [];
+    if (maybeHasHeader(first, ['uw', 'year', 'written', 'earned', 'commission', 'paid', 'os', 'incurred', 'loss', 'profit'])) {
+      start = 1;
+    }
+    const mapped: Row[] = rows.slice(start).map((r) => ({
+      uw_year: toNumber(r[0]) || new Date().getFullYear(),
+      written_premium: toNumber(r[1]),
+      earned_premium: toNumber(r[2]),
+      commission_amount: toNumber(r[3]),
+      commission_pct: toNumber(r[4]),
+      profit_commission: toNumber(r[5]),
+      total_commission: toNumber(r[6]),
+      paid_losses: toNumber(r[7]),
+      os_losses: toNumber(r[8]),
+      incurred_losses: toNumber(r[9]),
+      loss_ratio: toNumber(r[10]),
+      uw_profit: toNumber(r[11]),
+    }));
+    // Keep rows that have at least year or any non-zero metric
+    const cleaned = mapped.filter((m) => Number(m.uw_year) > 0 || Object.keys(m).some((k) => k !== 'uw_year' && (m as any)[k] > 0));
+    setValue('rows', cleaned.length ? cleaned : [{ uw_year: new Date().getFullYear(), written_premium: 0 } as Row], { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  };
+
   type Key = keyof Row;
   const columns = useMemo(() => [
     { key: 'uw_year' as Key, label: 'UW Year', type: 'number', step: '1', min: 1900 },
@@ -115,7 +158,16 @@ export default function StepTreatyStatsProp() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-3">Treaty Statistics (Prop)</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold">Treaty Statistics (Prop)</h2>
+        <button
+          type="button"
+          className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+          onClick={() => setPasteOpen(true)}
+        >
+          Paste from Excel
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border rounded">
           <thead className="bg-gray-100 dark:bg-gray-700">
@@ -176,6 +228,12 @@ export default function StepTreatyStatsProp() {
           <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
         </label>
       </div>
+      <PasteModal
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        onApply={applyPaste}
+        title="Paste from Excel — Treaty Statistics (Prop)"
+      />
     </div>
   );
 }

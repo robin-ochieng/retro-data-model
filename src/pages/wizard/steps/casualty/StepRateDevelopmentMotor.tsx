@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
-import { parseCsv, toCsv } from '../../../../utils/csv';
 
 type Row = Record<string, string | number> & { metric: string };
 
@@ -36,8 +35,6 @@ export default function StepRateDevelopmentMotor() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPasteTop, setShowPasteTop] = useState(false);
   const [showPasteMotor, setShowPasteMotor] = useState(false);
-  const fileRefTop = useRef<HTMLInputElement | null>(null);
-  const fileRefMotor = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -72,8 +69,14 @@ export default function StepRateDevelopmentMotor() {
     if (!up.error) setLastSaved(new Date());
   });
 
-  const columns = useMemo(() => [{ key: 'metric', label: 'U/W Years', type: 'text' as const }, ...yearCols], [yearCols]);
-  const headers = useMemo(() => ['metric', ...yearCols.map(c => c.key)], [yearCols]);
+  const columns = useMemo(
+    () => [
+      { key: 'metric', label: 'U/W Years', type: 'text' as const, className: 'min-w-[18rem] sm:min-w-[22rem]' },
+      ...yearCols,
+    ],
+    [yearCols]
+  );
+  // headers removed as CSV import/export is disabled
 
   const onChangeTop = (idx: number, key: keyof Row, value: any) => {
     const copy = topRows.slice();
@@ -131,15 +134,7 @@ export default function StepRateDevelopmentMotor() {
           rows={topRows}
           onChange={onChangeTop}
           onPaste={() => setShowPasteTop(true)}
-          onImportCsv={() => fileRefTop.current?.click()}
-          onExportCsv={() => {
-            const blob = new Blob([toCsv(topRows as any[], headers)], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `${SHEET}-top.csv`; a.click(); URL.revokeObjectURL(url);
-          }}
         />
-        <input ref={fileRefTop} type="file" accept=".csv" className="hidden" onChange={async (e) => { const f=e.target.files?.[0]; if(!f) return; const grid=parseCsv(await f.text()); applyTop(grid); e.target.value=''; }} />
         <PasteModal open={showPasteTop} onClose={() => setShowPasteTop(false)} onApply={applyTop} title="Paste Rate Development" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
@@ -149,15 +144,7 @@ export default function StepRateDevelopmentMotor() {
           rows={motorRows}
           onChange={onChangeMotor}
           onPaste={() => setShowPasteMotor(true)}
-          onImportCsv={() => fileRefMotor.current?.click()}
-          onExportCsv={() => {
-            const blob = new Blob([toCsv(motorRows as any[], headers)], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `${SHEET}-motor.csv`; a.click(); URL.revokeObjectURL(url);
-          }}
         />
-        <input ref={fileRefMotor} type="file" accept=".csv" className="hidden" onChange={async (e) => { const f=e.target.files?.[0]; if(!f) return; const grid=parseCsv(await f.text()); applyMotor(grid); e.target.value=''; }} />
         <PasteModal open={showPasteMotor} onClose={() => setShowPasteMotor(false)} onApply={applyMotor} title="Paste Motor Specific" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">

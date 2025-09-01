@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-01T07:19:23.875Z",
+  "generatedAt": "2025-09-01T13:36:42.168Z",
   "tabs": [
     {
       "tabKey": "epi-summary",
@@ -280,63 +280,6 @@
       ]
     },
     {
-      "tabKey": "stepcrestazonecontrol",
-      "sheetName": "Unknown",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "cresta_zone_aggregates",
-          "op": "insert"
-        }
-      ]
-    },
-    {
       "tabKey": "steplargelosstriangulation",
       "sheetName": "Unknown",
       "autosave": {
@@ -590,85 +533,6 @@
         {
           "type": "table",
           "table": "top_risks",
-          "op": "insert"
-        }
-      ]
-    },
-    {
-      "tabKey": "steptriangulation",
-      "sheetName": "Unknown",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "triangle_values",
           "op": "insert"
         }
       ]
