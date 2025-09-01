@@ -2,146 +2,61 @@
   "lob": "property",
   "tabs": [
     {
-      "tabKey": "header",
-      "sheetName": "Header",
-      "excelColumns": {
-        "sheet_blobs": {
-          "fields": {
-            "name_of_company": "Name of Company",
-            "country": "Country",
-            "currency_std_units": "Currency (std. units)",
-            "munich_re_client_manager": "Munich RE Client Manager",
-            "munich_re_underwriter": "Munich RE Underwriter",
-            "inception_date": "Inception Date",
-            "expiry_date": "Expiry Date",
-            "claims_period": "Claims Period",
-            "class_of_business": "Class of Business",
-            "lines_of_business": "Line/s of Business",
-            "treaty_type": "Treaty Type",
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
-    },
-    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
-      "excelColumns": {
-        "table:epi_summary": [
-          "Programme",
-          "Estimate Type",
-          "Period Label",
-          "EPI Value",
-          "Currency"
-        ],
-        "sheet_blobs": {
-          "array:gwp_split": ["Section", "Premium"],
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
-    },
-    {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics_Prop",
-      "excelColumns": {
-        "table:treaty_stats_prop": [
-          "UW Year",
-          "Written Premium",
-          "Earned Premium",
-          "Commission Amount",
-          "Commission %",
-          "Profit Commission",
-          "Total Commission",
-          "Paid Losses",
-          "OS Losses",
-          "Incurred Losses",
-          "Loss Ratio",
-          "UW Profit"
-        ],
-        "sheet_blobs": {
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
-    },
-    {
-      "tabKey": "treaty-stats-non-prop",
-      "sheetName": "Treaty Statistics_Non-Prop",
-      "excelColumns": {
-        "sheet_blobs": {
-          "array:overall": [
-            "Treaty Year",
-            "Limit",
-            "Excess",
-            "GNRPI",
-            "Premium Rate",
-            "Minimum Premium",
-            "Earned Premium",
-            "Reinstatement Premium",
-            "Paid Losses",
-            "OS Losses",
-            "Incurred Losses",
-            "Balance"
-          ],
-          "array:cat_layer1": [
-            "Treaty Year",
-            "Limit",
-            "Excess",
-            "GNRPI",
-            "Premium Rate",
-            "Minimum Premium",
-            "Earned Premium",
-            "Reinstatement Premium",
-            "Paid Losses",
-            "OS Losses",
-            "Incurred Losses",
-            "Balance"
-          ],
-          "array:cat_layer2": [
-            "Treaty Year",
-            "Limit",
-            "Excess",
-            "GNRPI",
-            "Premium Rate",
-            "Minimum Premium",
-            "Earned Premium",
-            "Reinstatement Premium",
-            "Paid Losses",
-            "OS Losses",
-            "Incurred Losses",
-            "Balance"
-          ],
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
+      "excelColumns": {}
     },
     {
       "tabKey": "large-loss-list",
       "sheetName": "Large Loss List",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosslist",
+      "sheetName": "Cat Loss List",
       "excelColumns": {
-        "table:large_loss_list": [
-          "Loss Date",
-          "UW Year",
-          "Insured",
-          "Cause of Loss",
-          "Gross Sum Insured",
-          "Gross Incurred",
-          "Paid to Date",
-          "Gross Outstanding",
-          "Currency",
-          "Notes"
-        ],
         "sheet_blobs": {
           "fields": {
             "additional_comments": "Additional Comments"
           }
         }
       }
+    },
+    {
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Climate change exposure",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "exposures": "Exposures"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "steplargelosstriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "excelColumns": {}
     }
   ]
 }

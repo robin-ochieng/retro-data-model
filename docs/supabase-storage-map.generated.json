@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-01T13:37:57.353Z",
+  "generatedAt": "2025-09-01T15:32:05.699Z",
   "tabs": [
     {
       "tabKey": "epi-summary",
@@ -179,7 +179,7 @@
     },
     {
       "tabKey": "stepcatlosslist",
-      "sheetName": "Unknown",
+      "sheetName": "Cat Loss List",
       "autosave": {
         "strategy": "debounced"
       },
@@ -249,7 +249,7 @@
     },
     {
       "tabKey": "stepclimateexposure",
-      "sheetName": "Unknown",
+      "sheetName": "Climate change exposure",
       "autosave": {
         "strategy": "debounced"
       },

@@ -2,152 +2,33 @@
   "lob": "property",
   "tabs": [
     {
-      "tabKey": "header",
-      "sheetName": "Header",
-      "storage": [
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "name_of_company": "string",
-            "country": "string",
-            "currency_std_units": "string",
-            "munich_re_client_manager": "string?",
-            "munich_re_underwriter": "string?",
-            "inception_date": "string",
-            "expiry_date": "string",
-            "claims_period": "string?",
-            "class_of_business": "string?",
-            "lines_of_business": "string?",
-            "treaty_type": "string?",
-            "additional_comments": "string?"
-          }
-        }
-      ]
-    },
-    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
       "storage": [
         {
           "type": "table",
           "table": "epi_summary",
-          "rowSchema": {
-            "programme": "string",
-            "estimate_type": "string",
-            "period_label": "string?",
-            "epi_value": "number",
-            "currency": "string"
-          }
+          "rowSchema": {}
         },
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "gwp_split": [
-              {
-                "section": "string",
-                "premium": "number"
-              }
-            ],
-            "additional_comments": "string?"
-          }
-        }
-      ]
-    },
-    {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics_Prop",
-      "storage": [
         {
           "type": "table",
-          "table": "treaty_stats_prop",
-          "rowSchema": {
-            "uw_year": "number",
-            "written_premium": "number",
-            "earned_premium": "number",
-            "commission_amount": "number",
-            "commission_pct": "number",
-            "profit_commission": "number",
-            "total_commission": "number",
-            "paid_losses": "number",
-            "os_losses": "number",
-            "incurred_losses": "number",
-            "loss_ratio": "number",
-            "uw_profit": "number"
-          }
+          "table": "epi_summary",
+          "rowSchema": {}
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "additional_comments": "string?"
-          }
-        }
-      ]
-    },
-    {
-      "tabKey": "treaty-stats-non-prop",
-      "sheetName": "Treaty Statistics_Non-Prop",
-      "storage": [
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "overall": [
-              {
-                "treaty_year": "number?",
-                "limit": "number",
-                "excess": "number",
-                "gnrpi": "number",
-                "premium_rate": "number",
-                "minimum_premium": "number",
-                "earned_premium": "number",
-                "reinstatement_premium": "number",
-                "paid_losses": "number",
-                "os_losses": "number",
-                "incurred_losses": "number",
-                "balance": "number?"
-              }
-            ],
-            "cat_layer1": [
-              {
-                "treaty_year": "number?",
-                "limit": "number",
-                "excess": "number",
-                "gnrpi": "number",
-                "premium_rate": "number",
-                "minimum_premium": "number",
-                "earned_premium": "number",
-                "reinstatement_premium": "number",
-                "paid_losses": "number",
-                "os_losses": "number",
-                "incurred_losses": "number",
-                "balance": "number?"
-              }
-            ],
-            "cat_layer2": [
-              {
-                "treaty_year": "number?",
-                "limit": "number",
-                "excess": "number",
-                "gnrpi": "number",
-                "premium_rate": "number",
-                "minimum_premium": "number",
-                "earned_premium": "number",
-                "reinstatement_premium": "number",
-                "paid_losses": "number",
-                "os_losses": "number",
-                "incurred_losses": "number",
-                "balance": "number?"
-              }
-            ],
-            "additional_comments": "string?"
-          }
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "epi_summary",
+          "rowSchema": {}
         }
       ]
     },
@@ -158,104 +39,300 @@
         {
           "type": "table",
           "table": "large_loss_list",
-          "rowSchema": {
-            "loss_date": "string?",
-            "uw_year": "number?",
-            "insured": "string?",
-            "cause_of_loss": "string?",
-            "gross_sum_insured": "number",
-            "gross_incurred": "number",
-            "paid_to_date": "number",
-            "gross_outstanding": "number",
-            "currency": "string",
-            "notes": "string?"
-          }
+          "rowSchema": {}
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "additional_comments": "string?"
-          }
-        }
-      ]
-    }
-    ,
-    {
-      "tabKey": "uw-limit",
-      "sheetName": "UW Limit",
-      "storage": [
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "max_uw_limit": "number",
-            "max_uw_limit_currency": "string",
-            "per_risk_limit": "number",
-            "per_event_limit": "number",
-            "retention": "number",
-            "additional_comments": "string?"
-          }
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
         }
       ]
-    }
-    ,
+    },
     {
-      "tabKey": "risk-profile",
-      "sheetName": "Risk Profile",
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
       "storage": [
         {
           "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {
-            "segment": "string (gross|net)",
-            "band_label": "string?",
-            "exposure": "number",
-            "premium": "number",
-            "claims": "number",
-            "frequency": "number",
-            "severity": "number"
-          }
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
-          "payloadSchema": {
-            "retention": "number",
-            "additional_comments": "string?"
-          }
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
         }
       ]
-    }
-    ,
+    },
     {
-      "tabKey": "cat-loss-list",
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "stepcatlosslist",
       "sheetName": "Cat Loss List",
       "storage": [
         {
           "type": "table",
           "table": "cat_loss_list",
-          "rowSchema": {
-            "event_date": "string?",
-            "event_name": "string?",
-            "uw_year": "number?",
-            "gross_incurred": "number",
-            "paid_to_date": "number",
-            "gross_outstanding": "number",
-            "currency": "string",
-            "notes": "string?"
-          }
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "cat_loss_list",
+          "rowSchema": {}
         },
         {
           "type": "sheet_blobs",
           "table": "sheet_blobs",
-          "key": ["submission_id", "sheet_name"],
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
           "payloadSchema": {
-            "additional_comments": "string?"
+            "additional_comments": "unknown"
           }
+        }
+      ]
+    },
+    {
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Climate change exposure",
+      "storage": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "payloadSchema": {}
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "payloadSchema": {
+            "exposures": "unknown"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "steplargelosstriangulation",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
         }
       ]
     }

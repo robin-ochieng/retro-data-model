@@ -124,13 +124,15 @@ async function main() {
               }
             }
           }
-          operations.push({ type: 'sheet_blobs', table: 'sheet_blobs', op: 'upsert', key: ['submission_id','sheet_name'], payloadShape, notes: sheet });
+      operations.push({ type: 'sheet_blobs', table: 'sheet_blobs', op: 'upsert', key: ['submission_id','sheet_name'], payloadShape, notes: sheet });
+      // If we didn't resolve sheetName earlier, set it from detected sheet
+      if (!sheetName && sheet) sheetName = sheet;
         }
       }
     });
 
     if (operations.length) {
-      tabs.push({ tabKey: tabKey || sf.getBaseNameWithoutExtension().toLowerCase(), sheetName: sheetName || 'Unknown', autosave: { strategy: 'debounced' }, operations });
+  tabs.push({ tabKey: tabKey || sf.getBaseNameWithoutExtension().toLowerCase(), sheetName: sheetName || (operations.find(o => o.type === 'sheet_blobs')?.notes) || 'Unknown', autosave: { strategy: 'debounced' }, operations });
     }
   }
 
@@ -170,8 +172,56 @@ async function main() {
   writeFileSync(join(DOCS, 'field-map.generated.json'), JSON.stringify(fieldMap, null, 2));
   writeFileSync(join(DOCS, 'field-map-slim.generated.json'), JSON.stringify(slim, null, 2));
   writeFileSync(join(DOCS, 'supabase-storage-map.generated.json'), JSON.stringify(storage, null, 2));
-  const md = `# Generated Docs\n\nThis folder contains generated files based on parsing step components.\n\n- field-map.generated.json\n- field-map-slim.generated.json\n- supabase-storage-map.generated.json\n\nRegenerate with: npm run generate:docs\n`;
-  writeFileSync(join(DOCS, 'GENERATED.md'), md);
+  // Also mirror into the non-generated JSONs for external consumers
+  writeFileSync(join(DOCS, 'field-map.json'), JSON.stringify(fieldMap, null, 2));
+  writeFileSync(join(DOCS, 'field-map-slim.json'), JSON.stringify(slim, null, 2));
+  writeFileSync(join(DOCS, 'supabase-storage-map.json'), JSON.stringify(storage, null, 2));
+  const mdGenerated = `# Generated Docs\n\nThis folder contains generated files based on parsing step components.\n\n- field-map.generated.json\n- field-map-slim.generated.json\n- supabase-storage-map.generated.json\n\nRegenerate with: npm run generate:docs\n`;
+  writeFileSync(join(DOCS, 'GENERATED.md'), mdGenerated);
+
+  // Human-readable Markdown summaries
+  const fieldMapMd = [
+    '# Field Map',
+    '',
+    'This document summarizes the tabs, their sheet names, and storage shapes inferred from the codebase.',
+    '',
+    '## Tabs',
+    '',
+    ...tabs.map(t => `- ${t.tabKey} — sheet: ${t.sheetName}`),
+    '',
+    '## Storage',
+    '',
+    ...tabs.flatMap(t => {
+      const lines = [`### ${t.tabKey} (${t.sheetName})`, ''];
+      for (const op of t.operations) {
+        if (op.type === 'table') {
+          const keys = op.rowShape ? Object.keys(op.rowShape) : [];
+          lines.push(`- table: ${op.table} (${op.op})${keys.length ? ` — fields: ${keys.join(', ')}` : ''}`);
+        } else {
+          const keys = op.payloadShape ? Object.keys(op.payloadShape) : [];
+          lines.push(`- sheet_blobs upsert — key: [submission_id, sheet_name]${keys.length ? ` — payload: ${keys.join(', ')}` : ''}${op.notes ? ` — sheet_name: ${op.notes}` : ''}`);
+        }
+      }
+      lines.push('');
+      return lines;
+    })
+  ].join('\n');
+  writeFileSync(join(DOCS, 'field-map.md'), fieldMapMd);
+
+  const storageMd = [
+    '# Supabase Storage Map',
+    '',
+    `Generated at: ${new Date().toISOString()}`,
+    '',
+    ...tabs.map(t => {
+      const ops = t.operations.map(op => op.type === 'table' ? `table:${op.table}:${op.op}` : 'sheet_blobs:upsert').join(', ');
+      return `- ${t.tabKey} (${t.sheetName}) — ${ops}`;
+    })
+  ].join('\n');
+  writeFileSync(join(DOCS, 'supabase-storage-map.md'), storageMd);
+
+  const helpMd = `# Help\n\n- Regenerate docs: \`npm run generate:docs\`\n- The generator parses TSX steps for zod schemas and Supabase calls.\n- Non-generated JSON mirrors are updated automatically.\n- Keep sheet_name constants and zod schemas close to their usage for best results.\n`;
+  writeFileSync(join(DOCS, 'HELP.md'), helpMd);
   console.log('Docs generated in docs/*.generated.json');
 }
 

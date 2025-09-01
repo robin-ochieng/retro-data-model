@@ -23,7 +23,7 @@
     },
     {
       "tabKey": "stepcatlosslist",
-      "sheetName": "Unknown",
+      "sheetName": "Cat Loss List",
       "excelColumns": {
         "sheet_blobs": {
           "fields": {
@@ -34,7 +34,7 @@
     },
     {
       "tabKey": "stepclimateexposure",
-      "sheetName": "Unknown",
+      "sheetName": "Climate change exposure",
       "excelColumns": {
         "sheet_blobs": {
           "fields": {

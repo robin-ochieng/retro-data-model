@@ -112,7 +112,7 @@
     },
     {
       "tabKey": "stepcatlosslist",
-      "sheetName": "Unknown",
+      "sheetName": "Cat Loss List",
       "storage": [
         {
           "type": "table",
@@ -159,7 +159,7 @@
     },
     {
       "tabKey": "stepclimateexposure",
-      "sheetName": "Unknown",
+      "sheetName": "Climate change exposure",
       "storage": [
         {
           "type": "sheet_blobs",
