@@ -64,9 +64,12 @@ async function main() {
     let sheetName; let tabKey;
     if (/StepHeader\.tsx$/.test(filePath)) { sheetName = 'Header'; tabKey = 'header'; }
     if (/StepEpiSummary\.tsx$/.test(filePath)) { sheetName = 'EPI Summary'; tabKey = 'epi-summary'; }
-    if (/StepTreatyStatsProp\.tsx$/.test(filePath)) { sheetName = 'Treaty Statistics_Prop'; tabKey = 'treaty-stats-prop'; }
+  if (/StepTreatyStatsProp\.tsx$/.test(filePath)) { sheetName = 'Treaty Statistics_Prop'; tabKey = 'treaty-stats-prop'; }
     if (/StepTreatyStatsNonProp\.tsx$/.test(filePath)) { sheetName = 'Treaty Statistics_Non-Prop'; tabKey = 'treaty-stats-non-prop'; }
     if (/StepLargeLossList\.tsx$/.test(filePath)) { sheetName = 'Large Loss List'; tabKey = 'large-loss-list'; }
+  if (/StepCrestaZoneControl\.tsx$/.test(filePath)) { sheetName = 'Cresta Zone Control (Property)'; tabKey = 'cresta-zone-control'; }
+  if (/StepLargeLossTriangulation\.tsx$/.test(filePath)) { sheetName = 'Large Loss Triangulation (Property)'; tabKey = 'large-loss-triangulation'; }
+  if (/StepTriangulation\.tsx$/.test(filePath)) { sheetName = 'Aggregate Triangulation (Property)'; tabKey = 'aggregate-triangulation'; }
 
     const operations = [];
     const zodObjects = new Map();

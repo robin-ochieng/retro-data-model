@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-01T15:31:10.390Z",
+  "generatedAt": "2025-09-01T15:36:17.057Z",
   "tabs": [
     {
       "tabKey": "epi-summary",
@@ -280,8 +280,8 @@
       ]
     },
     {
-      "tabKey": "steplargelosstriangulation",
-      "sheetName": "Unknown",
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation (Property)",
       "autosave": {
         "strategy": "debounced"
       },

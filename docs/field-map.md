@@ -10,7 +10,7 @@ This document summarizes the tabs, their sheet names, and storage shapes inferre
 - stepcatlosstriangulation — sheet: Unknown
 - stepcatlosslist — sheet: Cat Loss List
 - stepclimateexposure — sheet: Climate change exposure
-- steplargelosstriangulation — sheet: Unknown
+- large-loss-triangulation — sheet: Large Loss Triangulation (Property)
 - stepriskprofile — sheet: Unknown
 - steptop20risks — sheet: Unknown
 
@@ -60,7 +60,7 @@ This document summarizes the tabs, their sheet names, and storage shapes inferre
 - sheet_blobs upsert — key: [submission_id, sheet_name] — sheet_name: Climate change exposure
 - sheet_blobs upsert — key: [submission_id, sheet_name] — payload: exposures — sheet_name: Climate change exposure
 
-### steplargelosstriangulation (Unknown)
+### large-loss-triangulation (Large Loss Triangulation (Property))
 
 - table: large_loss_triangle_values (insert)
 - table: large_loss_triangle_values (insert)
