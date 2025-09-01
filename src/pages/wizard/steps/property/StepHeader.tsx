@@ -337,6 +337,13 @@ export default function StepHeader() {
     setLastSaved(new Date());
   });
 
+  // Broadcast currency changes for other tabs (e.g., EPI Summary) to react instantly
+  useEffect(() => {
+    const fmt = (s: string | undefined) => (s ?? 'USD').trim().toUpperCase();
+    const detail = { submissionId, currency: fmt(values.currency_std_units) };
+    window.dispatchEvent(new CustomEvent('submission:currency-changed', { detail }));
+  }, [values.currency_std_units, submissionId]);
+
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
 
   return (

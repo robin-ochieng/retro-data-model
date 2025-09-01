@@ -55,6 +55,18 @@ export default function StepEpiSummary() {
   useEffect(() => {
     async function loadRows() {
       if (!submissionId) return;
+      // Load client details currency from Header sheet for initial sync
+      const header = await supabase
+        .from('sheet_blobs')
+        .select('payload')
+        .eq('submission_id', submissionId)
+        .eq('sheet_name', 'Header')
+        .maybeSingle();
+      let headerCurrency: string | undefined = undefined;
+      if (!header.error && header.data?.payload) {
+        const payload = header.data.payload as any;
+        headerCurrency = (payload?.currency_std_units as string | undefined)?.toUpperCase();
+      }
       const { data, error } = await supabase
         .from('epi_summary')
         .select('*')
@@ -65,8 +77,11 @@ export default function StepEpiSummary() {
           estimate_type: row.estimate_type,
           period_label: row.period_label,
           epi_value: row.epi_value,
-          currency: row.currency || 'USD',
+          currency: (headerCurrency ?? row.currency) || 'USD',
         })) });
+      } else if (headerCurrency) {
+        // If no data yet, set defaults with header currency
+        reset({ rows: defaultRows.map(r => ({ ...r, currency: headerCurrency! })), gwp_split: [], additional_comments: '' });
       }
       // Load GWP Split from sheet_blobs
       const gwp = await supabase
@@ -138,18 +153,34 @@ export default function StepEpiSummary() {
   if (maybeHasHeader(first, ['programme', 'estimate', 'period', 'epi', 'currency'])) {
       start = 1;
     }
-    const mapped = rows
+  const mapped = rows
       .slice(start)
       .map((r) => ({
         programme: (r[0] ?? '').trim(),
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
-        epi_value: toNumber((r[3] ?? '').trim()),
-        currency: (r[4] ?? 'USD').trim() || 'USD',
+    epi_value: toNumber((r[3] ?? '').trim()),
+    currency: (r[4] ?? '').trim() || (watch('rows')?.[0]?.currency ?? 'USD'),
       }))
       .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value), r.currency].some((v) => (v ?? '').toString().trim() !== ''));
     setValue('rows', mapped.length > 0 ? mapped : defaultRows, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
+
+  // Keep EPI table currency in sync with client details changes via window event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { submissionId?: string; currency?: string };
+      if (!detail) return;
+      if (detail.submissionId && detail.submissionId !== submissionId) return;
+      const curr = (detail.currency ?? 'USD').toUpperCase();
+      const rows = watch('rows') ?? [];
+      if (rows.length === 0) return;
+      const updated = rows.map(r => ({ ...r, currency: curr }));
+      setValue('rows', updated, { shouldDirty: true, shouldTouch: true, shouldValidate: false });
+    };
+    window.addEventListener('submission:currency-changed', handler as EventListener);
+    return () => window.removeEventListener('submission:currency-changed', handler as EventListener);
+  }, [submissionId, setValue, watch]);
 
   // Apply pasted rows to GWP Split table
   const applyGwpPaste = (rows: string[][]) => {
