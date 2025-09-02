@@ -4,6 +4,7 @@ import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import StepIntro from './steps/StepIntro';
 import StepEpiSummary from './steps/StepEpiSummary';
 import Logo from '../../components/Logo';
+import Page from '../../components/layout/Page';
 import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, propertyTabs, SheetTab } from '../../config/lobConfig';
 import StepTreatyStatsProp from './steps/StepTreatyStatsProp';
 import StepLargeLossList from './steps/StepLargeLossList';
@@ -92,21 +93,24 @@ function WizardShell() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo />
-          <div className="text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium capitalize">{normalizedLob}</span>
-            <span className="mx-2">•</span>
-            <span className="font-mono">{submissionId}</span>
-            <span className="mx-2">•</span>
-            <span className="rounded px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs">In Progress</span>
+        <Page>
+          <div className="py-3 flex items-center justify-between 3xl:justify-start 3xl:gap-6">
+            <Logo />
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              <span className="font-medium capitalize">{normalizedLob}</span>
+              <span className="mx-2">•</span>
+              <span className="font-mono">{submissionId}</span>
+              <span className="mx-2">•</span>
+              <span className="rounded px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs">In Progress</span>
+            </div>
           </div>
-        </div>
+        </Page>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-6">
+      <Page>
+      <div className="py-6 grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] gap-6">
         {/* Left tabs */}
         <aside className="md:sticky md:top-20 self-start">
           <nav className="flex md:block gap-2 overflow-x-auto pb-2 md:pb-0">
@@ -133,7 +137,7 @@ function WizardShell() {
         </aside>
 
         {/* Content */}
-        <section className="bg-white dark:bg-gray-800 rounded shadow p-4 sm:p-6">
+  <section className="bg-white dark:bg-gray-800 rounded shadow p-4 sm:p-6">
           <Routes>
             {/* Keep an Intro route for now */}
             <Route path="intro" element={<StepIntro />} />
@@ -208,7 +212,7 @@ function WizardShell() {
           <Outlet />
 
           {/* Footer nav */}
-          <div className="mt-6 pt-4 border-t flex items-center justify-between sticky bottom-0 bg-white dark:bg-gray-800">
+          <div className="mt-6 pt-4 border-t flex items-center justify-between 3xl:justify-start 3xl:gap-6 sticky bottom-0 bg-white dark:bg-gray-800">
             <button
               type="button"
               disabled={currentIndex <= 0}
@@ -239,6 +243,7 @@ function WizardShell() {
           </div>
         </section>
       </div>
+  </Page>
     </div>
   );
 }

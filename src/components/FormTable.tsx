@@ -42,7 +42,7 @@ export function FormTable<T extends Record<string, any>>({
 }: FormTableProps<T>) {
   return (
     <div className="overflow-x-auto">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between 3xl:justify-start 3xl:gap-4 mb-2">
         <div className="flex gap-2">
           {onPaste && (
             <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={onPaste}>
@@ -64,7 +64,7 @@ export function FormTable<T extends Record<string, any>>({
           {isSaving ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosave ready'}
         </div>
       </div>
-      <table className="min-w-full table-auto border rounded">
+  <table className="min-w-full table-auto border rounded 3xl:max-w-[1760px] 4xl:max-w-[1960px]">
         <thead className="bg-gray-100 dark:bg-gray-700">
           <tr>
             {columns.map(col => (
@@ -127,7 +127,7 @@ export function FormTable<T extends Record<string, any>>({
         )}
       </table>
       {onAddRow && (
-        <div className="flex justify-between items-center mt-4">
+  <div className="flex justify-between 3xl:justify-start 3xl:gap-4 items-center mt-4">
           <button
             type="button"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

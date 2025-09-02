@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Logo from '../components/Logo';
+import Page from '../components/layout/Page';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Login() {
@@ -54,18 +55,21 @@ export default function Login() {
     mode === 'signup' ? Boolean(name && email && password) : Boolean(email && password);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col overflow-x-hidden">
       {/* Header (navbar) */}
       <header className="w-full sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/60 bg-white dark:bg-gray-900 border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo />
-          {/* Empty right side to keep spacing consistent with Home header */}
-          <span className="text-sm text-gray-700 dark:text-gray-300" aria-hidden="true"></span>
-        </div>
+        <Page>
+          <div className="py-3 flex items-center justify-between 3xl:justify-start 3xl:gap-6">
+            <Logo />
+            {/* Empty right side to keep spacing consistent with Home header */}
+            <span className="text-sm text-gray-700 dark:text-gray-300" aria-hidden="true"></span>
+          </div>
+        </Page>
       </header>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
+      <main className="flex-1">
+        <Page>
         <div className="w-full h-full flex items-center justify-center py-8">
           <form
             className="bg-white dark:bg-gray-800 p-8 rounded shadow w-full max-w-md"
@@ -148,17 +152,20 @@ export default function Login() {
             </p>
           </form>
         </div>
+        </Page>
       </main>
 
       {/* Footer */}
       <footer className="w-full mt-auto border-t bg-white/70 dark:bg-gray-900/60 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-          <span>© {new Date().getFullYear()} Kenbright Re</span>
-          <span className="inline-flex items-center gap-1">
-            <span className="opacity-80">Powered by</span>
-            <strong className="font-semibold">Kenbright AI</strong>
-          </span>
-        </div>
+        <Page>
+          <div className="py-4 flex items-center justify-between 3xl:justify-start 3xl:gap-6 text-sm text-gray-600 dark:text-gray-300">
+            <span>© {new Date().getFullYear()} Kenbright Re</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="opacity-80">Powered by</span>
+              <strong className="font-semibold">Kenbright AI</strong>
+            </span>
+          </div>
+        </Page>
       </footer>
     </div>
   );

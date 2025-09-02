@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthContext';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
+import Page from '../components/layout/Page';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 
 export default function Home() {
@@ -121,31 +122,34 @@ function HomeContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col overflow-x-hidden">
       <header className="w-full sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/60 bg-white dark:bg-gray-900 border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <a
-              href="/help"
-              className="text-sm text-blue-700 dark:text-blue-400 hover:underline"
-              title="Help & User Guide"
-            >
-              Help
-            </a>
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
-              {`Welcome, ${displayName ?? user?.email ?? ''}`}
-            </span>
-            <button
-              className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-              onClick={signOut}
-            >
-              Sign out
-            </button>
+        <Page>
+          <div className="py-3 flex items-center justify-between 3xl:justify-start 3xl:gap-6">
+            <Logo />
+            <div className="flex items-center gap-4">
+              <a
+                href="/help"
+                className="text-sm text-blue-700 dark:text-blue-400 hover:underline"
+                title="Help & User Guide"
+              >
+                Help
+              </a>
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                {`Welcome, ${displayName ?? user?.email ?? ''}`}
+              </span>
+              <button
+                className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={signOut}
+              >
+                Sign out
+              </button>
+            </div>
           </div>
-        </div>
+        </Page>
       </header>
-      <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
+      <main className="flex-1">
+        <Page>
         {/* Hero / Intro */}
         <section className="mb-10 overflow-hidden rounded-2xl border shadow-sm bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
           <div className="p-6 sm:p-8">
@@ -177,7 +181,7 @@ function HomeContent() {
 
         <h2 className="text-xl font-bold mb-4">Start a New Submission</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6">
           {/* Left: LoB cards */}
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -232,14 +236,14 @@ function HomeContent() {
 
         {/* Resume section */}
         <section className="mt-10 bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between 3xl:justify-start 3xl:gap-6 mb-3">
             <h2 className="text-lg font-semibold">Resume recent submissions</h2>
             <span className="text-xs text-gray-500">showing last 10</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4">
             {recent.map((s) => (
               <div key={s.id} className="border rounded-lg p-4 hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between 3xl:justify-start 3xl:gap-4 mb-2">
                   <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.line_of_business}</div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${s.status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>
                     {s.status}
@@ -264,16 +268,19 @@ function HomeContent() {
             )}
           </div>
         </section>
+        </Page>
       </main>
       {/* Footer */}
       <footer className="w-full mt-auto border-t bg-white/70 dark:bg-gray-900/60 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-          <span>© {new Date().getFullYear()} Kenbright Re</span>
-          <span className="inline-flex items-center gap-1">
-            <span className="opacity-80">Powered by</span>
-            <strong className="font-semibold">Kenbright AI</strong>
-          </span>
-        </div>
+        <Page>
+          <div className="py-4 flex items-center justify-between 3xl:justify-start 3xl:gap-6 text-sm text-gray-600 dark:text-gray-300">
+            <span>© {new Date().getFullYear()} Kenbright Re</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="opacity-80">Powered by</span>
+              <strong className="font-semibold">Kenbright AI</strong>
+            </span>
+          </div>
+        </Page>
       </footer>
     </div>
   );
