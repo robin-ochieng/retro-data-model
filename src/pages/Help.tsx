@@ -1,9 +1,18 @@
 import React from 'react';
+import Logo from '../components/Logo';
 
 export default function Help() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950">
-      <main className="max-w-4xl mx-auto w-full px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col">
+      {/* Header (navbar) */}
+      <header className="w-full sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/60 bg-white dark:bg-gray-900 border-b">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Logo />
+          <a href="/" className="text-sm text-blue-700 dark:text-blue-400 hover:underline">Home</a>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
         <h1 className="text-3xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white">Help & User Guide</h1>
 
         <section className="mb-8">
@@ -74,6 +83,17 @@ export default function Help() {
         </section>
 
       </main>
+
+      {/* Footer */}
+      <footer className="w-full mt-auto border-t bg-white/70 dark:bg-gray-900/60 backdrop-blur">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+          <span>© {new Date().getFullYear()} Kenbright Re</span>
+          <span className="inline-flex items-center gap-1">
+            <span className="opacity-80">Powered by</span>
+            <strong className="font-semibold">Kenbright AI</strong>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

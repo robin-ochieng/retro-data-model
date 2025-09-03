@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { useAutosave } from '../../../hooks/useAutosave';
 import PasteModal from '../../../components/PasteModal';
 
 const RowSchema = z.object({
-  programme: z.string().min(1, 'Required'),
+  programme: z.string().min(1, 'Required'), // UI label: Treaty Type
   estimate_type: z.string().min(1, 'Required'),
   period_label: z.string().optional(),
   epi_value: z.number().min(0, 'Must be >= 0'),
@@ -24,13 +24,16 @@ const FormSchema = z.object({
 
 type FormValues = z.infer<typeof FormSchema>;
 
-const defaultRows = [
-  { programme: 'Quota Share', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
-  { programme: 'Surplus', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
-];
-
 export default function StepEpiSummary() {
-  const { submissionId } = useParams();
+  const { submissionId, lob } = useParams();
+  const lobLower = (lob ?? '').toLowerCase();
+  // Default rows: always start with a single 'Quota Share' row (no default 'Surplus' for any LoB)
+  const defaultRowsForLob = React.useMemo(
+    () => [
+      { programme: 'Quota Share', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
+    ],
+    [lobLower]
+  );
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteEpiOpen, setPasteEpiOpen] = useState(false);
@@ -45,7 +48,7 @@ export default function StepEpiSummary() {
     watch,
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { rows: defaultRows, gwp_split: [], additional_comments: '' },
+    defaultValues: { rows: defaultRowsForLob, gwp_split: [], additional_comments: '' },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
   const { fields: gwpFields, append: gwpAppend, remove: gwpRemove } = useFieldArray({ control, name: 'gwp_split' });
@@ -134,8 +137,8 @@ export default function StepEpiSummary() {
   const applyEpiPaste = (rows: string[][]) => {
     if (!rows || rows.length === 0) return;
     let start = 0;
-  const first = rows[0] ?? [];
-  if (maybeHasHeader(first, ['programme', 'estimate', 'period', 'epi', 'currency'])) {
+    const first = rows[0] ?? [];
+    if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi', 'currency'])) {
       start = 1;
     }
     const mapped = rows
@@ -148,15 +151,15 @@ export default function StepEpiSummary() {
         currency: (r[4] ?? 'USD').trim() || 'USD',
       }))
       .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value), r.currency].some((v) => (v ?? '').toString().trim() !== ''));
-    setValue('rows', mapped.length > 0 ? mapped : defaultRows, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+    setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   // Apply pasted rows to GWP Split table
   const applyGwpPaste = (rows: string[][]) => {
     if (!rows || rows.length === 0) return;
     let start = 0;
-  const first = rows[0] ?? [];
-  if (maybeHasHeader(first, ['section', 'premium'])) start = 1;
+    const first = rows[0] ?? [];
+    if (maybeHasHeader(first, ['section', 'premium'])) start = 1;
     const mapped = rows
       .slice(start)
       .map((r) => ({
@@ -183,7 +186,7 @@ export default function StepEpiSummary() {
         <table className="min-w-full table-auto border rounded">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
-              <th className="px-2 py-1">Programme</th>
+              <th className="px-2 py-1">Treaty Type</th>
               <th className="px-2 py-1">Estimate Type</th>
               <th className="px-2 py-1">Period Label</th>
               <th className="px-2 py-1">EPI Value</th>
