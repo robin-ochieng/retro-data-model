@@ -46,9 +46,10 @@ export const propertyTabs: SheetTab[] = [
   { key: 'uw-limit', label: 'UW Limit', component: 'UwLimit' },
   { key: 'risk-profile', label: 'Risk Profile', component: 'RiskProfile' },
   { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list', component: 'LargeLossList' },
+  // Place Large Loss Triangulation immediately after Large Loss List
+  { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'LargeLossTriangulation' },
   { key: 'cat-loss-list', label: 'Cat Loss List', component: 'CatLossList' },
   // Newly added Property tabs (order for left nav)
-  { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'LargeLossTriangulation' },
   { key: 'triangulation', label: 'Triangulation', component: 'Triangulation' },
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
   { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
