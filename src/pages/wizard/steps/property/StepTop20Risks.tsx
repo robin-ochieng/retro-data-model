@@ -37,20 +37,41 @@ export default function StepTop20Risks() {
       if (!submissionId) return;
       const { data, error } = await supabase.from('top_risks').select('*').eq('submission_id', submissionId);
       if (!error && Array.isArray(data) && data.length) {
-        setRows(data.map((d: any) => ({
-          rank: d.rank,
-          insured: d.insured ?? '',
-          class_of_business: d.class_of_business ?? '',
-          occupation: d.occupation ?? '',
-          gross_sum_insured: Number(d.gross_sum_insured) || 0,
-          fac_sum_insured: Number(d.fac_sum_insured) || 0,
-          surplus_sum_insured: Number(d.surplus_sum_insured) || 0,
-          quota_share_sum_insured: Number(d.quota_share_sum_insured) || 0,
-          net_sum_insured: Number(d.net_sum_insured) || 0,
-          gross_premium: Number(d.gross_premium) || 0,
-          fac_premium: Number(d.fac_premium) || 0,
-          surplus_premium: Number(d.surplus_premium) || 0,
-        })));
+        // Normalize to exactly 20 rows by rank 1..20
+        const base: Row[] = Array.from({ length: 20 }, (_, i) => ({
+          rank: i + 1,
+          insured: '',
+          class_of_business: '',
+          occupation: '',
+          gross_sum_insured: 0,
+          fac_sum_insured: 0,
+          surplus_sum_insured: 0,
+          quota_share_sum_insured: 0,
+          net_sum_insured: 0,
+          gross_premium: 0,
+          fac_premium: 0,
+          surplus_premium: 0,
+        }));
+        for (const d of data as any[]) {
+          const r = Number(d.rank);
+          if (Number.isFinite(r) && r >= 1 && r <= 20) {
+            base[r - 1] = {
+              rank: r,
+              insured: d.insured ?? '',
+              class_of_business: d.class_of_business ?? '',
+              occupation: d.occupation ?? '',
+              gross_sum_insured: Number(d.gross_sum_insured) || 0,
+              fac_sum_insured: Number(d.fac_sum_insured) || 0,
+              surplus_sum_insured: Number(d.surplus_sum_insured) || 0,
+              quota_share_sum_insured: Number(d.quota_share_sum_insured) || 0,
+              net_sum_insured: Number(d.net_sum_insured) || 0,
+              gross_premium: Number(d.gross_premium) || 0,
+              fac_premium: Number(d.fac_premium) || 0,
+              surplus_premium: Number(d.surplus_premium) || 0,
+            };
+          }
+        }
+        setRows(base);
       }
     })();
   }, [submissionId]);
@@ -66,7 +87,7 @@ export default function StepTop20Risks() {
   });
 
   const columns = useMemo(() => [
-    { key: 'rank', label: 'rank', type: 'number', step: '1', min: 1 },
+    { key: 'rank', label: 'rank', type: 'number', step: '1', min: 1, className: '', },
     { key: 'insured', label: 'insured' },
     { key: 'class_of_business', label: 'class_of_business' },
     { key: 'occupation', label: 'occupation' },
@@ -109,8 +130,6 @@ export default function StepTop20Risks() {
         columns={columns as any}
         rows={rows}
         onChange={onChange as any}
-        onAddRow={() => setRows(prev => [...prev, { rank: prev.length + 1, insured: '', class_of_business: '', occupation: '', gross_sum_insured: 0, fac_sum_insured: 0, surplus_sum_insured: 0, quota_share_sum_insured: 0, net_sum_insured: 0, gross_premium: 0, fac_premium: 0, surplus_premium: 0 }])}
-        onRemoveRow={(i) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, idx) => idx !== i)))}
         onPaste={() => setPasteOpen(true)}
         onExportCsv={() => {
           const csv = toCsv(rows as any, columns.map(c => c.key));
@@ -132,11 +151,24 @@ export default function StepTop20Risks() {
       />
       <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={(data) => {
         setRows(prev => {
-          const copy = [...prev];
-          data.forEach(cols => {
+          // Start from current rows; overwrite up to 20 entries.
+          const next = prev.slice(0, 20);
+          let seqIndex = 0;
+          const placeNext = (obj: Row, idx?: number) => {
+            if (idx !== undefined && idx >= 0 && idx < 20) {
+              next[idx] = { ...obj, rank: idx + 1 };
+              return;
+            }
+            while (seqIndex < 20 && next[seqIndex]) seqIndex++;
+            if (seqIndex < 20) {
+              next[seqIndex] = { ...obj, rank: seqIndex + 1 };
+              seqIndex++;
+            }
+          };
+          for (const cols of data) {
             const [rank, insured, cob, occ, gsi, fsi, ssi, qsi, nsi, gp, fp, sp] = cols;
-            copy.push({
-              rank: Number(rank) || copy.length + 1,
+            const obj: Row = {
+              rank: 0,
               insured: insured ?? '',
               class_of_business: cob ?? '',
               occupation: occ ?? '',
@@ -148,9 +180,16 @@ export default function StepTop20Risks() {
               gross_premium: Number(gp) || 0,
               fac_premium: Number(fp) || 0,
               surplus_premium: Number(sp) || 0,
-            });
-          });
-          return copy;
+            };
+            const r = Number(rank);
+            if (Number.isFinite(r) && r >= 1 && r <= 20) placeNext(obj, r - 1);
+            else placeNext(obj);
+          }
+          // Ensure exactly 20 rows exist
+          while (next.length < 20) {
+            next.push({ rank: next.length + 1, insured: '', class_of_business: '', occupation: '', gross_sum_insured: 0, fac_sum_insured: 0, surplus_sum_insured: 0, quota_share_sum_insured: 0, net_sum_insured: 0, gross_premium: 0, fac_premium: 0, surplus_premium: 0 });
+          }
+          return next.slice(0, 20);
         });
       }} />
     </div>
