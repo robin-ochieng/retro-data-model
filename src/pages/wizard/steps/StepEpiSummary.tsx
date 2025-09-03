@@ -63,13 +63,21 @@ export default function StepEpiSummary() {
         .select('*')
         .eq('submission_id', submissionId);
       if (!error && data && data.length > 0) {
-        reset({ rows: data.map((row: any) => ({
+        const loaded = data.map((row: any) => ({
           programme: row.programme,
           estimate_type: row.estimate_type,
           period_label: row.period_label,
           epi_value: row.epi_value,
           currency: row.currency || 'USD',
-        })) });
+        }));
+        // Remove any default/blank 'Surplus' rows that may have been saved previously
+        const filtered = loaded.filter((r: any) => {
+          const isSurplus = (r.programme ?? '').trim().toLowerCase() === 'surplus';
+          const isBlank = ((r.estimate_type ?? '').trim() === '') && ((r.period_label ?? '').trim() === '') && ((Number(r.epi_value) || 0) === 0);
+          return !(isSurplus && isBlank);
+        });
+        const rowsToUse = filtered.length > 0 ? filtered : defaultRowsForLob;
+        reset({ rows: rowsToUse });
       }
       // Load GWP Split from sheet_blobs
       const gwp = await supabase
