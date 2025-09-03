@@ -216,8 +216,7 @@ const Schema = z.object({
   name_of_company: z.string().min(1, 'Required'),
   country: z.string().min(1, 'Required'),
   currency_std_units: z.string().min(1, 'Required'),
-  munich_re_client_manager: z.string().optional().or(z.literal('')),
-  munich_re_underwriter: z.string().optional().or(z.literal('')),
+  // Removed per requirements
   inception_date: z.string().min(1, 'Required'),
   expiry_date: z.string().min(1, 'Required'),
   claims_period: z.string().optional().or(z.literal('')),
@@ -249,8 +248,7 @@ export default function StepHeader() {
       name_of_company: '',
   country: 'Kenya',
   currency_std_units: 'USD',
-      munich_re_client_manager: '',
-      munich_re_underwriter: '',
+  // removed per requirements
       inception_date: '',
       expiry_date: '',
       claims_period: '',
@@ -401,12 +399,7 @@ export default function StepHeader() {
             <input className="input mt-2" placeholder="Enter other currency (code or name)" {...register('currency_std_units')} />
           )}
         </Field>
-        <Field label="Client Manager">
-          <input className="input" placeholder="Optional" {...register('munich_re_client_manager')} />
-        </Field>
-        <Field label="Underwriter">
-          <input className="input" placeholder="Optional" {...register('munich_re_underwriter')} />
-        </Field>
+  {/* Client Manager and Underwriter removed per requirements */}
         <Field label="Inception Date" hint="e.g., 01/01/2022" error={errors.inception_date?.message}>
           <input className={`input ${errors.inception_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('inception_date')} />
         </Field>
