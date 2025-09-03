@@ -254,7 +254,7 @@ export default function StepHeader() {
       claims_period: '',
   class_of_business: '',
   lines_of_business: '',
-      treaty_type: '',
+  treaty_type: 'Quota Share Treaty',
       additional_comments: '',
     },
   });
@@ -273,7 +273,12 @@ export default function StepHeader() {
         .maybeSingle();
       if (!mounted) return;
       if (!error && data?.payload) {
-        reset(data.payload as FormValues);
+        const payload = data.payload as FormValues;
+        // Ensure a default treaty type if missing in stored payload
+        if (!payload.treaty_type || String(payload.treaty_type).trim() === '') {
+          payload.treaty_type = 'Quota Share Treaty';
+        }
+        reset(payload);
       }
       setLoading(false);
     })();

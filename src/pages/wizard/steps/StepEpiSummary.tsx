@@ -38,6 +38,8 @@ export default function StepEpiSummary() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteEpiOpen, setPasteEpiOpen] = useState(false);
   const [pasteGwpOpen, setPasteGwpOpen] = useState(false);
+  // Track treaty_type from Header
+  const [treatyType, setTreatyType] = useState<string>('');
   const {
     control,
     register,
@@ -48,7 +50,7 @@ export default function StepEpiSummary() {
     watch,
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { rows: defaultRowsForLob, gwp_split: [], additional_comments: '' },
+  defaultValues: { rows: defaultRowsForLob, gwp_split: [], additional_comments: '' },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
   const { fields: gwpFields, append: gwpAppend, remove: gwpRemove } = useFieldArray({ control, name: 'gwp_split' });
@@ -58,13 +60,27 @@ export default function StepEpiSummary() {
   useEffect(() => {
     async function loadRows() {
       if (!submissionId) return;
+      // Load treaty_type from Header sheet
+      const header = await supabase
+        .from('sheet_blobs')
+        .select('payload')
+        .eq('submission_id', submissionId)
+        .eq('sheet_name', 'Header')
+        .maybeSingle();
+      const tt = header?.data?.payload?.treaty_type || 'Quota Share Treaty';
+      setTreatyType(tt);
+      // If current default rows are present, ensure their programme matches treaty type
+      if ((watch('rows') ?? []).length > 0) {
+        const adjusted = (watch('rows') ?? []).map(r => ({ ...r, programme: r.programme || tt }));
+        reset(curr => ({ ...curr, rows: adjusted }));
+      }
       const { data, error } = await supabase
         .from('epi_summary')
         .select('*')
         .eq('submission_id', submissionId);
       if (!error && data && data.length > 0) {
         const loaded = data.map((row: any) => ({
-          programme: row.programme,
+          programme: row.programme || tt,
           estimate_type: row.estimate_type,
           period_label: row.period_label,
           epi_value: row.epi_value,
@@ -76,7 +92,7 @@ export default function StepEpiSummary() {
           const isBlank = ((r.estimate_type ?? '').trim() === '') && ((r.period_label ?? '').trim() === '') && ((Number(r.epi_value) || 0) === 0);
           return !(isSurplus && isBlank);
         });
-        const rowsToUse = filtered.length > 0 ? filtered : defaultRowsForLob;
+  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, programme: r.programme || tt }));
         reset({ rows: rowsToUse });
       }
       // Load GWP Split from sheet_blobs
@@ -97,6 +113,15 @@ export default function StepEpiSummary() {
     }
     loadRows();
   }, [submissionId, reset]);
+
+  // Keep programme in sync if treaty type changes later
+  useEffect(() => {
+    if (!treatyType) return;
+    const current = watch('rows') ?? [];
+    if (current.length === 0) return;
+    const updated = current.map(r => ({ ...r, programme: treatyType }));
+    setValue('rows', updated, { shouldDirty: true, shouldTouch: true });
+  }, [treatyType]);
 
   // Autosave on change
   useAutosave(watch(), async (values) => {
