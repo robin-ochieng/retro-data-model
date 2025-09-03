@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
-import { parseCsv, toCsv } from '../../../../utils/csv';
+// CSV import/export removed per requirements
 
 // Columns per screenshot: Policy Description, Number of Risks, Sum Insured (Gross, Net, Q/S, 1st Surplus, Fac), Premium (Gross, Net, Q/S, 1st Surplus, Fac)
 const RowSchema = z.object({
@@ -32,7 +32,7 @@ export default function StepMotorFleetList() {
   const [comments, setComments] = useState('');
   const [showPaste, setShowPaste] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  // File input removed (no CSV import)
 
   // Load
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function StepMotorFleetList() {
     { key: 'prem_fac', label: 'Premium Fac', type: 'number', step: '0.01', min: 0 },
   ], []);
 
-  const headers = useMemo(() => columns.map(c => c.key as string), [columns]);
+  // CSV export headers removed
 
   const onChange = (idx: number, key: keyof Row, value: any) => {
     const copy = rows.slice();
@@ -142,13 +142,7 @@ export default function StepMotorFleetList() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Motor Fleet List</h3>
           <div className="flex gap-2">
-            <button className="btn" onClick={() => setShowPaste(true)}>Paste</button>
-            <button className="btn" onClick={() => fileRef.current?.click()}>Import CSV</button>
-            <button className="btn" onClick={() => {
-              const csv = toCsv(rows as any, headers);
-              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-              const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'motor_fleet_list.csv'; a.click(); URL.revokeObjectURL(url);
-            }}>Export CSV</button>
+            <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowPaste(true)}>Paste from Excel</button>
           </div>
         </div>
         <FormTable<Row>
@@ -165,9 +159,7 @@ export default function StepMotorFleetList() {
           <div>Premium Gross: {totals.prem_gross.toLocaleString()}</div>
           <div>Premium Net: {totals.prem_net.toLocaleString()}</div>
         </div>
-        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={async (e) => {
-          const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); const grid = parseCsv(text); applyGrid(grid); e.target.value = '';
-        }} />
+  {/* CSV import removed */}
         <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Motor Fleet List" />
       </div>
 

@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
-import { parseCsv, toCsv } from '../../../../utils/csv';
+// CSV import/export removed per requirements
 
 type Row = {
   band: number;
@@ -42,7 +42,7 @@ export default function StepRiskProfile() {
   const [comments, setComments] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPaste, setShowPaste] = useState(false);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  // File input removed (no CSV import)
 
   // Load
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function StepRiskProfile() {
     { key: 'outstanding_claims_amount', label: 'Outstanding Claims Amount Per Band', type: 'number', className: 'w-48' },
   ], []);
 
-  const headers = useMemo(() => columns.map(c => c.key as string), [columns]);
+  // CSV export headers removed
 
   const totals = useMemo(() => {
     const sum = (k: keyof Row) => rows.reduce((acc, r) => acc + (typeof r[k] === 'number' ? (r[k] as number) : 0), 0);
@@ -163,14 +163,7 @@ export default function StepRiskProfile() {
     setRows(next);
   }
 
-  const onImportCsv = () => fileRef.current?.click();
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); const grid = parseCsv(text); applyGrid(grid); e.target.value='';
-  };
-  const onExportCsv = () => {
-    const blob = new Blob([toCsv(rows as any[], headers)], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Casualty-Risk-Profile.csv'; a.click(); URL.revokeObjectURL(url);
-  };
+  // CSV import/export removed
 
   return (
     <div className="space-y-6">
@@ -181,10 +174,7 @@ export default function StepRiskProfile() {
           rows={rows}
           onChange={onChange}
           onPaste={() => setShowPaste(true)}
-          onImportCsv={onImportCsv}
-          onExportCsv={onExportCsv}
         />
-        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={onFile} />
         <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Risk Profile" />
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
           <div>Total GWP: <span className="font-medium">{totals.gross_written_premium.toLocaleString()}</span></div>

@@ -1,0 +1,62 @@
+{
+  "lob": "property",
+  "tabs": [
+    {
+      "tabKey": "epi-summary",
+      "sheetName": "EPI Summary",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepcatlosslist",
+      "sheetName": "Cat Loss List",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "additional_comments": "Additional Comments"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Climate change exposure",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "exposures": "Exposures"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation (Property)",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "excelColumns": {}
+    }
+  ]
+}

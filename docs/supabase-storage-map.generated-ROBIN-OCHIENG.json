@@ -1,15 +1,7 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-03T13:16:02.807Z",
+  "generatedAt": "2025-09-01T15:37:03.034Z",
   "tabs": [
-    {
-      "tabKey": "header",
-      "sheetName": "Client Details",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
     {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
@@ -59,301 +51,6 @@
           "type": "table",
           "table": "epi_summary",
           "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "epi_summary",
-          "op": "insert"
-        }
-      ]
-    },
-    {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics (Prop)",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
-      "tabKey": "treaty-stats-nonprop",
-      "sheetName": "Treaty Statistics (Non-Prop)",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
-      "tabKey": "top-20-risks",
-      "sheetName": "Top 20 Risks",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        }
-      ]
-    },
-    {
-      "tabKey": "climate-exposure",
-      "sheetName": "Climate change exposure",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "op": "upsert",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "notes": "Climate change exposure"
-        },
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "op": "upsert",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadShape": {
-            "exposures": "unknown"
-          },
-          "notes": "Climate change exposure"
-        }
-      ]
-    },
-    {
-      "tabKey": "uw-limit",
-      "sheetName": "UW Limit",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
-      "tabKey": "risk-profile",
-      "sheetName": "Risk Profile",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "op": "insert"
         }
       ]
     },
@@ -363,34 +60,125 @@
       "autosave": {
         "strategy": "debounced"
       },
-      "operations": []
+      "operations": [
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "op": "insert"
+        }
+      ]
     },
     {
-      "tabKey": "large-loss-triangulation",
-      "sheetName": "Large Loss Triangulation",
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
       "autosave": {
         "strategy": "debounced"
       },
       "operations": [
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        }
+      ]
+    },
+    {
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "triangle_values",
           "op": "insert"
         },
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "triangle_values",
           "op": "insert"
         },
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "triangle_values",
           "op": "insert"
         }
       ]
     },
     {
-      "tabKey": "cat-loss-list",
+      "tabKey": "stepcatlosslist",
       "sheetName": "Cat Loss List",
       "autosave": {
         "strategy": "debounced"
@@ -460,28 +248,294 @@
       ]
     },
     {
-      "tabKey": "triangulation",
-      "sheetName": "Triangulation",
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Climate change exposure",
       "autosave": {
         "strategy": "debounced"
       },
-      "operations": []
+      "operations": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "notes": "Climate change exposure"
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "op": "upsert",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "payloadShape": {
+            "exposures": "unknown"
+          },
+          "notes": "Climate change exposure"
+        }
+      ]
     },
     {
-      "tabKey": "cresta-zone-control",
-      "sheetName": "Cresta Zone Control",
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation (Property)",
       "autosave": {
         "strategy": "debounced"
       },
-      "operations": []
+      "operations": [
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "op": "insert"
+        }
+      ]
     },
     {
-      "tabKey": "submit",
-      "sheetName": "Submit",
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
       "autosave": {
         "strategy": "debounced"
       },
-      "operations": []
+      "operations": [
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "op": "insert"
+        }
+      ]
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        }
+      ]
     }
   ]
 }

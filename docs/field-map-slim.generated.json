@@ -2,39 +2,33 @@
   "lob": "property",
   "tabs": [
     {
+      "tabKey": "header",
+      "sheetName": "Client Details",
+      "excelColumns": {}
+    },
+    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
       "excelColumns": {}
     },
     {
-      "tabKey": "large-loss-list",
-      "sheetName": "Large Loss List",
-      "excelColumns": {}
-    },
-    {
       "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics_Prop",
+      "sheetName": "Treaty Statistics (Prop)",
       "excelColumns": {}
     },
     {
-      "tabKey": "stepcatlosstriangulation",
-      "sheetName": "Unknown",
+      "tabKey": "treaty-stats-nonprop",
+      "sheetName": "Treaty Statistics (Non-Prop)",
       "excelColumns": {}
     },
     {
-      "tabKey": "stepcatlosslist",
-      "sheetName": "Unknown",
-      "excelColumns": {
-        "sheet_blobs": {
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
+      "tabKey": "top-20-risks",
+      "sheetName": "Top 20 Risks",
+      "excelColumns": {}
     },
     {
-      "tabKey": "stepclimateexposure",
-      "sheetName": "Unknown",
+      "tabKey": "climate-exposure",
+      "sheetName": "Climate change exposure",
       "excelColumns": {
         "sheet_blobs": {
           "fields": {
@@ -44,18 +38,49 @@
       }
     },
     {
-      "tabKey": "steplargelosstriangulation",
-      "sheetName": "Unknown",
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
       "excelColumns": {}
     },
     {
-      "tabKey": "stepriskprofile",
-      "sheetName": "Unknown",
+      "tabKey": "risk-profile",
+      "sheetName": "Risk Profile",
       "excelColumns": {}
     },
     {
-      "tabKey": "steptop20risks",
-      "sheetName": "Unknown",
+      "tabKey": "large-loss-list",
+      "sheetName": "Large Loss List",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "cat-loss-list",
+      "sheetName": "Cat Loss List",
+      "excelColumns": {
+        "sheet_blobs": {
+          "fields": {
+            "additional_comments": "Additional Comments"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "triangulation",
+      "sheetName": "Triangulation",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "cresta-zone-control",
+      "sheetName": "Cresta Zone Control",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "submit",
+      "sheetName": "Submit",
       "excelColumns": {}
     }
   ]

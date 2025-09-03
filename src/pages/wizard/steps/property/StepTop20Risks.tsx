@@ -25,7 +25,7 @@ const RowSchema = z.object({
 type Row = z.infer<typeof RowSchema>;
 
 export default function StepTop20Risks() {
-  const { submissionId } = useParams();
+  const { submissionId, lob } = useParams();
   const [rows, setRows] = useState<Row[]>(Array.from({ length: 20 }, (_, i) => ({ rank: i + 1, insured: '', class_of_business: '', occupation: '', gross_sum_insured: 0, fac_sum_insured: 0, surplus_sum_insured: 0, quota_share_sum_insured: 0, net_sum_insured: 0, gross_premium: 0, fac_premium: 0, surplus_premium: 0 })));
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -131,7 +131,7 @@ export default function StepTop20Risks() {
         rows={rows}
         onChange={onChange as any}
         onPaste={() => setPasteOpen(true)}
-        onExportCsv={() => {
+        onExportCsv={lob === 'casualty' ? undefined : () => {
           const csv = toCsv(rows as any, columns.map(c => c.key));
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'top_20_risks.csv'; a.click(); URL.revokeObjectURL(url);

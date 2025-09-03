@@ -2,11 +2,6 @@
   "lob": "property",
   "tabs": [
     {
-      "tabKey": "header",
-      "sheetName": "Client Details",
-      "storage": []
-    },
-    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
       "storage": [
@@ -34,215 +29,89 @@
           "type": "table",
           "table": "epi_summary",
           "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "epi_summary",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics (Prop)",
-      "storage": []
-    },
-    {
-      "tabKey": "treaty-stats-nonprop",
-      "sheetName": "Treaty Statistics (Non-Prop)",
-      "storage": []
-    },
-    {
-      "tabKey": "top-20-risks",
-      "sheetName": "Top 20 Risks",
-      "storage": [
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
-      "tabKey": "climate-exposure",
-      "sheetName": "Climate change exposure",
-      "storage": [
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadSchema": {}
-        },
-        {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadSchema": {
-            "exposures": "unknown"
-          }
-        }
-      ]
-    },
-    {
-      "tabKey": "uw-limit",
-      "sheetName": "UW Limit",
-      "storage": []
-    },
-    {
-      "tabKey": "risk-profile",
-      "sheetName": "Risk Profile",
-      "storage": [
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "risk_profile_bands",
-          "rowSchema": {}
         }
       ]
     },
     {
       "tabKey": "large-loss-list",
       "sheetName": "Large Loss List",
-      "storage": []
-    },
-    {
-      "tabKey": "large-loss-triangulation",
-      "sheetName": "Large Loss Triangulation",
       "storage": [
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "large_loss_list",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "large_loss_list",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "large_loss_triangle_values",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_list",
           "rowSchema": {}
         }
       ]
     },
     {
-      "tabKey": "cat-loss-list",
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics_Prop",
+      "storage": [
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "treaty_stats_prop",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "stepcatlosstriangulation",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "triangle_values",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "stepcatlosslist",
       "sheetName": "Cat Loss List",
       "storage": [
         {
@@ -289,19 +158,183 @@
       ]
     },
     {
-      "tabKey": "triangulation",
-      "sheetName": "Triangulation",
-      "storage": []
+      "tabKey": "stepclimateexposure",
+      "sheetName": "Climate change exposure",
+      "storage": [
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "payloadSchema": {}
+        },
+        {
+          "type": "sheet_blobs",
+          "table": "sheet_blobs",
+          "key": [
+            "submission_id",
+            "sheet_name"
+          ],
+          "payloadSchema": {
+            "exposures": "unknown"
+          }
+        }
+      ]
     },
     {
-      "tabKey": "cresta-zone-control",
-      "sheetName": "Cresta Zone Control",
-      "storage": []
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation (Property)",
+      "storage": [
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "large_loss_triangle_values",
+          "rowSchema": {}
+        }
+      ]
     },
     {
-      "tabKey": "submit",
-      "sheetName": "Submit",
-      "storage": []
+      "tabKey": "stepriskprofile",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "risk_profile_bands",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
+      "tabKey": "steptop20risks",
+      "sheetName": "Unknown",
+      "storage": [
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        }
+      ]
     }
   ]
 }

@@ -4,7 +4,7 @@ import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
-import { parseCsv } from '../../../../utils/csv';
+// CSV import removed per requirements
 
 // Casualty Large Loss Triangulation
 // Combines header list (year, loss desc, date of loss, threshold, claim no, status)
@@ -142,25 +142,7 @@ export default function StepLargeLossTriangulationCasualty() {
         rows={headers}
         onChange={onHeaderChange as any}
         onRemoveRow={removeHeader}
-        onPaste={() => setPasteOpen(true)}
-        onImportCsv={() => {
-          const inp = document.createElement('input');
-          inp.type = 'file'; inp.accept = '.csv,text/csv';
-          inp.onchange = async () => {
-            const f = inp.files?.[0]; if (!f) return; const txt = await f.text();
-            const rows = parseCsv(txt);
-            setHeaders(rows.map((r) => ({
-              year: r[0] ? Number(r[0]) : '',
-              loss_description: r[1] ?? '',
-              date_of_loss: r[2] ?? '',
-              threshold: r[3] ? Number(r[3]) : '',
-              claim_no: r[4] ?? '',
-              claim_status: r[5] ?? '',
-            })));
-            ensureGridRows(rows.length);
-          };
-          inp.click();
-        }}
+  onPaste={() => setPasteOpen(true)}
       />
 
       <div className="flex items-center justify-between">
@@ -181,17 +163,7 @@ export default function StepLargeLossTriangulationCasualty() {
         rows={gridRows}
         onChange={onGridChange as any}
         onRemoveRow={removeHeader}
-        onPaste={() => setPasteOpen(true)}
-        onImportCsv={() => {
-          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv';
-          inp.onchange = async () => {
-            const f = inp.files?.[0]; if (!f) return; const txt = await f.text();
-            const rows = parseCsv(txt);
-            setGrid(rows.map((r) => r.map((v) => Number(v) || 0)));
-            ensureGridRows(rows.length);
-          };
-          inp.click();
-        }}
+  onPaste={() => setPasteOpen(true)}
       />
 
       <PasteModal

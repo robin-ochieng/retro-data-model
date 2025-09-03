@@ -6,14 +6,16 @@
 
 - Client Details (data capture)
 	- Country dropdown with African countries; default to Kenya; “Other” free‑text fallback.
-	- Currency dropdown using ISO 4217 codes; default to USD; “Other” free‑text fallback.
+	- Currency (std. units) dropdown using ISO 4217 codes; default to USD; “Other” free‑text fallback.
 	- Class of Business dropdown with dependent Line(s) of Business; “Other” free‑text fallback; line options auto‑reset on class change.
 	- Treaty Type dropdown with common treaty taxonomies; “Other” free‑text fallback.
 	- Inline validation with descriptive error surfacing.
 
 - Workflows
-	- Property: EPI Summary, Treaty Statistics (Prop/Non‑Prop), UW Limit, Risk Profile, Large Loss List, Large Loss Triangulation, Triangulation, Cresta Zone Control, Top 20 Risks, Climate Exposure.
-	- Casualty: Treaty Statistics (Prop/PropCC/Non‑Prop), Rate Development (incl. Motor), Max UW Limit Development, Number of Risks Development, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, Motor Fleet List.
+	- Property (tab order)
+		- Client Details, EPI Summary, Treaty Statistics (Prop), Treaty Statistics (Non‑Prop), Top 20 Risks, Climate change exposure, UW Limit, Risk Profile, Large Loss List, Large Loss Triangulation, Cat Loss List, Triangulation, Cresta Zone Control, Submit.
+	- Casualty (tab order)
+		- Client Details, EPI Summary, Treaty Statistics (Prop), Treaty Statistics (PropCC), Treaty Statistics (Non‑Prop), Rate Development, Rate Development (Motor Specific), Max UW Limit Development, Number of Risks Development, Risk Profile, Top 20 Risks, Motor Fleet List, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, Cresta Zone Control, Submit.
 
 - Data persistence and autosave
 	- Supabase‑backed persistence with idempotent upserts to sheet_blobs per step.
@@ -29,13 +31,17 @@
 - UI/UX
 	- Responsive, accessible UI with Tailwind CSS and consistent form patterns.
 	- Paste Modal and "Paste from Excel" actions across key tables for high‑volume data entry.
-		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel.
+		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel. Currency column removed in UI; USD persisted internally if required.
 		- Property: Treaty Statistics (Prop), Treaty Statistics (Non‑Prop), Large Loss List, Cat Loss List, UW Limit, Risk Profile, and Cresta Zone Control support paste from Excel.
-		- Casualty: Treaty Statistics (Prop, PropCC, Non‑Prop) and Rate Development (incl. Motor Specific) support paste from Excel.
+		- Casualty: Treaty Statistics (Prop, PropCC, Non‑Prop), Rate Development (incl. Motor), Max UW Limit Development, Number of Risks Development, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, and Motor Fleet List support paste from Excel.
 		- Header detection and flexible column mapping; numeric parsing tolerant of commas and spaces.
-		- Casualty Rate Development tabs: Import/Export CSV removed; Paste‑only for a cleaner UX.
+		- Casualty tabs: Import/Export CSV removed (paste‑only UX retained). Top 20 Risks hides Export in Casualty and enforces exactly 20 rows.
 		- Label consistency: "Year" headers normalized to "UW Year" on Casualty Treaty Statistics (Prop, PropCC).
-		- Motor Specific table: widened first column to prevent U/W Year labels from being truncated.
+		- Motor Specific: standardized "Paste from Excel" button styling.
+
+- EPI Summary specifics
+	- Default Treaty Type set on Client Details to “Quota Share Treaty”; propagated read‑only to EPI Summary rows and kept in sync on changes.
+	- Removed default “Surplus” row across LoBs; no auto‑seeded rows.
 
 - Large Loss Triangulation (Property)
 	- UI mirrors Casualty: header list (per‑loss metadata) plus a multi‑row development grid with measure selector (Paid / Reserved / Incurred).

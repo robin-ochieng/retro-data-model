@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { useSubmissionMeta } from '../../SubmissionMetaContext';
 const OTHER = '__OTHER__';
 
 // Allowed countries for dropdown (African countries)
@@ -232,6 +233,7 @@ const SHEET = 'Header';
 
 export default function StepHeader() {
   const { submissionId } = useParams();
+  const meta = useSubmissionMeta();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +281,8 @@ export default function StepHeader() {
           payload.treaty_type = 'Quota Share Treaty';
         }
         reset(payload);
+        // Prime context for downstream consumers
+        meta.updateFromHeader(payload);
       }
       setLoading(false);
     })();
@@ -338,6 +342,8 @@ export default function StepHeader() {
       );
     if (error) { setError(error.message); return; }
     setLastSaved(new Date());
+    // Update context to reflect latest treaty type
+    meta.updateFromHeader(val);
   });
 
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;

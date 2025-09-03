@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
-import { parseCsv, toCsv } from '../../../../utils/csv';
+// CSV import/export removed per requirements
 
 type Row = {
   date_of_loss: string;
@@ -35,7 +35,6 @@ export default function StepLargeLossList() {
   const [comments, setComments] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPaste, setShowPaste] = useState(false);
-  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -84,7 +83,7 @@ export default function StepLargeLossList() {
     { key: 'net_paid', label: 'Net Paid', type: 'number' as const },
     { key: 'net_os', label: 'Net O/S', type: 'number' as const },
   ], []);
-  const headers = useMemo(() => columns.map(c => c.key as string), [columns]);
+  // CSV export headers removed
 
   const onChange = (idx: number, key: keyof Row, value: any) => {
     const copy = rows.slice();
@@ -127,14 +126,7 @@ export default function StepLargeLossList() {
     setRows(next);
   }
 
-  const onImportCsv = () => fileRef.current?.click();
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); const grid = parseCsv(text); applyGrid(grid); e.target.value='';
-  };
-  const onExportCsv = () => {
-    const blob = new Blob([toCsv(rows as any[], headers)], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='Casualty-Large-Loss-List.csv'; a.click(); URL.revokeObjectURL(url);
-  };
+  // CSV import/export removed
 
   return (
     <div className="space-y-6">
@@ -145,12 +137,9 @@ export default function StepLargeLossList() {
           rows={rows}
           onChange={onChange}
           onPaste={() => setShowPaste(true)}
-          onImportCsv={onImportCsv}
-          onExportCsv={onExportCsv}
           onAddRow={() => setRows(prev => [...prev, { date_of_loss: '', uw_year: '', insured: '', cause_of_loss: '', incurred_fgu: '', paid_fgu: '', os_fgu: '', fac_paid: '', fac_os: '', surplus_paid: '', surplus_os: '', quota_share_paid: '', quota_share_os: '', net_paid: '', net_os: '' }])}
           onRemoveRow={(idx) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)))}
         />
-        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={onFile} />
         <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Large Loss List" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">

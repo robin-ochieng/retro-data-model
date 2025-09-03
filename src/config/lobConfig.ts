@@ -43,6 +43,9 @@ export const propertyTabs: SheetTab[] = [
   { key: 'epi-summary', label: 'EPI Summary', table: 'epi_summary', component: 'EpiSummary' },
   { key: 'treaty-stats-prop', label: 'Treaty Statistics (Prop)', table: 'treaty_stats_prop', component: 'TreatyStatsProp' },
   { key: 'treaty-stats-nonprop', label: 'Treaty Statistics (Non-Prop)', component: 'TreatyStatsNonProp' },
+  // Move Top 20 Risks and Climate change exposure just above UW Limit
+  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
+  { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
   { key: 'uw-limit', label: 'UW Limit', component: 'UwLimit' },
   { key: 'risk-profile', label: 'Risk Profile', component: 'RiskProfile' },
   { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list', component: 'LargeLossList' },
@@ -52,8 +55,6 @@ export const propertyTabs: SheetTab[] = [
   // Newly added Property tabs (order for left nav)
   { key: 'triangulation', label: 'Triangulation', component: 'Triangulation' },
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
-  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
-  { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
   { key: 'submit', label: 'Submit', component: 'Submit' },
 ];
 
@@ -68,14 +69,15 @@ export const casualtyTabs: SheetTab[] = [
   { key: 'max-uw-limit-dev', label: 'Max UW Limit Development', component: 'CasualtyMaxUwLimitDev' },
   { key: 'number-of-risks-dev', label: 'Number of Risks Development', component: 'CasualtyNumberOfRisksDev' },
   { key: 'risk-profile', label: 'Risk Profile', component: 'CasualtyRiskProfile' },
+  // Move Top 20 Risks and Motor Fleet List to immediately after Risk Profile
+  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
+  { key: 'motor-fleet-list', label: 'Motor Fleet List', component: 'CasualtyMotorFleetList' },
+  // Then continue with loss and triangulation tabs
   { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list', component: 'CasualtyLargeLossList' },
   { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'CasualtyLargeLossTriangulation' },
   { key: 'aggregate-triangulation', label: 'Aggregate Triangulation', component: 'CasualtyAggregateTriangulation' },
   { key: 'cat-loss-triangulation', label: 'CAT Loss Triangulation', component: 'CasualtyCatLossTriangulation' },
-  // Newly requested tabs in this order: Cresta Zone Control, Top 20 Risks, Motor Fleet List
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
-  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
-  { key: 'motor-fleet-list', label: 'Motor Fleet List', component: 'CasualtyMotorFleetList' },
   { key: 'submit', label: 'Submit', component: 'Submit' },
 ];
 

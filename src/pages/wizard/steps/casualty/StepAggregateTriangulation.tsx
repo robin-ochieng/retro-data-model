@@ -4,7 +4,7 @@ import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
-import { parseCsv } from '../../../../utils/csv';
+// CSV import removed per requirements
 
 // Aggregate Triangulation (Casualty)
 // 6 triangles in order as per screenshots:
@@ -128,12 +128,7 @@ export default function StepAggregateTriangulation() {
             setCell(sk, r, key as string, value);
           }
         }}
-        onPaste={() => setPasteOpenFor(sk)}
-        onImportCsv={() => {
-          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv';
-          inp.onchange = async () => { const f = inp.files?.[0]; if (!f) return; const txt = await f.text(); applyPaste(sk, parseCsv(txt)); };
-          inp.click();
-        }}
+  onPaste={() => setPasteOpenFor(sk)}
       />
     </div>
   );

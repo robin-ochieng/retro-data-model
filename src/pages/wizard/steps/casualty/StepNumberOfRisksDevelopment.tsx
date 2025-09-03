@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
-import { parseCsv, toCsv } from '../../../../utils/csv';
+// CSV import/export removed per requirements
 
 type Row = Record<string, string | number> & { metric: string };
 
@@ -27,7 +27,6 @@ export default function StepNumberOfRisksDevelopment() {
   const [comments, setComments] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPaste, setShowPaste] = useState(false);
-  const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -62,7 +61,7 @@ export default function StepNumberOfRisksDevelopment() {
   });
 
   const columns = useMemo(() => [{ key: 'metric', label: 'U/W Years', type: 'text' as const }, ...yearCols], [yearCols]);
-  const headers = useMemo(() => ['metric', ...yearCols.map(c => c.key)], [yearCols]);
+  // Headers no longer needed (CSV export removed)
 
   const onChange = (idx: number, key: keyof Row, value: any) => {
     const copy = rows.slice();
@@ -86,15 +85,7 @@ export default function StepNumberOfRisksDevelopment() {
     }
     setRows(next);
   }
-  const onImportCsv = () => fileRef.current?.click();
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); const grid = parseCsv(text); applyGrid(grid); e.target.value = '';
-  };
-  const onExportCsv = () => {
-    const blob = new Blob([toCsv(rows as any[], headers)], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `${SHEET}.csv`; a.click(); URL.revokeObjectURL(url);
-  };
+  // CSV import/export removed
 
   return (
     <div className="space-y-6">
@@ -105,10 +96,7 @@ export default function StepNumberOfRisksDevelopment() {
           rows={rows}
           onChange={onChange}
           onPaste={() => setShowPaste(true)}
-          onImportCsv={onImportCsv}
-          onExportCsv={onExportCsv}
         />
-        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={onFile} />
         <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Number of Risks Development" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">

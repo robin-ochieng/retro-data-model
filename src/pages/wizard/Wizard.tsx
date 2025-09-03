@@ -34,6 +34,7 @@ import CasualtyLargeLossTriangulation from './steps/casualty/StepLargeLossTriang
 import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriangulation';
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
+import { SubmissionMetaProvider } from './SubmissionMetaContext';
 
 export default function Wizard() {
   return (
@@ -92,6 +93,7 @@ function WizardShell() {
   }
 
   return (
+    <SubmissionMetaProvider submissionId={submissionId}>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -239,6 +241,7 @@ function WizardShell() {
           </div>
         </section>
       </div>
-    </div>
+  </div>
+  </SubmissionMetaProvider>
   );
 }

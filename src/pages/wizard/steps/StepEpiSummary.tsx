@@ -6,9 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../lib/supabase';
 import { useAutosave } from '../../../hooks/useAutosave';
 import PasteModal from '../../../components/PasteModal';
+import { useSubmissionMeta } from '../SubmissionMetaContext';
 
 const RowSchema = z.object({
-  programme: z.string().min(1, 'Required'), // UI label: Treaty Type
+  // Keep both for backward compat: UI shows treaty_type; programme remains mapped for DB rows loaded previously
+  treaty_type: z.string().optional().default(''),
+  programme: z.string().optional().default(''),
   estimate_type: z.string().min(1, 'Required'),
   period_label: z.string().optional(),
   epi_value: z.number().min(0, 'Must be >= 0'),
@@ -26,11 +29,12 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
+  const { treatyType } = useSubmissionMeta();
   const lobLower = (lob ?? '').toLowerCase();
-  // Default rows: always start with a single 'Quota Share' row (no default 'Surplus' for any LoB)
+  // Default rows: no hardcoded treaty; set from meta on load
   const defaultRowsForLob = React.useMemo(
     () => [
-      { programme: 'Quota Share', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
+      { treaty_type: '', programme: '', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
     ],
     [lobLower]
   );
@@ -38,8 +42,6 @@ export default function StepEpiSummary() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteEpiOpen, setPasteEpiOpen] = useState(false);
   const [pasteGwpOpen, setPasteGwpOpen] = useState(false);
-  // Track treaty_type from Header
-  const [treatyType, setTreatyType] = useState<string>('');
   const {
     control,
     register,
@@ -60,26 +62,14 @@ export default function StepEpiSummary() {
   useEffect(() => {
     async function loadRows() {
       if (!submissionId) return;
-      // Load treaty_type from Header sheet
-      const header = await supabase
-        .from('sheet_blobs')
-        .select('payload')
-        .eq('submission_id', submissionId)
-        .eq('sheet_name', 'Header')
-        .maybeSingle();
-      const tt = header?.data?.payload?.treaty_type || 'Quota Share Treaty';
-      setTreatyType(tt);
-      // If current default rows are present, ensure their programme matches treaty type
-      if ((watch('rows') ?? []).length > 0) {
-        const adjusted = (watch('rows') ?? []).map(r => ({ ...r, programme: r.programme || tt }));
-        reset(curr => ({ ...curr, rows: adjusted }));
-      }
+  const tt = treatyType || 'Quota Share Treaty';
       const { data, error } = await supabase
         .from('epi_summary')
         .select('*')
         .eq('submission_id', submissionId);
       if (!error && data && data.length > 0) {
         const loaded = data.map((row: any) => ({
+          treaty_type: (row.treaty_type || row.programme || tt) as string,
           programme: row.programme || tt,
           estimate_type: row.estimate_type,
           period_label: row.period_label,
@@ -92,7 +82,7 @@ export default function StepEpiSummary() {
           const isBlank = ((r.estimate_type ?? '').trim() === '') && ((r.period_label ?? '').trim() === '') && ((Number(r.epi_value) || 0) === 0);
           return !(isSurplus && isBlank);
         });
-  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, programme: r.programme || tt }));
+  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt }));
         reset({ rows: rowsToUse });
       }
       // Load GWP Split from sheet_blobs
@@ -114,12 +104,12 @@ export default function StepEpiSummary() {
     loadRows();
   }, [submissionId, reset]);
 
-  // Keep programme in sync if treaty type changes later
+  // Keep treaty columns in sync if treaty type changes later
   useEffect(() => {
-    if (!treatyType) return;
+    const tt = treatyType || 'Quota Share Treaty';
     const current = watch('rows') ?? [];
     if (current.length === 0) return;
-    const updated = current.map(r => ({ ...r, programme: treatyType }));
+    const updated = current.map(r => ({ ...r, treaty_type: tt, programme: tt }));
     setValue('rows', updated, { shouldDirty: true, shouldTouch: true });
   }, [treatyType]);
 
@@ -131,10 +121,25 @@ export default function StepEpiSummary() {
     if (del.error) { setSaveError(del.error.message); return; }
     const rows = values.rows ?? [];
     if (rows.length > 0) {
-      const ins = await supabase.from('epi_summary').insert(
-        rows.map(row => ({ ...row, submission_id: submissionId }))
-      );
-      if (ins.error) { setSaveError(ins.error.message); return; }
+      const payloadRows = rows.map(row => ({
+        ...row,
+        programme: row.programme || treatyType || 'Quota Share Treaty',
+        treaty_type: (row as any).treaty_type || treatyType || 'Quota Share Treaty',
+        submission_id: submissionId,
+      }));
+      let ins = await supabase.from('epi_summary').insert(payloadRows);
+      if (ins.error) {
+        const msg = String(ins.error.message || '').toLowerCase();
+        if (msg.includes('column') && msg.includes('treaty_type')) {
+          // Retry without treaty_type for backward compatibility
+          const fallback = payloadRows.map(({ treaty_type, ...rest }) => rest);
+          ins = await supabase.from('epi_summary').insert(fallback);
+          if (ins.error) { setSaveError(ins.error.message); return; }
+        } else {
+          setSaveError(ins.error.message);
+          return;
+        }
+      }
     }
     // Save GWP Split to sheet_blobs
     const gwp = values.gwp_split ?? [];
@@ -142,7 +147,7 @@ export default function StepEpiSummary() {
     const up = await supabase
       .from('sheet_blobs')
       .upsert(
-        [{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments } }],
+        [{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } }],
         { onConflict: 'submission_id,sheet_name' }
       );
     if (up.error) { setSaveError(up.error.message); return; }
@@ -171,13 +176,14 @@ export default function StepEpiSummary() {
     if (!rows || rows.length === 0) return;
     let start = 0;
     const first = rows[0] ?? [];
-    if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi'])) {
+  if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi'])) {
       start = 1;
     }
     const mapped = rows
       .slice(start)
       .map((r) => ({
-        programme: (r[0] ?? '').trim(),
+    treaty_type: ((r[0] ?? '').trim()) || treatyType || 'Quota Share Treaty',
+    programme: ((r[0] ?? '').trim()) || treatyType || 'Quota Share Treaty',
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
         epi_value: toNumber((r[3] ?? '').trim()),
@@ -185,7 +191,7 @@ export default function StepEpiSummary() {
         currency: 'USD',
       }))
       .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value)].some((v) => (v ?? '').toString().trim() !== ''));
-    setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob.map(r => ({ ...r, treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty' })), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   // Apply pasted rows to GWP Split table
@@ -232,12 +238,11 @@ export default function StepEpiSummary() {
               <tr key={field.id}>
                 <td>
                   <input
-                    {...register(`rows.${idx}.programme`)}
-                    className="px-2 py-1 border rounded w-full"
+                    {...register(`rows.${idx}.treaty_type`)}
+                    className="px-2 py-1 border rounded w-full bg-gray-100 dark:bg-gray-700"
+                    readOnly
+                    disabled
                   />
-                  {errors.rows?.[idx]?.programme && (
-                    <span className="text-red-600 text-xs">{errors.rows[idx].programme.message}</span>
-                  )}
                 </td>
                 <td>
                   <input
@@ -284,7 +289,7 @@ export default function StepEpiSummary() {
         <button
           type="button"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => append({ programme: '', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' })}
+          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' })}
         >
           Add Row
         </button>
