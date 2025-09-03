@@ -171,7 +171,7 @@ export default function StepEpiSummary() {
     if (!rows || rows.length === 0) return;
     let start = 0;
     const first = rows[0] ?? [];
-    if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi', 'currency'])) {
+    if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi'])) {
       start = 1;
     }
     const mapped = rows
@@ -181,9 +181,10 @@ export default function StepEpiSummary() {
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
         epi_value: toNumber((r[3] ?? '').trim()),
-        currency: (r[4] ?? 'USD').trim() || 'USD',
+        // Currency column removed from UI; keep default value for persistence
+        currency: 'USD',
       }))
-      .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value), r.currency].some((v) => (v ?? '').toString().trim() !== ''));
+      .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value)].some((v) => (v ?? '').toString().trim() !== ''));
     setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
@@ -223,7 +224,6 @@ export default function StepEpiSummary() {
               <th className="px-2 py-1">Estimate Type</th>
               <th className="px-2 py-1">Period Label</th>
               <th className="px-2 py-1">EPI Value</th>
-              <th className="px-2 py-1">Currency</th>
               <th className="px-2 py-1">Actions</th>
             </tr>
           </thead>
@@ -264,12 +264,6 @@ export default function StepEpiSummary() {
                   {errors.rows?.[idx]?.epi_value && (
                     <span className="text-red-600 text-xs">{errors.rows[idx].epi_value.message}</span>
                   )}
-                </td>
-                <td>
-                  <input
-                    {...register(`rows.${idx}.currency`)}
-                    className="px-2 py-1 border rounded w-full"
-                  />
                 </td>
                 <td>
                   <button
