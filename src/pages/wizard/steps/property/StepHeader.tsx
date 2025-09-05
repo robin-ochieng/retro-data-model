@@ -220,11 +220,21 @@ const Schema = z.object({
   // Removed per requirements
   inception_date: z.string().min(1, 'Required'),
   expiry_date: z.string().min(1, 'Required'),
-  claims_period: z.string().optional().or(z.literal('')),
+  claims_period_start: z.string().optional().or(z.literal('')),
+  claims_period_end: z.string().optional().or(z.literal('')),
   class_of_business: z.string().optional().or(z.literal('')),
   lines_of_business: z.string().optional().or(z.literal('')),
   treaty_type: z.string().optional().or(z.literal('')),
   additional_comments: z.string().optional().or(z.literal('')),
+}).superRefine((val, ctx) => {
+  // Validate that end >= start when both present
+  if (val.claims_period_start && val.claims_period_end) {
+    const s = new Date(val.claims_period_start);
+    const e = new Date(val.claims_period_end);
+    if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime()) && e < s) {
+      ctx.addIssue({ path: ['claims_period_end'], code: z.ZodIssueCode.custom, message: 'End date must be after start date' });
+    }
+  }
 });
 
 type FormValues = z.infer<typeof Schema>;
@@ -246,6 +256,7 @@ export default function StepHeader() {
 
   const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
+    mode: 'onChange',
     defaultValues: {
       name_of_company: '',
   country: 'Kenya',
@@ -253,7 +264,8 @@ export default function StepHeader() {
   // removed per requirements
       inception_date: '',
       expiry_date: '',
-      claims_period: '',
+  claims_period_start: '',
+  claims_period_end: '',
   class_of_business: '',
   lines_of_business: '',
   treaty_type: 'Quota Share Treaty',
@@ -275,14 +287,60 @@ export default function StepHeader() {
         .maybeSingle();
       if (!mounted) return;
       if (!error && data?.payload) {
-        const payload = data.payload as FormValues;
+        const toISO = (s: string | undefined | null): string => {
+          const v = (s ?? '').trim();
+          if (!v) return '';
+          if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v; // already ISO
+          const m = v.match(/^(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})$/);
+          if (m && m.length >= 4) {
+            const dd = (m[1] ?? '').padStart(2, '0');
+            const mm = (m[2] ?? '').padStart(2, '0');
+            const yyyy = (m[3] ?? '');
+            return `${yyyy}-${mm}-${dd}`;
+          }
+          return v;
+        };
+        const raw = data.payload as any;
+        // Back-compat: derive start/end from legacy claims_period string if needed
+        let cps: string = raw.claims_period_start ?? '';
+        let cpe: string = raw.claims_period_end ?? '';
+    if ((!cps || !cpe) && typeof raw.claims_period === 'string') {
+          const s = String(raw.claims_period);
+          // Accept common separators: "–", "-", "to"
+          const parts = s.split(/\s*(?:–|—|-|to)\s*/i).filter(Boolean);
+          if (parts.length >= 2) {
+      cps = cps || (parts[0] ?? '');
+      cpe = cpe || (parts[1] ?? '');
+          }
+        }
+        const payload: FormValues = {
+          name_of_company: String(raw.name_of_company ?? ''),
+          country: String(raw.country ?? 'Kenya'),
+          currency_std_units: String(raw.currency_std_units ?? 'USD'),
+          inception_date: String(raw.inception_date ?? ''),
+          expiry_date: String(raw.expiry_date ?? ''),
+          claims_period_start: toISO(cps ?? ''),
+          claims_period_end: toISO(cpe ?? ''),
+          class_of_business: String(raw.class_of_business ?? ''),
+          lines_of_business: String(raw.lines_of_business ?? ''),
+          treaty_type: String(raw.treaty_type ?? 'Quota Share Treaty'),
+          additional_comments: String(raw.additional_comments ?? ''),
+        };
         // Ensure a default treaty type if missing in stored payload
         if (!payload.treaty_type || String(payload.treaty_type).trim() === '') {
           payload.treaty_type = 'Quota Share Treaty';
         }
         reset(payload);
         // Prime context for downstream consumers
-        meta.updateFromHeader(payload);
+  meta.updateFromHeader(payload);
+        // Store claims period in meta as well
+        void meta.updateMeta({
+          claims_period_start: payload.claims_period_start,
+          claims_period_end: payload.claims_period_end,
+          claims_period: payload.claims_period_start && payload.claims_period_end
+            ? `${payload.claims_period_start}–${payload.claims_period_end}`
+            : '',
+        });
       }
       setLoading(false);
     })();
@@ -333,6 +391,13 @@ export default function StepHeader() {
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
+    // Validate date range before saving
+    const s = val.claims_period_start ? new Date(val.claims_period_start) : null;
+    const e = val.claims_period_end ? new Date(val.claims_period_end) : null;
+    if (s && e && !Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime()) && e < s) {
+      setError('Claims Period: End date must be after start date');
+      return; // Block save
+    }
     // Upsert by (submission_id, sheet_name) with robust fallback when PK is missing
     const res = await supabase
       .from('sheet_blobs')
@@ -362,6 +427,12 @@ export default function StepHeader() {
     setLastSaved(new Date());
     // Update context to reflect latest treaty type
     meta.updateFromHeader(val);
+    // Mirror claims period into submissions.meta for downstream usage
+    void meta.updateMeta({
+      claims_period_start: val.claims_period_start,
+      claims_period_end: val.claims_period_end,
+      claims_period: val.claims_period_start && val.claims_period_end ? `${val.claims_period_start}–${val.claims_period_end}` : '',
+    });
   });
 
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
@@ -435,8 +506,25 @@ export default function StepHeader() {
         <Field label="Expiry Date" hint="e.g., 31/12/2022" error={errors.expiry_date?.message}>
           <input className={`input ${errors.expiry_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('expiry_date')} />
         </Field>
-        <Field label="Claims Period">
-          <input className="input" placeholder="e.g., 01/01/2022–31/12/2022" {...register('claims_period')} />
+        <Field label="Claims Period" hint="Select a start and end date">
+          <div className="flex gap-2 items-center">
+            <input
+              type="date"
+              className={`input ${errors.claims_period_start ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+              {...register('claims_period_start')}
+            />
+            <span className="text-gray-500">to</span>
+            <input
+              type="date"
+              className={`input ${errors.claims_period_end ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+              {...register('claims_period_end')}
+            />
+          </div>
+          {(errors.claims_period_start || errors.claims_period_end) && (
+            <div className="text-xs text-red-600 mt-1">
+              {errors.claims_period_start?.message || errors.claims_period_end?.message}
+            </div>
+          )}
         </Field>
         <Field label="Class of Business">
       <select

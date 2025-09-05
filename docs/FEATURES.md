@@ -9,7 +9,18 @@
 	- Currency (std. units) dropdown using ISO 4217 codes; default to USD; “Other” free‑text fallback.
 	- Class of Business dropdown with dependent Line(s) of Business; “Other” free‑text fallback; line options auto‑reset on class change.
 	- Treaty Type dropdown with common treaty taxonomies; “Other” free‑text fallback.
+	- Claims Period now uses a date range (Start / End) picker with validation (End must be on/after Start). Legacy single‑string values are parsed and migrated on load.
 	- Inline validation with descriptive error surfacing.
+	- Header autosaves to sheet_blobs('Header') and mirrors key fields (treaty_type, currency_std_units, claims_period_start/end) to submissions.meta for downstream consumers.
+
+- Submission meta & propagation
+	- Centralized, type‑safe SubmissionMeta context (provider + hook) backed by Supabase.
+	- On mount, loads submissions.meta and sheet_blobs('Header'), deriving:
+		- treatyType: from Header payload or submissions.meta
+		- currencyStdUnits: from Header payload or submissions.meta
+	- Exposes: meta, treatyType, currencyStdUnits, lastSavedAt, updateMeta(patch), refresh().
+	- updateMeta merges into submissions.meta and, when patch includes treaty_type or currency_std_units, also syncs sheet_blobs('Header').
+	- Wizard is wrapped with SubmissionMetaProvider so all steps can read current treaty/currency and react to live edits.
 
 - Workflows
 	- Property (tab order)
@@ -19,10 +30,12 @@
 
 - Data persistence and autosave
 	- Supabase‑backed persistence with idempotent upserts to sheet_blobs per step.
-	- Transparent autosave across wizard steps with save‑time indicator.
+	- Transparent autosave across wizard steps with debounced saves and a “Saved hh:mm:ss” indicator per tab.
+	- Array‑backed tables follow a consistent pattern on save: delete by submission_id then bulk insert current rows (chunking supported).
 	- Bulk ingestion via Paste from Excel (TSV/CSV) with header detection, tolerant numeric parsing, and chunked saves for large payloads.
 	- Excel export scaffolding for downstream reporting.
 	- Excel templates available under Resources for standardized inputs.
+	- Resilient upsert: if the database lacks the composite unique/primary key on sheet_blobs, the app falls back to update‑then‑insert to ensure autosave never blocks.
 
 - Security and routing
 	- Authentication via Supabase session; gated access with ProtectedRoute.
@@ -41,6 +54,7 @@
 
 - EPI Summary specifics
 	- Default Treaty Type set on Client Details to “Quota Share Treaty”; propagated read‑only to EPI Summary rows and kept in sync on changes.
+	- Currency for EPI rows is derived from Client Details (currency_std_units) and kept read‑only/synced; legacy rows without treaty_type are handled for backward compatibility.
 	- Removed default “Surplus” row across LoBs; no auto‑seeded rows.
 
 - Large Loss Triangulation (Property)
@@ -63,3 +77,7 @@
 	- Config‑driven, per‑LoB tab registry for extensibility.
 	- Automated documentation generation on pre‑commit.
 	- Git hygiene: ignore Excel lock/temp files to avoid accidental commits.
+
+- Database resiliency & indexes
+	- Migration enforces (or promotes) a composite primary key on sheet_blobs (submission_id, sheet_name) to enable ON CONFLICT upserts reliably.
+	- Functional JSONB indexes added for Header sheet on payload->>'claims_period_start' and payload->>'claims_period_end' to accelerate date‑range queries.

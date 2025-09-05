@@ -21,6 +21,44 @@ create table if not exists public.sheet_blobs (
   primary key (submission_id, sheet_name)
 );
 
+-- Safety net for instances created before this migration where the primary key might be missing
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'sheet_blobs'
+  ) then
+    -- If no primary key exists, create a unique index and promote it to the PK
+    if not exists (
+      select 1
+      from pg_constraint c
+      join pg_class t on t.oid = c.conrelid
+      join pg_namespace n on n.oid = t.relnamespace
+      where c.contype = 'p' and n.nspname = 'public' and t.relname = 'sheet_blobs'
+    ) then
+      -- Unique index (idempotent)
+      if not exists (
+        select 1 from pg_indexes
+        where schemaname = 'public' and indexname = 'uidx_sheet_blobs_submission_sheet'
+      ) then
+        create unique index uidx_sheet_blobs_submission_sheet
+          on public.sheet_blobs (submission_id, sheet_name);
+      end if;
+      -- Promote to primary key if still missing
+      if not exists (
+        select 1
+        from pg_constraint
+        where conname = 'sheet_blobs_pkey' and conrelid = 'public.sheet_blobs'::regclass
+      ) then
+        alter table public.sheet_blobs
+          add constraint sheet_blobs_pkey primary key
+          using index uidx_sheet_blobs_submission_sheet;
+      end if;
+    end if;
+  end if;
+end
+$$;
+
 -- EPI Summary (table-backed rows)
 create table if not exists public.epi_summary (
   id bigserial primary key,
@@ -325,6 +363,14 @@ CREATE POLICY top_risks_owner_all ON public.top_risks FOR ALL
 CREATE INDEX IF NOT EXISTS idx_sheet_blobs_submission ON public.sheet_blobs(submission_id);
 CREATE INDEX IF NOT EXISTS idx_sheet_blobs_sub_sheet ON public.sheet_blobs(submission_id, sheet_name);
 
+-- Optional: indexes to speed up querying Claims Period (split fields) for Header sheet
+CREATE INDEX IF NOT EXISTS idx_sheet_blobs_header_claims_start
+  ON public.sheet_blobs ((payload->>'claims_period_start'))
+  WHERE sheet_name = 'Header';
+CREATE INDEX IF NOT EXISTS idx_sheet_blobs_header_claims_end
+  ON public.sheet_blobs ((payload->>'claims_period_end'))
+  WHERE sheet_name = 'Header';
+
 
 -- RPC: get_submission_package(submission_id)
 create or replace function public.get_submission_package(p_submission_id uuid)
@@ -366,3 +412,4 @@ end;
 $$;
 
 comment on function public.get_submission_package(uuid) is 'Aggregates a full submission (parent row, table-backed children, and sheet_blobs) into one JSON package.';
+
