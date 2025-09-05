@@ -57,8 +57,11 @@ export default function StepRiskProfile() {
         .maybeSingle();
       if (!mounted) return;
       if (data?.payload) {
-        setRows(Array.isArray(data.payload.rows) && data.payload.rows.length ? data.payload.rows : makeDefaultRows());
-        setComments(String(data.payload.comments ?? ''));
+        const payload = (typeof data.payload === 'object' && !Array.isArray(data.payload)) ? (data.payload as any) : null;
+        const pRows = payload?.rows as Row[] | undefined;
+        const pComments = payload?.comments as string | undefined;
+        setRows(Array.isArray(pRows) && pRows.length ? pRows : makeDefaultRows());
+        setComments(String(pComments ?? ''));
       }
     })();
     return () => { mounted = false; };

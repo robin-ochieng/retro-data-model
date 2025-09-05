@@ -106,6 +106,101 @@ create table if not exists public.cat_loss_list (
 );
 create index if not exists idx_cat_loss_list_submission on public.cat_loss_list(submission_id);
 
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'large_loss_triangle_values'
+  ) then
+    -- Ensure expected columns exist
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='large_loss_triangle_values' and column_name='measure'
+    ) then
+      alter table public.large_loss_triangle_values add column measure text;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='large_loss_triangle_values' and column_name='uw_or_acc_year'
+    ) then
+      alter table public.large_loss_triangle_values add column uw_or_acc_year int;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='large_loss_triangle_values' and column_name='development_months'
+    ) then
+      alter table public.large_loss_triangle_values add column development_months int;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='large_loss_triangle_values' and column_name='amount'
+    ) then
+      alter table public.large_loss_triangle_values add column amount numeric;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='large_loss_triangle_values' and column_name='created_at'
+    ) then
+      alter table public.large_loss_triangle_values add column created_at timestamptz not null default now();
+    end if;
+
+    -- Recreate indexes if missing
+    if not exists (
+      select 1 from pg_indexes where schemaname='public' and indexname='idx_large_loss_triangle_values_submission'
+    ) then
+      create index idx_large_loss_triangle_values_submission
+        on public.large_loss_triangle_values(submission_id);
+    end if;
+
+    if not exists (
+      select 1 from pg_indexes where schemaname='public' and indexname='idx_large_loss_triangle_values_comp'
+    ) then
+      create index idx_large_loss_triangle_values_comp
+        on public.large_loss_triangle_values(submission_id, measure, uw_or_acc_year, development_months);
+    end if;
+
+  else
+    -- Fresh install path (if table truly absent)
+    create table public.large_loss_triangle_values (
+      id bigserial primary key,
+      submission_id uuid not null references public.submissions(id) on delete cascade,
+      measure text,
+      uw_or_acc_year int,
+      development_months int,
+      amount numeric,
+      created_at timestamptz not null default now()
+    );
+    create index idx_large_loss_triangle_values_submission on public.large_loss_triangle_values(submission_id);
+    create index idx_large_loss_triangle_values_comp on public.large_loss_triangle_values(submission_id, measure, uw_or_acc_year, development_months);
+  end if;
+end
+$$;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- Large Loss Triangulation (Property) values
 create table if not exists public.large_loss_triangle_values (
   id bigserial primary key,
@@ -161,47 +256,75 @@ alter table public.top_risks enable row level security;
 
 -- Policies
 -- Submissions: owner-only access
-create policy if not exists submissions_owner_select on public.submissions for select using (user_id = auth.uid());
-create policy if not exists submissions_owner_ins on public.submissions for insert with check (user_id = auth.uid());
-create policy if not exists submissions_owner_upd on public.submissions for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy if not exists submissions_owner_del on public.submissions for delete using (user_id = auth.uid());
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS submissions_owner_select ON public.submissions;
+DROP POLICY IF EXISTS submissions_owner_ins ON public.submissions;
+DROP POLICY IF EXISTS submissions_owner_upd ON public.submissions;
+DROP POLICY IF EXISTS submissions_owner_del ON public.submissions;
+
+-- Create policies
+CREATE POLICY submissions_owner_select ON public.submissions 
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY submissions_owner_ins ON public.submissions 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY submissions_owner_upd ON public.submissions 
+  FOR UPDATE USING (user_id = auth.uid()) 
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY submissions_owner_del ON public.submissions 
+  FOR DELETE USING (user_id = auth.uid());
+
 
 -- Child tables: submission must belong to the caller
-create policy if not exists sheet_blobs_owner_all on public.sheet_blobs for all
-  using (exists (select 1 from public.submissions s where s.id = sheet_blobs.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = sheet_blobs.submission_id and s.user_id = auth.uid()));
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS sheet_blobs_owner_all ON public.sheet_blobs;
+DROP POLICY IF EXISTS epi_summary_owner_all ON public.epi_summary;
+DROP POLICY IF EXISTS treaty_stats_prop_owner_all ON public.treaty_stats_prop;
+DROP POLICY IF EXISTS risk_profile_bands_owner_all ON public.risk_profile_bands;
+DROP POLICY IF EXISTS large_loss_list_owner_all ON public.large_loss_list;
+DROP POLICY IF EXISTS cat_loss_list_owner_all ON public.cat_loss_list;
+DROP POLICY IF EXISTS large_loss_triangle_values_owner_all ON public.large_loss_triangle_values;
+DROP POLICY IF EXISTS top_risks_owner_all ON public.top_risks;
 
-create policy if not exists epi_summary_owner_all on public.epi_summary for all
-  using (exists (select 1 from public.submissions s where s.id = epi_summary.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = epi_summary.submission_id and s.user_id = auth.uid()));
+-- Create policies correctly
+CREATE POLICY sheet_blobs_owner_all ON public.sheet_blobs FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = sheet_blobs.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = sheet_blobs.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists treaty_stats_prop_owner_all on public.treaty_stats_prop for all
-  using (exists (select 1 from public.submissions s where s.id = treaty_stats_prop.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = treaty_stats_prop.submission_id and s.user_id = auth.uid()));
+CREATE POLICY epi_summary_owner_all ON public.epi_summary FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = epi_summary.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = epi_summary.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists risk_profile_bands_owner_all on public.risk_profile_bands for all
-  using (exists (select 1 from public.submissions s where s.id = risk_profile_bands.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = risk_profile_bands.submission_id and s.user_id = auth.uid()));
+CREATE POLICY treaty_stats_prop_owner_all ON public.treaty_stats_prop FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = treaty_stats_prop.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = treaty_stats_prop.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists large_loss_list_owner_all on public.large_loss_list for all
-  using (exists (select 1 from public.submissions s where s.id = large_loss_list.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = large_loss_list.submission_id and s.user_id = auth.uid()));
+CREATE POLICY risk_profile_bands_owner_all ON public.risk_profile_bands FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = risk_profile_bands.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = risk_profile_bands.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists cat_loss_list_owner_all on public.cat_loss_list for all
-  using (exists (select 1 from public.submissions s where s.id = cat_loss_list.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = cat_loss_list.submission_id and s.user_id = auth.uid()));
+CREATE POLICY large_loss_list_owner_all ON public.large_loss_list FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = large_loss_list.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = large_loss_list.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists large_loss_triangle_values_owner_all on public.large_loss_triangle_values for all
-  using (exists (select 1 from public.submissions s where s.id = large_loss_triangle_values.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = large_loss_triangle_values.submission_id and s.user_id = auth.uid()));
+CREATE POLICY cat_loss_list_owner_all ON public.cat_loss_list FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = cat_loss_list.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = cat_loss_list.submission_id AND s.user_id = auth.uid()));
 
-create policy if not exists top_risks_owner_all on public.top_risks for all
-  using (exists (select 1 from public.submissions s where s.id = top_risks.submission_id and s.user_id = auth.uid()))
-  with check (exists (select 1 from public.submissions s where s.id = top_risks.submission_id and s.user_id = auth.uid()));
+CREATE POLICY large_loss_triangle_values_owner_all ON public.large_loss_triangle_values FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = large_loss_triangle_values.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = large_loss_triangle_values.submission_id AND s.user_id = auth.uid()));
+
+CREATE POLICY top_risks_owner_all ON public.top_risks FOR ALL
+  USING (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = top_risks.submission_id AND s.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.submissions s WHERE s.id = top_risks.submission_id AND s.user_id = auth.uid()));
 
 -- Helpful indexes for blobs
-create index if not exists idx_sheet_blobs_submission on public.sheet_blobs(submission_id);
-create index if not exists idx_sheet_blobs_sub_sheet on public.sheet_blobs(submission_id, sheet_name);
+CREATE INDEX IF NOT EXISTS idx_sheet_blobs_submission ON public.sheet_blobs(submission_id);
+CREATE INDEX IF NOT EXISTS idx_sheet_blobs_sub_sheet ON public.sheet_blobs(submission_id, sheet_name);
+
 
 -- RPC: get_submission_package(submission_id)
 create or replace function public.get_submission_package(p_submission_id uuid)

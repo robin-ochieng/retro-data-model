@@ -40,8 +40,11 @@ export default function StepNumberOfRisksDevelopment() {
         .maybeSingle();
       if (!mounted) return;
       if (data?.payload) {
-        setRows(data.payload.rows ?? rows);
-        setComments(String(data.payload.comments ?? ''));
+        const payload = (typeof data.payload === 'object' && !Array.isArray(data.payload)) ? (data.payload as any) : null;
+        const pRows = payload?.rows as Row[] | undefined;
+        const pComments = payload?.comments as string | undefined;
+        setRows(Array.isArray(pRows) ? pRows : rows);
+        setComments(String(pComments ?? ''));
       }
     })();
     return () => {

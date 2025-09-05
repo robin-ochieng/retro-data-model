@@ -34,7 +34,7 @@ import CasualtyLargeLossTriangulation from './steps/casualty/StepLargeLossTriang
 import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriangulation';
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
-import { SubmissionMetaProvider } from './SubmissionMetaContext';
+import { SubmissionMetaProvider } from '../../context/SubmissionMeta';
 
 export default function Wizard() {
   return (
@@ -48,6 +48,8 @@ function WizardShell() {
   const { lob, submissionId, '*': rest } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+
+  if (!submissionId) return null;
 
   const normalizedLob = (lob?.toLowerCase() as LobKey) ?? 'property';
   const tabs = useMemo<SheetTab[]>(() => getTabsForLob(normalizedLob), [normalizedLob]);

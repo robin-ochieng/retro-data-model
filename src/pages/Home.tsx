@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
+import type { Tables } from '../types/supabase';
 
 export default function Home() {
   return (
@@ -14,14 +15,7 @@ export default function Home() {
   );
 }
 
-type Submission = {
-  id: string;
-  user_id: string;
-  line_of_business: 'Property' | 'Casualty';
-  status: 'in_progress' | 'submitted' | string;
-  created_at?: string;
-  meta?: { client?: string; year?: string };
-};
+type Submission = Tables<'submissions'>;
 
 function HomeContent() {
   const { user, signOut } = useAuth();
@@ -83,14 +77,12 @@ function HomeContent() {
     try {
       const { data, error } = await supabase
         .from('submissions')
-        .insert([
-          {
-            user_id: user?.id,
-            line_of_business: lineOfBusiness,
-            status: 'in_progress',
-            meta: { client, year },
-          },
-        ])
+        .insert({
+          user_id: user?.id ?? null,
+          line_of_business: lineOfBusiness,
+          status: 'in_progress',
+          meta: { client, year },
+        })
         .select('id')
         .single();
       if (error) throw error;
@@ -246,7 +238,12 @@ function HomeContent() {
                   </span>
                 </div>
                 <div className="font-mono text-xs break-all mb-2 text-gray-600 dark:text-gray-300">{s.id}</div>
-                <div className="text-xs text-gray-500 mb-3">{s.meta?.client ?? '-'} • {s.meta?.year ?? '-'}</div>
+                {(() => {
+                  const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
+                  return (
+                    <div className="text-xs text-gray-500 mb-3">{meta?.client ?? '-'} • {meta?.year ?? '-'}</div>
+                  );
+                })()}
                 <button
                   className="px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-black"
                   onClick={() => {

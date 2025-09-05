@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
-  const { treatyType } = useSubmissionMeta();
+  const { treatyType, currencyStdUnits } = useSubmissionMeta();
   const lobLower = (lob ?? '').toLowerCase();
   // Default rows: no hardcoded treaty; set from meta on load
   const defaultRowsForLob = React.useMemo(
@@ -67,14 +67,14 @@ export default function StepEpiSummary() {
         .from('epi_summary')
         .select('*')
         .eq('submission_id', submissionId);
-      if (!error && data && data.length > 0) {
+    if (!error && data && data.length > 0) {
         const loaded = data.map((row: any) => ({
           treaty_type: (row.treaty_type || row.programme || tt) as string,
           programme: row.programme || tt,
           estimate_type: row.estimate_type,
           period_label: row.period_label,
-          epi_value: row.epi_value,
-          currency: row.currency || 'USD',
+      epi_value: row.epi_value,
+      currency: row.currency || currencyStdUnits || 'USD',
         }));
         // Remove any default/blank 'Surplus' rows that may have been saved previously
         const filtered = loaded.filter((r: any) => {
@@ -82,7 +82,7 @@ export default function StepEpiSummary() {
           const isBlank = ((r.estimate_type ?? '').trim() === '') && ((r.period_label ?? '').trim() === '') && ((Number(r.epi_value) || 0) === 0);
           return !(isSurplus && isBlank);
         });
-  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt }));
+  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt, currency: r.currency || currencyStdUnits || 'USD' }));
         reset({ rows: rowsToUse });
       }
       // Load GWP Split from sheet_blobs
@@ -102,16 +102,17 @@ export default function StepEpiSummary() {
       }
     }
     loadRows();
-  }, [submissionId, reset]);
+  }, [submissionId, reset, currencyStdUnits]);
 
   // Keep treaty columns in sync if treaty type changes later
   useEffect(() => {
     const tt = treatyType || 'Quota Share Treaty';
     const current = watch('rows') ?? [];
     if (current.length === 0) return;
-    const updated = current.map(r => ({ ...r, treaty_type: tt, programme: tt }));
+    const cur = currencyStdUnits || 'USD';
+    const updated = current.map(r => ({ ...r, treaty_type: tt, programme: tt, currency: cur }));
     setValue('rows', updated, { shouldDirty: true, shouldTouch: true });
-  }, [treatyType]);
+  }, [treatyType, currencyStdUnits]);
 
   // Autosave on change
   useAutosave(watch(), async (values) => {
@@ -179,7 +180,7 @@ export default function StepEpiSummary() {
   if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi'])) {
       start = 1;
     }
-    const mapped = rows
+  const mapped = rows
       .slice(start)
       .map((r) => ({
     treaty_type: ((r[0] ?? '').trim()) || treatyType || 'Quota Share Treaty',
@@ -187,11 +188,11 @@ export default function StepEpiSummary() {
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
         epi_value: toNumber((r[3] ?? '').trim()),
-        // Currency column removed from UI; keep default value for persistence
-        currency: 'USD',
+    // Currency column removed from UI; keep value from meta for persistence
+    currency: currencyStdUnits || 'USD',
       }))
       .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value)].some((v) => (v ?? '').toString().trim() !== ''));
-  setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob.map(r => ({ ...r, treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty' })), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob.map(r => ({ ...r, treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', currency: currencyStdUnits || 'USD' })), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   // Apply pasted rows to GWP Split table
@@ -289,7 +290,7 @@ export default function StepEpiSummary() {
         <button
           type="button"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' })}
+          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0, currency: currencyStdUnits || 'USD' })}
         >
           Add Row
         </button>
