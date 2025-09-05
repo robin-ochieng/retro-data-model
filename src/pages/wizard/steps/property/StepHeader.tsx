@@ -333,14 +333,32 @@ export default function StepHeader() {
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
-    // Upsert by (submission_id, sheet_name)
-    const { error } = await supabase
+    // Upsert by (submission_id, sheet_name) with robust fallback when PK is missing
+    const res = await supabase
       .from('sheet_blobs')
       .upsert(
         [{ submission_id: submissionId, sheet_name: SHEET, payload: val }],
         { onConflict: 'submission_id,sheet_name' }
       );
-    if (error) { setError(error.message); return; }
+    if (res.error && /no unique or exclusion constraint/i.test(String(res.error.message))) {
+      // Fallback: try update, then insert if no row exists
+      const upd = await supabase
+        .from('sheet_blobs')
+        .update({ payload: val as any })
+        .eq('submission_id', submissionId)
+        .eq('sheet_name', SHEET)
+        .select('submission_id');
+      if (upd.error) {
+        // If update failed (likely row absent), insert
+        const ins = await supabase
+          .from('sheet_blobs')
+          .insert([{ submission_id: submissionId, sheet_name: SHEET, payload: val as any }]);
+        if (ins.error) { setError(ins.error.message); return; }
+      }
+    } else if (res.error) {
+      setError(res.error.message);
+      return;
+    }
     setLastSaved(new Date());
     // Update context to reflect latest treaty type
     meta.updateFromHeader(val);

@@ -35,7 +35,6 @@ export default function StepLargeLossList() {
   const [additionalComments, setAdditionalComments] = useState<string>('');
   const [optionalCols, setOptionalCols] = useState<{ qs_cession?: boolean; net_of_proportional?: boolean; xol_payment?: boolean }>({});
   const [showPaste, setShowPaste] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -80,9 +79,8 @@ export default function StepLargeLossList() {
         .eq('submission_id', submissionId)
         .eq('sheet_name', 'Large Loss List')
         .maybeSingle();
-      if (!cm.error && cm.data?.payload) {
-        const p = cm.data.payload as any;
-        if (p?.additional_comments) setAdditionalComments(String(p.additional_comments));
+      if (!cm.error && cm.data?.payload?.additional_comments) {
+        setAdditionalComments(String(cm.data.payload.additional_comments));
       }
     })();
     return () => { mounted = false; };
@@ -130,7 +128,6 @@ export default function StepLargeLossList() {
         [{ submission_id: submissionId, sheet_name: 'Large Loss List', payload: { additional_comments: value.additionalComments ?? '' } }],
         { onConflict: 'submission_id,sheet_name' }
       );
-  setLastSaved(new Date());
   });
 
   const columns = useMemo(() => {
@@ -253,10 +250,7 @@ export default function StepLargeLossList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Large Loss List</h2>
-        <span className="text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</span>
-      </div>
+      <h2 className="text-lg font-semibold mb-3">Large Loss List</h2>
       <FormTable<Row>
         columns={columns as any}
         rows={rows}
