@@ -12,6 +12,7 @@ import { SubmissionMetaProvider } from '@/context/SubmissionMeta';
 vi.useFakeTimers();
 
 // Mock Supabase client and behaviors used by StepHeader
+// Mock for alias path used elsewhere
 vi.mock('@/lib/supabase', () => {
   // Minimal chainable mock for .from('sheet_blobs') calls used in Header
   const upsertSpy = vi.fn().mockResolvedValue({ data: null, error: null });
@@ -56,6 +57,71 @@ vi.mock('@/lib/supabase', () => {
     maybeSingle: vi.fn(async () => ({ data: { meta: {} }, error: null })),
   } as any;
 
+  const submissionsUpdateChain = {
+    update: vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) })),
+  } as any;
+
+  return {
+    supabase: {
+      from: (table: string) => {
+        if (table === 'sheet_blobs') return sheetBlobsHandler;
+        if (table === 'submissions') {
+          return {
+            select: submissionsSelectChain.select,
+            eq: submissionsSelectChain.eq,
+            maybeSingle: submissionsSelectChain.maybeSingle,
+            update: submissionsUpdateChain.update,
+          } as any;
+        }
+        return {} as any;
+      },
+    },
+    __mocks: { upsertSpy },
+  };
+});
+
+// Also mock the exact relative specifier used inside StepHeader
+vi.mock('../../../../lib/supabase', () => {
+  const upsertSpy = vi.fn().mockResolvedValue({ data: null, error: null });
+
+  const selectChain = {
+    select: vi.fn(() => selectChain),
+    eq: vi.fn(() => selectChain),
+    maybeSingle: vi.fn(async () => ({
+      data: {
+        payload: {
+          treaty_type: 'Quota Share Treaty',
+          currency_std_units: 'USD',
+        },
+      },
+      error: null,
+    })),
+  } as any;
+
+  const updateChain = {
+    update: vi.fn(() => updateChain),
+    eq: vi.fn(() => updateChain),
+    select: vi.fn(async () => ({ data: [], error: null })),
+  } as any;
+
+  const insertChain = {
+    insert: vi.fn(async () => ({ data: null, error: null })),
+  } as any;
+
+  const sheetBlobsHandler = {
+    select: selectChain.select,
+    eq: selectChain.eq,
+    maybeSingle: selectChain.maybeSingle,
+    upsert: upsertSpy,
+    update: updateChain.update,
+    insert: insertChain.insert,
+  } as any;
+
+  const submissionsSelectChain = {
+    select: vi.fn(() => submissionsSelectChain),
+    eq: vi.fn(() => submissionsSelectChain),
+    maybeSingle: vi.fn(async () => ({ data: { meta: {} }, error: null })),
+  } as any;
   const submissionsUpdateChain = {
     update: vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) })),
   } as any;
