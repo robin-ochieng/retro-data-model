@@ -152,9 +152,9 @@ export default function StepTreatyStatsNonProp() {
           {fa.fields.map((field, idx) => (
             <tr key={field.id}>
               <td><input type="number" step="1" {...register(`${name}.${idx}.treaty_year` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.limit` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.excess` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.gnrpi` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
+              <td><input type="number" step="0.01" {...register(`${name}.${idx}.limit` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
+              <td><input type="number" step="0.01" {...register(`${name}.${idx}.excess` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
+              <td><input type="number" step="0.01" {...register(`${name}.${idx}.gnrpi` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
               <td><input type="number" step="0.01" {...register(`${name}.${idx}.premium_rate` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
               <td><input type="number" step="0.01" {...register(`${name}.${idx}.minimum_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
               <td><input type="number" step="0.01" {...register(`${name}.${idx}.earned_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>

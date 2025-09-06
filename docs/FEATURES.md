@@ -82,3 +82,26 @@
 - Database resiliency & indexes
 	- Migration enforces (or promotes) a composite primary key on sheet_blobs (submission_id, sheet_name) to enable ON CONFLICT upserts reliably.
 	- Functional JSONB indexes added for Header sheet on payload->>'claims_period_start' and payload->>'claims_period_end' to accelerate date‑range queries.
+
+## Testing
+
+We use Vitest + React Testing Library (jsdom) for fast, reliable unit/integration tests.
+
+- Tooling: Vitest, @testing-library/react, @testing-library/user-event, jsdom
+- Current coverage:
+	- Clipboard parser: TSV/CSV with quotes, thousand separators, multi-row paste, and column-mismatch errors.
+	- Header autosave: debounced save after input change with Supabase mocked; stabilized with controlled timers.
+- How to run locally:
+
+	- All tests (headless):
+		- npm test
+	- Watch/UI mode (optional):
+		- npm run test:ui
+
+- Conventions:
+	- Mock Supabase via vi.mock to avoid network calls.
+	- For debounce flows, use real timers for initial effects, then fake timers or plain waitFor as appropriate.
+
+- Next steps (recommended):
+	- Add integration tests for PasteModal across representative tables (EPI, Treaty Stats, Risk Profile) with expected column validation.
+	- Expand clipboard edge cases (escaped quotes, empty trailing cells, mixed delimiters).

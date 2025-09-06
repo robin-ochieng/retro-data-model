@@ -202,11 +202,12 @@ export default function StepEpiSummary() {
   if (maybeHasHeader(first, ['treaty', 'programme', 'estimate', 'period', 'epi'])) {
       start = 1;
     }
+  // Ignore any pasted Treaty/Programme column values; always use current treatyType
   const mapped = rows
       .slice(start)
       .map((r) => ({
-    treaty_type: ((r[0] ?? '').trim()) || treatyType || 'Quota Share Treaty',
-    programme: ((r[0] ?? '').trim()) || treatyType || 'Quota Share Treaty',
+        treaty_type: treatyType || 'Quota Share Treaty',
+        programme: treatyType || 'Quota Share Treaty',
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
         epi_value: toNumber((r[3] ?? '').trim()),
@@ -247,7 +248,12 @@ export default function StepEpiSummary() {
         <table className="min-w-full table-auto border rounded">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
-              <th className="px-2 py-1">Treaty Type</th>
+              <th className="px-2 py-1">
+                <div className="flex items-center gap-1">
+                  <span>Treaty Type</span>
+                  <span className="text-xs text-gray-500" title="Comes from Client Details">(from Client Details)</span>
+                </div>
+              </th>
               <th className="px-2 py-1">Estimate Type</th>
               <th className="px-2 py-1">Period Label</th>
               <th className="px-2 py-1">EPI Value</th>
@@ -263,6 +269,7 @@ export default function StepEpiSummary() {
                     className="px-2 py-1 border rounded w-full bg-gray-100 dark:bg-gray-700"
                     readOnly
                     disabled
+                    aria-label="Treaty Type (from Client Details)"
                   />
                 </td>
                 <td>
