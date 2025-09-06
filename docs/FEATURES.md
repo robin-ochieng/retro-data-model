@@ -29,10 +29,10 @@
 		- Client Details, EPI Summary, Treaty Statistics (Prop), Treaty Statistics (PropCC), Treaty Statistics (Non‑Prop), Rate Development, Rate Development (Motor Specific), Max UW Limit Development, Number of Risks Development, Risk Profile, Top 20 Risks, Motor Fleet List, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, Cresta Zone Control, Submit.
 
 - Data persistence and autosave
-	- Supabase‑backed persistence with idempotent upserts to sheet_blobs per step.
+	- Supabase‑backed persistence to sheet_blobs per step (uses resilient update‑then‑insert where needed).
 	- Transparent autosave across wizard steps with debounced saves and a “Saved hh:mm:ss” indicator per tab.
 	- Array‑backed tables follow a consistent pattern on save: delete by submission_id then bulk insert current rows (chunking supported).
-	- Bulk ingestion via Paste from Excel (TSV/CSV) with header detection, tolerant numeric parsing, and chunked saves for large payloads.
+	- Bulk ingestion via Paste from Excel (TSV/CSV) with header detection, tolerant numeric parsing (thousand separators allowed), column validation, and chunked saves for large payloads.
 	- Excel export scaffolding for downstream reporting.
 	- Excel templates available under Resources for standardized inputs.
 	- Resilient upsert: if the database lacks the composite unique/primary key on sheet_blobs, the app falls back to update‑then‑insert to ensure autosave never blocks.
@@ -44,18 +44,19 @@
 - UI/UX
 	- Responsive, accessible UI with Tailwind CSS and consistent form patterns.
 	- Paste Modal and "Paste from Excel" actions across key tables for high‑volume data entry.
-		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel. Currency column removed in UI; USD persisted internally if required.
+		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel. Currency removed entirely for this tab (no currency stored).
 		- Property: Treaty Statistics (Prop), Treaty Statistics (Non‑Prop), Large Loss List, Cat Loss List, UW Limit, Risk Profile, and Cresta Zone Control support paste from Excel.
 		- Casualty: Treaty Statistics (Prop, PropCC, Non‑Prop), Rate Development (incl. Motor), Max UW Limit Development, Number of Risks Development, Large Loss List, Large Loss Triangulation, Aggregate Triangulation, CAT Loss Triangulation, and Motor Fleet List support paste from Excel.
-		- Header detection and flexible column mapping; numeric parsing tolerant of commas and spaces.
+		- Robust parser with header detection and flexible mapping: prefers tab‑delimited Excel ranges, supports quoted CSV, trims cells, never splits numbers on commas (e.g., "1,200.00" remains one value). Numeric fields strip thousands separators; text fields preserve formatting.
 		- Casualty tabs: Import/Export CSV removed (paste‑only UX retained). Top 20 Risks hides Export in Casualty and enforces exactly 20 rows.
 		- Label consistency: "Year" headers normalized to "UW Year" on Casualty Treaty Statistics (Prop, PropCC).
 		- Motor Specific: standardized "Paste from Excel" button styling.
 
 - EPI Summary specifics
 	- Default Treaty Type set on Client Details to “Quota Share Treaty”; propagated read‑only to EPI Summary rows and kept in sync on changes.
-	- Currency for EPI rows is derived from Client Details (currency_std_units) and kept read‑only/synced; legacy rows without treaty_type are handled for backward compatibility.
-	- Removed default “Surplus” row across LoBs; no auto‑seeded rows.
+	- Currency removed from EPI Summary; no currency field is saved or synced on this tab.
+	- Persistence: rows saved to table `epi_summary`; GWP Split and Additional Comments saved under `sheet_blobs` (sheet_name: "EPI Summary") using update‑then‑insert so autosave never blocks or duplicates.
+	- Autosave flushes on tab switch to capture last‑second edits reliably.
 
 - Large Loss Triangulation (Property)
 	- UI mirrors Casualty: header list (per‑loss metadata) plus a multi‑row development grid with measure selector (Paid / Reserved / Incurred).

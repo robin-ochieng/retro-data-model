@@ -15,7 +15,6 @@ const RowSchema = z.object({
   estimate_type: z.string().min(1, 'Required'),
   period_label: z.string().optional(),
   epi_value: z.number().min(0, 'Must be >= 0'),
-  currency: z.string().default('USD'),
 });
 
 const GwpsSchema = z.object({ section: z.string().min(1, 'Required'), premium: z.number().nonnegative() });
@@ -29,12 +28,12 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
-  const { treatyType, currencyStdUnits } = useSubmissionMeta();
+  const { treatyType } = useSubmissionMeta();
   const lobLower = (lob ?? '').toLowerCase();
   // Default rows: no hardcoded treaty; set from meta on load
   const defaultRowsForLob = React.useMemo(
     () => [
-      { treaty_type: '', programme: '', estimate_type: '', period_label: '', epi_value: 0, currency: 'USD' },
+      { treaty_type: '', programme: '', estimate_type: '', period_label: '', epi_value: 0 },
     ],
     [lobLower]
   );
@@ -73,8 +72,7 @@ export default function StepEpiSummary() {
           programme: row.programme || tt,
           estimate_type: row.estimate_type,
           period_label: row.period_label,
-      epi_value: row.epi_value,
-      currency: row.currency || currencyStdUnits || 'USD',
+    epi_value: row.epi_value,
         }));
         // Remove any default/blank 'Surplus' rows that may have been saved previously
         const filtered = loaded.filter((r: any) => {
@@ -82,18 +80,28 @@ export default function StepEpiSummary() {
           const isBlank = ((r.estimate_type ?? '').trim() === '') && ((r.period_label ?? '').trim() === '') && ((Number(r.epi_value) || 0) === 0);
           return !(isSurplus && isBlank);
         });
-  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt, currency: r.currency || currencyStdUnits || 'USD' }));
+  const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt }));
         reset({ rows: rowsToUse });
       }
       // Load GWP Split from sheet_blobs
-      const gwp = await supabase
+      let latest: any = await supabase
         .from('sheet_blobs')
-        .select('payload')
+        .select('payload, updated_at')
         .eq('submission_id', submissionId)
         .eq('sheet_name', 'EPI Summary')
-        .maybeSingle();
-      if (!gwp.error && gwp.data?.payload) {
-        const payload = gwp.data.payload as any;
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(1);
+      // If the backend/client schema cache doesn't know about updated_at, fall back to a simple select
+      if (latest.error && /updated_at/i.test(String(latest.error.message))) {
+        latest = await supabase
+          .from('sheet_blobs')
+          .select('payload')
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', 'EPI Summary')
+          .limit(1);
+      }
+      if (!latest.error && Array.isArray(latest.data) && latest.data[0]?.payload) {
+        const payload = latest.data[0].payload as any;
         reset(curr => ({
           ...curr,
           gwp_split: payload.gwp_split ?? [],
@@ -102,17 +110,16 @@ export default function StepEpiSummary() {
       }
     }
     loadRows();
-  }, [submissionId, reset, currencyStdUnits]);
+  }, [submissionId, reset]);
 
   // Keep treaty columns in sync if treaty type changes later
   useEffect(() => {
     const tt = treatyType || 'Quota Share Treaty';
     const current = watch('rows') ?? [];
     if (current.length === 0) return;
-    const cur = currencyStdUnits || 'USD';
-    const updated = current.map(r => ({ ...r, treaty_type: tt, programme: tt, currency: cur }));
+    const updated = current.map(r => ({ ...r, treaty_type: tt, programme: tt }));
     setValue('rows', updated, { shouldDirty: true, shouldTouch: true });
-  }, [treatyType, currencyStdUnits]);
+  }, [treatyType]);
 
   // Autosave on change
   useAutosave(watch(), async (values) => {
@@ -131,9 +138,15 @@ export default function StepEpiSummary() {
       let ins = await supabase.from('epi_summary').insert(payloadRows);
       if (ins.error) {
         const msg = String(ins.error.message || '').toLowerCase();
-        if (msg.includes('column') && msg.includes('treaty_type')) {
-          // Retry without treaty_type for backward compatibility
-          const fallback = payloadRows.map(({ treaty_type, ...rest }) => rest);
+        // Back-compat: drop fields that might not exist yet in older schemas
+        const dropIfMissing: Array<keyof typeof payloadRows[number]> = [] as any;
+        if (msg.includes('column') && msg.includes('treaty_type')) dropIfMissing.push('treaty_type');
+        if (dropIfMissing.length > 0) {
+          const fallback = payloadRows.map((row) => {
+            const copy: any = { ...row };
+            dropIfMissing.forEach((k) => { delete copy[k as any]; });
+            return copy;
+          });
           ins = await supabase.from('epi_summary').insert(fallback);
           if (ins.error) { setSaveError(ins.error.message); return; }
         } else {
@@ -145,13 +158,22 @@ export default function StepEpiSummary() {
     // Save GWP Split to sheet_blobs
     const gwp = values.gwp_split ?? [];
     const additional_comments = values.additional_comments ?? '';
-    const up = await supabase
+    // Update-then-insert to avoid a gap where no row exists; bump updated_at so latest loads deterministically
+  const updBlob = await supabase
       .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
-    if (up.error) { setSaveError(up.error.message); return; }
+      .update({
+    payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } as any,
+      })
+      .eq('submission_id', submissionId)
+      .eq('sheet_name', 'EPI Summary')
+      .select('submission_id');
+    const noneUpdated = !!updBlob && Array.isArray((updBlob as any).data) && ((updBlob as any).data?.length ?? 0) === 0;
+    if (updBlob.error || noneUpdated) {
+      const insBlob = await supabase
+        .from('sheet_blobs')
+        .insert([{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } as any }]);
+      if (insBlob.error) { setSaveError(insBlob.error.message); return; }
+    }
     setLastSaved(new Date());
   });
 
@@ -188,11 +210,9 @@ export default function StepEpiSummary() {
         estimate_type: (r[1] ?? '').trim(),
         period_label: (r[2] ?? '').trim(),
         epi_value: toNumber((r[3] ?? '').trim()),
-    // Currency column removed from UI; keep value from meta for persistence
-    currency: currencyStdUnits || 'USD',
       }))
       .filter((r) => [r.programme, r.estimate_type, r.period_label, String(r.epi_value)].some((v) => (v ?? '').toString().trim() !== ''));
-  setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob.map(r => ({ ...r, treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', currency: currencyStdUnits || 'USD' })), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+  setValue('rows', mapped.length > 0 ? mapped : defaultRowsForLob.map(r => ({ ...r, treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty' })), { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   // Apply pasted rows to GWP Split table
@@ -290,7 +310,7 @@ export default function StepEpiSummary() {
         <button
           type="button"
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0, currency: currencyStdUnits || 'USD' })}
+          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0 })}
         >
           Add Row
         </button>
@@ -371,13 +391,15 @@ export default function StepEpiSummary() {
       <PasteModal
         open={pasteEpiOpen}
         onClose={() => setPasteEpiOpen(false)}
-        onApply={applyEpiPaste}
+  onApply={applyEpiPaste}
+  expectedColumns={4}
         title="Paste from Excel — Premium Summary (EPI)"
       />
       <PasteModal
         open={pasteGwpOpen}
         onClose={() => setPasteGwpOpen(false)}
-        onApply={applyGwpPaste}
+  onApply={applyGwpPaste}
+  expectedColumns={2}
         title="Paste from Excel — GWP Split"
       />
     </form>

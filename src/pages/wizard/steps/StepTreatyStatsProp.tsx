@@ -63,14 +63,23 @@ export default function StepTreatyStatsProp() {
           loss_ratio: Number(d.loss_ratio) || 0,
           uw_profit: Number(d.uw_profit) || 0,
         } as Row));
-        // Load any comments from sheet_blobs
-        const cm = await supabase
+        // Load any comments from sheet_blobs with fallback in case of duplicates
+        let cm: any = await supabase
           .from('sheet_blobs')
           .select('payload')
           .eq('submission_id', submissionId)
           .eq('sheet_name', 'Treaty Statistics_Prop')
           .maybeSingle();
-        reset({ rows: mapped, additional_comments: (!cm.error && cm.data?.payload?.additional_comments) ? String(cm.data.payload.additional_comments) : '' });
+        if (cm.error || !cm.data?.payload) {
+          cm = await supabase
+            .from('sheet_blobs')
+            .select('payload')
+            .eq('submission_id', submissionId)
+            .eq('sheet_name', 'Treaty Statistics_Prop')
+            .limit(1);
+        }
+        const cmPayload = (!cm.error && (cm.data?.payload || (Array.isArray(cm.data) && cm.data[0]?.payload))) ? (cm.data.payload ?? cm.data[0]?.payload) : undefined;
+        reset({ rows: mapped, additional_comments: cmPayload?.additional_comments ? String(cmPayload.additional_comments) : '' });
       }
     })();
     return () => { mounted = false; };
@@ -88,14 +97,20 @@ export default function StepTreatyStatsProp() {
         .from('treaty_stats_prop')
         .insert(value.map((v: any) => ({ ...v, submission_id: submissionId })));
     }
-    // Save comments to sheet_blobs
+    // Save comments to sheet_blobs (update-then-insert fallback)
     const additional_comments = formVal.additional_comments ?? '';
-    await supabase
+    const upd = await supabase
       .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Prop', payload: { additional_comments } }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
+      .update({ payload: { additional_comments } as any })
+      .eq('submission_id', submissionId)
+      .eq('sheet_name', 'Treaty Statistics_Prop')
+      .select('submission_id');
+    const zeroUpd = Array.isArray((upd as any).data) && ((upd as any).data?.length ?? 0) === 0;
+    if (upd.error || zeroUpd) {
+      await supabase
+        .from('sheet_blobs')
+        .insert([{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Prop', payload: { additional_comments } as any }]);
+    }
     setLastSaved(new Date());
   }, 900);
 
@@ -231,7 +246,8 @@ export default function StepTreatyStatsProp() {
       <PasteModal
         open={pasteOpen}
         onClose={() => setPasteOpen(false)}
-        onApply={applyPaste}
+  onApply={applyPaste}
+  expectedColumns={12}
         title="Paste from Excel — Treaty Statistics (Prop)"
       />
     </div>

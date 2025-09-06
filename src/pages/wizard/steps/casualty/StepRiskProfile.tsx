@@ -178,7 +178,7 @@ export default function StepRiskProfile() {
           onChange={onChange}
           onPaste={() => setShowPaste(true)}
         />
-        <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Risk Profile" />
+  <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} expectedColumns={10} title="Paste Risk Profile" />
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
           <div>Total GWP: <span className="font-medium">{totals.gross_written_premium.toLocaleString()}</span></div>
           <div>Total Risks: <span className="font-medium">{totals.number_of_risks.toLocaleString()}</span></div>

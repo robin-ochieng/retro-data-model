@@ -158,7 +158,7 @@ export default function StepTreatyStatsPropCC() {
           <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
         </label>
       </div>
-  <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={applyPaste} title="Paste from Excel — Treaty Statistics (PropCC)" />
+  <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={applyPaste} expectedColumns={11} title="Paste from Excel — Treaty Statistics (PropCC)" />
     </div>
   );
 }

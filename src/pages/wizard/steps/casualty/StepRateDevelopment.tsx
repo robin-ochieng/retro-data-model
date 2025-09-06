@@ -39,9 +39,10 @@ export default function StepRateDevelopment() {
         .eq('sheet_name', SHEET)
         .maybeSingle();
       if (!mounted) return;
-      if (data?.payload) {
-        setRows(data.payload.rows ?? rows);
-        setComments(String(data.payload.comments ?? ''));
+      const payload = (data as any)?.payload as { rows?: Row[]; comments?: string } | undefined;
+      if (payload) {
+        setRows(Array.isArray(payload.rows) && payload.rows.length ? payload.rows : rows);
+        setComments(String(payload.comments ?? ''));
       }
     })();
     return () => {
@@ -100,7 +101,7 @@ export default function StepRateDevelopment() {
           onChange={onChange}
           onPaste={() => setShowPaste(true)}
         />
-        <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Rate Development" />
+  <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} expectedColumns={1 + yearCols.length} title="Paste Rate Development" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <label className="block">

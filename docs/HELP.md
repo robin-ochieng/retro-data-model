@@ -78,12 +78,13 @@ Welcome to Retrocession Hub. This application streamlines collection of client a
   1) Click “Paste from Excel”.
   2) In Excel, select the range (headers optional) and copy.
   3) Paste into the modal textarea.
-  4) Review the preview; ensure headers/columns align. Numbers can include commas/spaces.
+  4) Review the preview; ensure headers/columns align. Numbers may include commas as thousand separators and decimals. The parser never splits numbers like “1,200.00”.
   5) Confirm to import; data fills the table and autosaves shortly after.
 - Large pastes are saved in chunks; if you hit limits, paste smaller batches.
 - Casualty tabs: Import/Export CSV is removed; use Paste from Excel.
 - Top 20 Risks: exactly 20 rows are kept. Pasting more than 20 rows will ignore extras; Export is hidden under Casualty.
 - EPI Summary: Currency column is removed in UI; USD is assumed internally for compatibility.
+ - If the columns don’t match the expected count for that table, you’ll see a clear error and the Apply button will be disabled until the selection matches. Adjust your Excel range (e.g., remove extra blank columns) and paste again.
 
 ### EPI Summary specifics
 - Treaty Type is read‑only and comes from Client Details; changes there update rows automatically.

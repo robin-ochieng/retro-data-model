@@ -163,7 +163,7 @@ export default function StepMotorFleetList() {
           <div>Premium Net: {totals.prem_net.toLocaleString()}</div>
         </div>
   {/* CSV import removed */}
-        <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} title="Paste Motor Fleet List" />
+  <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyGrid} expectedColumns={12} title="Paste Motor Fleet List" />
       </div>
 
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">

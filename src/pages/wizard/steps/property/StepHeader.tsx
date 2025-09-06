@@ -388,6 +388,7 @@ export default function StepHeader() {
     ? (values.lines_of_business ?? '')
     : (values.lines_of_business ? OTHER : ''));
   const treatySelectValue = treatyIsOther ? OTHER : (TREATY_TYPES.includes(values.treaty_type ?? '') ? (values.treaty_type ?? '') : (values.treaty_type ? OTHER : ''));
+  // Disable autosave until initial load completes to avoid spurious saves and test flakiness
   useAutosave(values, async (val) => {
     if (!submissionId) return;
     setError(null);
@@ -433,7 +434,7 @@ export default function StepHeader() {
       claims_period_end: val.claims_period_end,
       claims_period: val.claims_period_start && val.claims_period_end ? `${val.claims_period_start}–${val.claims_period_end}` : '',
     });
-  });
+  }, 900, !loading);
 
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
 

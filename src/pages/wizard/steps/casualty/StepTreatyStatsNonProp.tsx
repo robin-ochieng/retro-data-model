@@ -57,12 +57,22 @@ export default function StepTreatyStatsNonPropCasualty() {
     let mounted = true;
     (async () => {
       if (!submissionId) return;
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('sheet_blobs')
         .select('payload')
         .eq('submission_id', submissionId)
         .eq('sheet_name', 'Treaty Statistics_Non-Prop')
         .maybeSingle();
+      if (error || !data?.payload) {
+        const alt = await supabase
+          .from('sheet_blobs')
+          .select('payload')
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', 'Treaty Statistics_Non-Prop')
+          .limit(1);
+        data = (alt as any).data?.[0];
+        error = (alt as any).error;
+      }
       if (!mounted) return;
       if (!error && data?.payload) reset(data.payload as FormValues);
     })();
@@ -71,13 +81,19 @@ export default function StepTreatyStatsNonPropCasualty() {
 
   useAutosave(watch(), async (val) => {
     if (!submissionId) return;
-    const up = await supabase
+    const upd = await supabase
       .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Non-Prop', payload: val }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
-    if (!up.error) setLastSaved(new Date());
+      .update({ payload: val as any })
+      .eq('submission_id', submissionId)
+      .eq('sheet_name', 'Treaty Statistics_Non-Prop')
+      .select('submission_id');
+    const zeroUpd = Array.isArray((upd as any).data) && ((upd as any).data?.length ?? 0) === 0;
+    if (upd.error || zeroUpd) {
+      await supabase
+        .from('sheet_blobs')
+        .insert([{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Non-Prop', payload: val as any }]);
+    }
+    setLastSaved(new Date());
   });
 
   // Paste helpers and mapping
@@ -166,7 +182,7 @@ export default function StepTreatyStatsNonPropCasualty() {
           <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
         </label>
       </div>
-  <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={applyPaste} title="Paste from Excel — Treaty Statistics (Non-Prop)" />
+  <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={applyPaste} expectedColumns={13} title="Paste from Excel — Treaty Statistics (Non-Prop)" />
     </div>
   );
 }

@@ -1,23 +1,18 @@
 import React, { useMemo, useState } from 'react';
+import { parseClipboardGrid } from '../utils/clipboard';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onApply: (rows: string[][]) => void;
   title?: string;
+  expectedColumns?: number; // optional schema check
 };
 
-export default function PasteModal({ open, onClose, onApply, title }: Props) {
+export default function PasteModal({ open, onClose, onApply, title, expectedColumns }: Props) {
   const [text, setText] = useState('');
-
-  const rows = useMemo(() => {
-    return text
-      .trim()
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .map((line) => line.split(/\t|,/) // TSV or CSV
-      );
-  }, [text]);
+  const parsed = useMemo(() => parseClipboardGrid(text, { expectedColumns }), [text, expectedColumns]);
+  const rows = parsed.rows;
 
   if (!open) return null;
   return (
@@ -34,6 +29,11 @@ export default function PasteModal({ open, onClose, onApply, title }: Props) {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
+        {parsed.error && (
+          <div className="mb-2 text-sm text-red-600">
+            {parsed.error}
+          </div>
+        )}
         <div className="overflow-auto max-h-64 border rounded">
           <table className="min-w-full table-auto">
             <tbody>
@@ -49,7 +49,13 @@ export default function PasteModal({ open, onClose, onApply, title }: Props) {
         </div>
         <div className="mt-3 flex justify-end gap-2">
           <button className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={onClose}>Cancel</button>
-          <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => { onApply(rows); onClose(); }}>Apply</button>
+          <button
+            className="px-3 py-1 rounded bg-blue-600 text-white disabled:opacity-50"
+            disabled={!!parsed.error}
+            onClick={() => { onApply(rows); onClose(); }}
+          >
+            Apply
+          </button>
         </div>
       </div>
     </div>

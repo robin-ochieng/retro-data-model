@@ -47,10 +47,11 @@ export default function StepRateDevelopmentMotor() {
         .eq('sheet_name', SHEET)
         .maybeSingle();
       if (!mounted) return;
-      if (data?.payload) {
-        setTopRows(data.payload.topRows ?? topRows);
-        setMotorRows(data.payload.motorRows ?? motorRows);
-        setComments(String(data.payload.comments ?? ''));
+      const payload = (data as any)?.payload as { topRows?: Row[]; motorRows?: Row[]; comments?: string } | undefined;
+      if (payload) {
+        setTopRows(Array.isArray(payload.topRows) && payload.topRows.length ? payload.topRows : topRows);
+        setMotorRows(Array.isArray(payload.motorRows) && payload.motorRows.length ? payload.motorRows : motorRows);
+        setComments(String(payload.comments ?? ''));
       }
     })();
     return () => {
@@ -135,7 +136,7 @@ export default function StepRateDevelopmentMotor() {
           onChange={onChangeTop}
           onPaste={() => setShowPasteTop(true)}
         />
-        <PasteModal open={showPasteTop} onClose={() => setShowPasteTop(false)} onApply={applyTop} title="Paste Rate Development" />
+  <PasteModal open={showPasteTop} onClose={() => setShowPasteTop(false)} onApply={applyTop} expectedColumns={1 + yearCols.length} title="Paste Rate Development" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-3">Motor Specific Information</h3>
@@ -145,7 +146,7 @@ export default function StepRateDevelopmentMotor() {
           onChange={onChangeMotor}
           onPaste={() => setShowPasteMotor(true)}
         />
-        <PasteModal open={showPasteMotor} onClose={() => setShowPasteMotor(false)} onApply={applyMotor} title="Paste Motor Specific" />
+  <PasteModal open={showPasteMotor} onClose={() => setShowPasteMotor(false)} onApply={applyMotor} expectedColumns={1 + yearCols.length} title="Paste Motor Specific" />
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <label className="block">

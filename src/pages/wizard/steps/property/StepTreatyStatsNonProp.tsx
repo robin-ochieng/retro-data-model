@@ -81,13 +81,19 @@ export default function StepTreatyStatsNonProp() {
 
   useAutosave(watch(), async (val) => {
     if (!submissionId) return;
-    const up = await supabase
+    const upd = await supabase
       .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Non-Prop', payload: val }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
-    if (!up.error) setLastSaved(new Date());
+      .update({ payload: val as any })
+      .eq('submission_id', submissionId)
+      .eq('sheet_name', 'Treaty Statistics_Non-Prop')
+      .select('submission_id');
+    const zeroUpd = Array.isArray((upd as any).data) && ((upd as any).data?.length ?? 0) === 0;
+    if (upd.error || zeroUpd) {
+      await supabase
+        .from('sheet_blobs')
+        .insert([{ submission_id: submissionId, sheet_name: 'Treaty Statistics_Non-Prop', payload: val as any }]);
+    }
+    setLastSaved(new Date());
   });
 
   // Paste helpers
@@ -185,7 +191,8 @@ export default function StepTreatyStatsNonProp() {
       <PasteModal
         open={pasteSection !== null}
         onClose={() => setPasteSection(null)}
-        onApply={(grid) => { if (pasteSection) applyPaste(pasteSection, grid); setPasteSection(null); }}
+  onApply={(grid) => { if (pasteSection) applyPaste(pasteSection, grid); setPasteSection(null); }}
+  expectedColumns={12}
         title="Paste from Excel — Treaty Statistics (Non-Prop)"
       />
     </div>
