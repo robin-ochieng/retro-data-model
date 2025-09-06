@@ -61,13 +61,6 @@ export default function Login() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Logo />
           <div className="flex items-center gap-4">
-            <a
-              href="/help"
-              className="text-sm text-blue-700 dark:text-blue-400 hover:underline"
-              title="Help & User Guide"
-            >
-              Help
-            </a>
             <ThemeToggle />
           </div>
         </div>
