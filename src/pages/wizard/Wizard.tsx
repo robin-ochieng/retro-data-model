@@ -37,6 +37,7 @@ import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriang
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
 import { SubmissionMetaProvider } from '../../context/SubmissionMeta';
+import { TAB_ICONS } from '../../components/icons/TabIcons';
 
 export default function Wizard() {
   return (
@@ -136,14 +137,28 @@ function WizardShell() {
                 key={t.key}
         to={`${basePath}/${t.key}`}
                 className={({ isActive }) =>
-                  `px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap mr-1 md:mr-0 block ${
+                  `group px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap mr-1 md:mr-0 block ${
                     isActive
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`
                 }
               >
-                {t.label}
+                {({ isActive }) => {
+                  const Icon = TAB_ICONS[t.key];
+                  return (
+                    <span className="inline-flex items-center gap-2">
+                      {Icon ? (
+                        <Icon
+                          className={`h-4 w-4 text-muted-foreground group-hover:text-foreground ${isActive ? 'text-primary' : ''}`}
+                          aria-hidden="true"
+                          focusable="false"
+                        />
+                      ) : null}
+                      <span>{t.label}</span>
+                    </span>
+                  );
+                }}
               </NavLink>
             ))}
           </nav>
