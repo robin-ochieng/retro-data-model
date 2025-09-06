@@ -80,7 +80,7 @@ export default function Login() {
             className="bg-white dark:bg-gray-800 p-8 rounded shadow w-full max-w-md"
             onSubmit={handleSubmit}
           >
-            <div className="flex justify-center mb-4"><Logo /></div>
+            <div className="flex justify-center mb-4"><Logo className="mx-auto h-8 md:h-10" /></div>
             <h1 className="text-2xl font-bold mb-6 text-center">{mode === 'signup' ? 'Create your account' : 'Sign in'}</h1>
 
             {mode === 'signup' && (
