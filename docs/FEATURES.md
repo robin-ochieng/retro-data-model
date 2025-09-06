@@ -52,6 +52,14 @@
 		- Label consistency: "Year" headers normalized to "UW Year" on Casualty Treaty Statistics (Prop, PropCC).
 		- Motor Specific: standardized "Paste from Excel" button styling.
 
+- Theming
+	- Light/Dark/System modes powered by Tailwind CSS variables (HSL tokens) defined in `src/index.css` and mapped in `tailwind.config.js`.
+	- Respects system preference via `prefers-color-scheme`; in System mode, changes to the OS theme reflect immediately.
+	- Persists per user to `profiles.theme` in Supabase; falls back to `localStorage` when signed out.
+	- Accessible three-option toggle placed in app headers (Login, Home, Wizard) for quick switching.
+	- Implementation: `src/theme/ThemeProvider.tsx` (applies `html.dark` and `data-theme`), `src/components/ThemeToggle.tsx`.
+	- Recommended utility classes: `bg-background`, `text-foreground`, `border-border`, `bg-primary`, `text-primary-foreground`.
+
 - EPI Summary specifics
 	- Default Treaty Type set on Client Details to “Quota Share Treaty”; propagated read‑only to EPI Summary rows and kept in sync on changes.
 	- Currency removed from EPI Summary; no currency field is saved or synced on this tab.

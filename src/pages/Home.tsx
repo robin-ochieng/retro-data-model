@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthContext';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 import type { Tables } from '../types/supabase';
 
@@ -28,6 +29,13 @@ function HomeContent() {
     (user?.user_metadata as any)?.full_name ?? null
   );
   const navigate = useNavigate();
+
+  const fullName = displayName ?? user?.email ?? '';
+  const firstName = React.useMemo(() => {
+    if (!fullName) return '';
+    const namePart = fullName.includes('@') ? (fullName.split('@')[0] ?? '') : fullName;
+    return (namePart || '').split(/\s+/)[0] ?? '';
+  }, [fullName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,8 +133,10 @@ function HomeContent() {
             >
               Help
             </a>
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
-              {`Welcome, ${displayName ?? user?.email ?? ''}`}
+            <ThemeToggle />
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300" title={fullName}>
+              <span className="sm:hidden">{firstName}</span>
+              <span className="hidden sm:inline">{`Welcome, ${fullName}`}</span>
             </span>
             <button
               className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"

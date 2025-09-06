@@ -4,6 +4,8 @@ import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import StepIntro from './steps/StepIntro';
 import StepEpiSummary from './steps/StepEpiSummary';
 import Logo from '../../components/Logo';
+import ThemeToggle from '../../components/ThemeToggle';
+import { useAuth } from '../../auth/AuthContext';
 import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, propertyTabs, SheetTab } from '../../config/lobConfig';
 import StepTreatyStatsProp from './steps/StepTreatyStatsProp';
 import StepLargeLossList from './steps/StepLargeLossList';
@@ -48,6 +50,7 @@ function WizardShell() {
   const { lob, submissionId, '*': rest } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   if (!submissionId) return null;
 
@@ -100,12 +103,26 @@ function WizardShell() {
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Logo />
-          <div className="text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium capitalize">{normalizedLob}</span>
-            <span className="mx-2">•</span>
-            <span className="font-mono">{submissionId}</span>
-            <span className="mx-2">•</span>
-            <span className="rounded px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs">In Progress</span>
+          <div className="flex items-center gap-4">
+            <a href="/help" className="text-sm text-blue-700 dark:text-blue-400 hover:underline">Help</a>
+            <ThemeToggle />
+            <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+              <span className="font-medium capitalize">{normalizedLob}</span>
+              <span className="mx-2">•</span>
+              <span className="font-mono">{submissionId}</span>
+              <span className="mx-2">•</span>
+              <span className="rounded px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs">In Progress</span>
+            </div>
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300" title={user?.email ?? ''}>
+              <span className="sm:hidden">{(user?.user_metadata as any)?.full_name?.split?.(/\s+/)?.[0] ?? (user?.email?.split?.('@')?.[0] ?? '')}</span>
+              <span className="hidden sm:inline">{`Welcome, ${(user?.user_metadata as any)?.full_name ?? user?.email ?? ''}`}</span>
+            </span>
+            <button
+              className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </header>

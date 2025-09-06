@@ -7,10 +7,14 @@ export default function Logo({ className = '' }: LogoProps) {
   return (
     <Link
       to="/"
-      className={`inline-flex items-center font-bold text-xl tracking-tight text-blue-700 dark:text-blue-400 ${className}`}
-      aria-label="Kenbright Re Home"
+      className={`inline-flex items-center ${className}`}
+      aria-label="Retrocession Hub Home"
     >
-      Kenbright Re
+      <img
+        src="/Retrocession%20Hub%20Logo.png"
+        alt="Retrocession Hub"
+        className="h-10 md:h-12 w-auto"
+      />
     </Link>
   );
 }

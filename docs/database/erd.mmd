@@ -1,0 +1,138 @@
+erDiagram
+  submissions {
+    uuid id PK
+    uuid user_id
+    text line_of_business "check in ('property','casualty')"
+    text status "default 'in-progress'"
+    jsonb meta
+    timestamptz created_at "default now()"
+    timestamptz submitted_at
+  }
+
+  sheet_blobs {
+    uuid submission_id FK
+    text sheet_name
+    jsonb payload "default '{}'::jsonb"
+    timestamptz updated_at "default now()"
+    PK "(submission_id, sheet_name)"
+  }
+
+  epi_summary {
+    bigserial id PK
+    uuid submission_id FK
+    text treaty_type "default 'Quota Share Treaty'"
+    text programme
+    text estimate_type
+    text period_label
+    numeric epi_value
+    text currency
+    timestamptz created_at "default now()"
+  }
+
+  treaty_stats_prop {
+    bigserial id PK
+    uuid submission_id FK
+    int uw_year
+    numeric written_premium
+    numeric earned_premium
+    numeric commission_amount
+    numeric commission_pct
+    numeric profit_commission
+    numeric total_commission
+    numeric paid_losses
+    numeric os_losses
+    numeric incurred_losses
+    numeric loss_ratio
+    numeric uw_profit
+    timestamptz created_at "default now()"
+    UNIQUE "(submission_id, uw_year)"
+  }
+
+  risk_profile_bands {
+    bigserial id PK
+    uuid submission_id FK
+    text segment "check in ('gross','net')"
+    text band_label
+    numeric exposure
+    numeric premium
+    numeric claims
+    numeric frequency
+    numeric severity
+    timestamptz created_at "default now()"
+  }
+
+  large_loss_list {
+    bigserial id PK
+    uuid submission_id FK
+    text loss_date
+    int uw_year
+    text insured
+    text cause_of_loss
+    numeric gross_sum_insured
+    numeric gross_incurred
+    numeric paid_to_date
+    numeric gross_outstanding
+    text currency
+    text notes
+    timestamptz created_at "default now()"
+  }
+
+  cat_loss_list {
+    bigserial id PK
+    uuid submission_id FK
+    text event_date
+    text event_name
+    int uw_year
+    numeric gross_incurred
+    numeric paid_to_date
+    numeric gross_outstanding
+    text currency
+    text notes
+    timestamptz created_at "default now()"
+  }
+
+  large_loss_triangle_values {
+    bigserial id PK
+    uuid submission_id FK
+    text measure
+    int uw_or_acc_year
+    int development_months
+    numeric amount
+    timestamptz created_at "default now()"
+  }
+
+  top_risks {
+    bigserial id PK
+    uuid submission_id FK
+    int rank
+    text insured
+    text class_of_business
+    text occupation
+    numeric gross_sum_insured
+    numeric fac_sum_insured
+    numeric surplus_sum_insured
+    numeric quota_share_sum_insured
+    numeric net_sum_insured
+    numeric gross_premium
+    numeric fac_premium
+    numeric surplus_premium
+    timestamptz created_at "default now()"
+    UNIQUE "(submission_id, rank)"
+  }
+
+  profiles {
+    uuid id PK "references auth.users(id)"
+    text full_name
+    timestamptz created_at "default now()"
+    timestamptz updated_at "default now()"
+    text theme "default 'system'" "(added by 20250907_001_add_theme_to_profiles.sql)"
+  }
+
+  epi_summary }o--|| submissions : "submission_id -> id"
+  treaty_stats_prop }o--|| submissions : "submission_id -> id"
+  risk_profile_bands }o--|| submissions : "submission_id -> id"
+  large_loss_list }o--|| submissions : "submission_id -> id"
+  cat_loss_list }o--|| submissions : "submission_id -> id"
+  large_loss_triangle_values }o--|| submissions : "submission_id -> id"
+  top_risks }o--|| submissions : "submission_id -> id"
+  sheet_blobs }o--|| submissions : "submission_id -> id"

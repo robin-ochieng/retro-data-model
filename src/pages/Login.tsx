@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Logo from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 import { useAuth } from '../auth/AuthContext';
 
 export default function Login() {
@@ -59,8 +60,16 @@ export default function Login() {
       <header className="w-full sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/60 bg-white dark:bg-gray-900 border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Logo />
-          {/* Empty right side to keep spacing consistent with Home header */}
-          <span className="text-sm text-gray-700 dark:text-gray-300" aria-hidden="true"></span>
+          <div className="flex items-center gap-4">
+            <a
+              href="/help"
+              className="text-sm text-blue-700 dark:text-blue-400 hover:underline"
+              title="Help & User Guide"
+            >
+              Help
+            </a>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

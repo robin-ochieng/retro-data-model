@@ -44,3 +44,20 @@ The repository auto-generates documentation artifacts from the field maps and st
 	- Minimizes drift when adding/changing fields.
 
 If you adjust any field map or storage mapping, re-run `npm run generate:docs` and commit the resulting changes in `docs/*.generated.*` to keep CI and collaborators aligned.
+
+## Theming
+
+Light/Dark/System theming is implemented via Tailwind CSS variables mapped in `tailwind.config.js` and tokens defined in `src/index.css`.
+
+- Provider: `src/theme/ThemeProvider.tsx` wraps the app and applies `html.dark` when resolved mode is dark.
+- Modes: `light`, `dark`, `system` (default). System respects OS `prefers-color-scheme` and updates live.
+- Persistence: Signed-in users persist to `profiles.theme`; signed-out users persist to `localStorage` key `theme_mode`.
+- Toggle: `src/components/ThemeToggle.tsx` renders a simple 3-option control and is placed in headers.
+
+Use semantic Tailwind colors to benefit from tokens:
+
+- Background/text: `bg-background`, `text-foreground`
+- Primary: `bg-primary`, `text-primary-foreground`
+- Borders: `border-border`
+
+You can gradually adopt tokens; existing classes remain working.
