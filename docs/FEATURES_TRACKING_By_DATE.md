@@ -22,10 +22,11 @@
 
 - Profiles: theme preference column for per-user theming ([supabase/migrations/20250907_001_add_theme_to_profiles.sql](../supabase/migrations/20250907_001_add_theme_to_profiles.sql)).
 - App: Light/Dark/System theming with Tailwind tokens and Theme toggle ([src/theme/ThemeProvider.tsx](../src/theme/ThemeProvider.tsx), [src/components/ThemeToggle.tsx](../src/components/ThemeToggle.tsx), [tailwind.config.js](../tailwind.config.js), [src/index.css](../src/index.css)).
+- App: Accessible Theme dropdown (ARIA, keyboard, outside click/Escape) replacing button group; tests added ([tests/theme/ThemeDropdown.test.tsx](../tests/theme/ThemeDropdown.test.tsx), [tests/theme/resolveTheme.test.tsx](../tests/theme/resolveTheme.test.tsx)).
 
 ### Changed
 
-- N/A
+- Navbar: Help moved before Theme across Login, Home, and Wizard headers ([src/pages/Login.tsx](../src/pages/Login.tsx), [src/pages/Home.tsx](../src/pages/Home.tsx), [src/pages/wizard/Wizard.tsx](../src/pages/wizard/Wizard.tsx)).
 
 ### Removed
 

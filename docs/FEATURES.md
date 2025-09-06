@@ -3,6 +3,7 @@
 - Branding and navigation
 	- Renamed the “Header” tab to “Client Details” for both Property and Casualty.
 	- Updated the site title to “Retrocession Hub”.
+	- Help is shown before Theme in top nav (consistent across Login, Home, Wizard).
 
 - Client Details (data capture)
 	- Country dropdown with African countries; default to Kenya; “Other” free‑text fallback.
@@ -56,7 +57,7 @@
 	- Light/Dark/System modes powered by Tailwind CSS variables (HSL tokens) defined in `src/index.css` and mapped in `tailwind.config.js`.
 	- Respects system preference via `prefers-color-scheme`; in System mode, changes to the OS theme reflect immediately.
 	- Persists per user to `profiles.theme` in Supabase; falls back to `localStorage` when signed out.
-	- Accessible three-option toggle placed in app headers (Login, Home, Wizard) for quick switching.
+	- Accessible dropdown for selecting theme (Light/Dark/System), keyboard/ARIA complete, used in app headers (Login, Home, Wizard).
 	- Implementation: `src/theme/ThemeProvider.tsx` (applies `html.dark` and `data-theme`), `src/components/ThemeToggle.tsx`.
 	- Recommended utility classes: `bg-background`, `text-foreground`, `border-border`, `bg-primary`, `text-primary-foreground`.
 
