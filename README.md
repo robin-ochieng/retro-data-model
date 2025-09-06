@@ -20,3 +20,27 @@ A Vite + React + TypeScript + Tailwind app with Supabase for auth and persistenc
 ## Troubleshooting
 - If styles don’t apply, ensure Tailwind is built and `index.css` is imported.
 - If Supabase auth fails, check env variables and network access.
+
+## Automation: Docs Generation
+
+The repository auto-generates documentation artifacts from the field maps and storage schema to keep implementation and docs in sync.
+
+- What runs:
+	- `scripts/generate-docs.cjs` (invoked by `npm run generate:docs`)
+	- It reads canonical definitions from `docs/field-map*.json` and `docs/supabase-storage-map*.json`
+	- It writes consolidated outputs into:
+		- `docs/field-map.generated.json`
+		- `docs/field-map-slim.generated.json`
+		- `docs/supabase-storage-map.generated.json`
+		- `docs/GENERATED.md`
+
+- When it runs:
+	- Automatically as part of `npm run build` (see package.json: build runs generate:docs first)
+	- You can run it manually anytime:
+		- npm run generate:docs
+
+- Why it matters:
+	- Ensures UI tables, Supabase schema, and help docs share a single source of truth.
+	- Minimizes drift when adding/changing fields.
+
+If you adjust any field map or storage mapping, re-run `npm run generate:docs` and commit the resulting changes in `docs/*.generated.*` to keep CI and collaborators aligned.
