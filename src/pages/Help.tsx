@@ -203,6 +203,10 @@ export default function Help() {
               <AnchorHeading id="glossary">Glossary (Quick Definitions)</AnchorHeading>
               <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
                 <div>
+                  <dt className="font-medium">Retrocession</dt>
+                  <dd>The practice where a reinsurer transfers portions of its assumed risk to other reinsurers (retrocessionaires) to manage exposure and capital.</dd>
+                </div>
+                <div>
                   <dt className="font-medium">Submission</dt>
                   <dd>Your working package of client/treaty data across tabs for a given opportunity.</dd>
                 </div>
