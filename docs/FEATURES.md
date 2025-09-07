@@ -3,7 +3,9 @@
 - Branding and navigation
 	- Renamed the “Header” tab to “Client Details” for both Property and Casualty.
 	- Updated the site title to “Retrocession Hub”.
-	- Help is shown before Theme in top nav (consistent across Login, Home, Wizard).
+	- Help shown in header only after sign-in (Home, Wizard). On Login, Help appears in the card footer.
+	- Theme‑aware logo assets: light and dark variants selected automatically.
+	- Wizard tabs include compact Lucide icons for clear wayfinding across both LoBs.
 
 - Client Details (data capture)
 	- Country dropdown with African countries; default to Kenya; “Other” free‑text fallback.
@@ -52,6 +54,13 @@
 		- Casualty tabs: Import/Export CSV removed (paste‑only UX retained). Top 20 Risks hides Export in Casualty and enforces exactly 20 rows.
 		- Label consistency: "Year" headers normalized to "UW Year" on Casualty Treaty Statistics (Prop, PropCC).
 		- Motor Specific: standardized "Paste from Excel" button styling.
+	- Help Center page with structured content and in‑page navigation:
+		- Sticky right‑rail Table of Contents (md+), anchors with copy‑link, callouts, FAQ, and links to data model docs (overview, glossary, epi_summary, sheet_blobs) and features list.
+		- Theming via tokens; accessible landmarks (header/main/nav/footer), skip link, focus rings, and aria‑current for active TOC.
+	- Polished Login/Sign‑up UI:
+		- Header (logo left, compact Theme button right), softened divider; footer with Privacy/Terms.
+		- Centered card (rounded, ring, shadow, bg‑card), theme‑aware logo sizing, clear title/subtitle.
+		- Form improvements: labeled inputs with aria hints, password show/hide toggle, inline errors, aria‑live error banner, and loading spinner.
 
 - Theming
 	- Light/Dark/System modes powered by Tailwind CSS variables (HSL tokens) defined in `src/index.css` and mapped in `tailwind.config.js`.
