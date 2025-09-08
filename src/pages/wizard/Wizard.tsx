@@ -102,7 +102,7 @@ function WizardShell() {
     <SubmissionMetaProvider submissionId={submissionId}>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14 md:h-16">
           <Logo />
           <div className="flex items-center gap-4">
             <a href="/help" className="text-sm text-blue-700 dark:text-blue-400 hover:underline">Help</a>

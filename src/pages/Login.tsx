@@ -68,7 +68,7 @@ export default function Login() {
     <div className="min-h-screen grid grid-rows-[auto,1fr,auto] bg-background text-foreground">
       {/* Header (navbar) */}
       <header className="w-full border-b border-border/40 bg-background">
-        <div className="mx-auto max-w-7xl px-4 flex h-12 sm:h-14 items-center justify-between">
+        <div className="mx-auto max-w-7xl px-4 flex items-center justify-between h-14 md:h-16">
           <Logo />
           <div className="flex items-center gap-3">
             <ThemeToggle />

@@ -4,7 +4,7 @@ import { useTheme } from '../theme/ThemeProvider';
 
 export type LogoProps = { className?: string };
 
-export default function Logo({ className = 'h-6 md:h-7 w-auto' }: LogoProps) {
+export default function Logo({ className = 'h-8 md:h-10 lg:h-12 w-auto' }: LogoProps) {
   const { isDark } = useTheme();
   const src = isDark
     ? '/Retrocession_Hub_Dark_Mode_Variant.png'
