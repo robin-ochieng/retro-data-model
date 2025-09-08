@@ -16,7 +16,7 @@ export default function HelpLayout({ children }: { children: React.ReactNode }) 
       </main>
       <footer className="w-full border-t border-border/40 bg-background text-muted-foreground text-xs sm:text-sm">
         <div className="mx-auto max-w-7xl px-4 py-2 sm:py-3 flex items-center justify-between">
-          <span>© {new Date().getFullYear()} Kenbright Re</span>
+            <span>© {new Date().getFullYear()} Retrocession Hub</span>
           <nav className="flex items-center gap-4">
             <a href="/privacy" className="hover:underline">Privacy</a>
             <a href="/terms" className="hover:underline">Terms</a>
