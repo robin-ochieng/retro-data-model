@@ -90,7 +90,7 @@ export default function Login() {
             noValidate
             aria-describedby={error ? 'auth-error' : undefined}
           >
-            <div className="flex justify-center"><Logo className="h-8 md:h-10 w-auto" /></div>
+            <div className="flex justify-center"><Logo className="mx-auto h-10 md:h-12 lg:h-14 w-auto mb-3 md:mb-4" /></div>
             <div className="space-y-1 text-center">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {mode === 'signup' ? 'Create your account' : 'Sign in'}
