@@ -38,3 +38,19 @@
 
 - N/A
 
+## 2025-09-09
+
+### Added
+
+- Property: Reworked "Climate change exposure" tab with expanded 16-field schema (policy dates, insured, categorization, exposure & premium breakdown, EML/MPL, ceded & net fields) ([src/pages/wizard/steps/property/StepClimateExposure.tsx](../src/pages/wizard/steps/property/StepClimateExposure.tsx), [src/types/climateExposure.ts](../src/types/climateExposure.ts)).
+- Migration: Client-side legacy row transformer plus SQL migration preserving original row under _legacy ([supabase/migrations/20250909_001_climate_change_exposure_rework.sql](../supabase/migrations/20250909_001_climate_change_exposure_rework.sql)).
+- Tests: Validation, auto-calculation, and migration tests for new model ([src/types/__tests__/climateExposure.test.ts](../src/types/__tests__/climateExposure.test.ts)).
+
+### Changed
+
+- Deprecated legacy columns (region_or_zone, peril, tsi, premium, notes) for Climate change exposure; UI now shows new schema only. CSV export updated.
+
+### Removed
+
+- Old climate exposure columns from UI (retained only in _legacy for migrated rows).
+

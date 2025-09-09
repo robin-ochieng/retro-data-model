@@ -101,6 +101,13 @@
 	- Migration enforces (or promotes) a composite primary key on sheet_blobs (submission_id, sheet_name) to enable ON CONFLICT upserts reliably.
 	- Functional JSONB indexes added for Header sheet on payload->>'claims_period_start' and payload->>'claims_period_end' to accelerate date‑range queries.
 
+- Climate change exposure (Property) – Reworked (2025-09-09)
+	- Replaced legacy columns (region_or_zone, peril, tsi, premium, notes) with expanded policy, exposure, EML/MPL, and premium structure (16 fields).
+	- Added auto-calculation of net exposure/premium when blank.
+	- Client & server migration: legacy data preserved per row in _legacy.
+	- Validation: required inception/expiry ordering, required insured, non-negative numerics, conditional EML/MPL requirement.
+	- Updated CSV export and UI totals (sums exclude derived net fields).
+
 ## Testing
 
 We use Vitest + React Testing Library (jsdom) for fast, reliable unit/integration tests.

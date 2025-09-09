@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-08T14:14:09.439Z",
+  "generatedAt": "2025-09-09T10:32:04.454Z",
   "tabs": [
     {
       "tabKey": "header",
@@ -165,9 +165,6 @@
             "submission_id",
             "sheet_name"
           ],
-          "payloadShape": {
-            "exposures": "unknown"
-          },
           "notes": "Climate change exposure"
         }
       ]

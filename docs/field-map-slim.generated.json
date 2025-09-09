@@ -31,9 +31,7 @@
       "sheetName": "Climate change exposure",
       "excelColumns": {
         "sheet_blobs": {
-          "fields": {
-            "exposures": "Exposures"
-          }
+          "fields": {}
         }
       }
     },

@@ -108,9 +108,7 @@
             "submission_id",
             "sheet_name"
           ],
-          "payloadSchema": {
-            "exposures": "unknown"
-          }
+          "payloadSchema": {}
         }
       ]
     },

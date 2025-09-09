@@ -53,3 +53,28 @@ Keep these files in sync when fields or tabs change:
 - docs/field-map.md (this descriptive guide)
 
 If you add or remove fields/tabs, update all three files. I can automate this syncing if we centralize field definitions in code and add a script to regenerate the docs—tell me if you want that next.
+
+### Climate change exposure (sheet: "Climate change exposure")
+- Storage: sheet_blobs (payload.rows[])
+- New Schema (2025-09-09 rework): each row has
+  - policy_inception_date (date, required)
+  - policy_expiry_date (date, required, >= inception)
+  - insured (text, required)
+  - policy_category (text)
+  - policy_description (text)
+  - nature_of_risk (text)
+  - gross_exposure_tsi (numeric ≥ 0)
+  - cedants_exposure_tsi (numeric ≥ 0)
+  - eml_mpl_limit_applied (boolean)
+  - eml_mpl_limit (numeric ≥ 0 if applied)
+  - ceded_prop_reinsurance_exposure (numeric ≥ 0)
+  - net_inuring_prop_reinsurance_exposure (numeric ≥ 0, optional manual / derived)
+  - gross_premium (numeric ≥ 0)
+  - cedants_premium (numeric ≥ 0)
+  - ceded_prop_reinsurance_premium (numeric ≥ 0)
+  - net_prop_reinsurance_premium (numeric ≥ 0, optional manual / derived)
+  - _legacy (object, only present for migrated rows containing the original row with region_or_zone, peril, tsi, premium, notes)
+- Migration:
+  - Legacy rows detected by presence of region_or_zone/peril fields are transformed to new keys and preserved under _legacy.
+  - A server-side SQL migration (`20250909_001_climate_change_exposure_rework.sql`) performs bulk update; client also migrates on load if needed.
+  - Old columns (region_or_zone, peril, tsi, premium, notes) are deprecated and no longer shown in UI.
