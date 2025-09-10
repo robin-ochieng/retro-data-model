@@ -278,7 +278,7 @@ function HomeContent() {
           <span>© {new Date().getFullYear()} Retrocession Hub</span>
           <span className="inline-flex items-center gap-1">
             <span className="opacity-80">Powered by</span>
-            <strong className="font-semibold">Kenbright AI</strong>
+            <strong className="font-semibold">kenbright.ai</strong>
           </span>
         </div>
       </footer>

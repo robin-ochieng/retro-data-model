@@ -126,6 +126,7 @@ export default function StepTop20Risks() {
         <h3 className="font-semibold">Top 20 Risks</h3>
         <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
       </div>
+  {/* Debug instrumentation removed */}
       <FormTable<Row>
         columns={columns as any}
         rows={rows}

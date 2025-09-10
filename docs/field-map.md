@@ -65,7 +65,7 @@ If you add or remove fields/tabs, update all three files. I can automate this sy
   - nature_of_risk (text)
   - gross_exposure_tsi (numeric ≥ 0)
   - cedants_exposure_tsi (numeric ≥ 0)
-  - eml_mpl_limit_applied (boolean)
+  - eml_mpl_limit_applied (number; previously boolean, >0 indicates applied)
   - eml_mpl_limit (numeric ≥ 0 if applied)
   - ceded_prop_reinsurance_exposure (numeric ≥ 0)
   - net_inuring_prop_reinsurance_exposure (numeric ≥ 0, optional manual / derived)

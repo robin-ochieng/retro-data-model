@@ -54,3 +54,29 @@
 
 - Old climate exposure columns from UI (retained only in _legacy for migrated rows).
 
+## 2025-09-10
+
+### Changed
+
+- Climate change exposure: Policy Inception Date & Policy Expiry Date fields converted from native date inputs to paste-friendly text inputs accepting multiple formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY) with client-side normalization to ISO and validation (expiry >= inception). ([src/types/climateExposure.ts](../src/types/climateExposure.ts), [src/pages/wizard/steps/property/StepClimateExposure.tsx](../src/pages/wizard/steps/property/StepClimateExposure.tsx)).
+
+### Added
+
+- Date normalization utility `normalizeDateString` for Climate change exposure rows.
+
+### Removed
+
+- Native HTML date picker usage on Climate change exposure dates (improves bulk Excel paste workflow).
+
+### Added (later 2025-09-10)
+
+- Climate change exposure: Robust numeric paste parsing (commas, spaces, parentheses negatives) via `parseNumeric`; converted `eml_mpl_limit_applied` from boolean checkbox to numeric field (null or >0) with conditional validation of `eml_mpl_limit`. Added JSON migration to transform stored boolean values ([supabase/migrations/20250910_002_climate_exposure_numeric_applied.sql](../supabase/migrations/20250910_002_climate_exposure_numeric_applied.sql)).
+
+### Added (final 2025-09-10)
+
+- Climate change exposure persistence migrated from `sheet_blobs` JSON to relational table `climate_exposure` with RLS policy `climate_exposure_owner_all` and delete+bulk insert autosave pattern.
+- Lazy backfill RPC `migrate_climate_exposure_from_blob(submission_id uuid)` created; invoked on first load only when a submission has legacy blob but no table rows.
+- Updated `get_submission_package` function to return `climate_exposure` rows directly.
+- Added Vitest integration tests for autosave normalization (single-row edit) and multi-row Excel paste (16-column header + two data rows) confirming date normalization and numeric parsing.
+- Documentation updated in `FEATURES.md` and this tracking file to reflect migration and testing.
+
