@@ -5,6 +5,7 @@ export function useAutosave<T>(value: T, onSave: (value: T) => void, delay = 900
   // In the browser, setTimeout returns a number
   const timerRef = useRef<number | null>(null);
   const latestValue = useRef(value);
+  const dirtyRef = useRef(false);
   const latestOnSave = useRef(onSave);
 
   // Keep the latest value in sync immediately so unmount flush captures the newest edits
@@ -16,7 +17,8 @@ export function useAutosave<T>(value: T, onSave: (value: T) => void, delay = 900
   }, [onSave]);
 
   useEffect(() => {
-    latestValue.current = value;
+  latestValue.current = value;
+  dirtyRef.current = true; // any new value marks dirty
     // Always clear any existing timer first
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -48,11 +50,11 @@ export function useAutosave<T>(value: T, onSave: (value: T) => void, delay = 900
   useEffect(() => {
     return () => {
       // If a save is pending and autosave is enabled, flush it synchronously on unmount
-      if (enabled && timerRef.current !== null) {
+      if (enabled && dirtyRef.current) {
         try {
           latestOnSave.current(latestValue.current);
         } finally {
-          // No need to clearTimeout; component is unmounting
+          dirtyRef.current = false;
         }
       }
     };

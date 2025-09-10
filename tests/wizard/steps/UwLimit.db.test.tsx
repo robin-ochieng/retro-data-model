@@ -73,4 +73,22 @@ describe('UW Limit autosave & persistence', () => {
     expect((reInputs[0] as HTMLInputElement).value).toBe('RC-001');
     expect((reInputs[1] as HTMLInputElement).value).toBe('10M xs 1M');
   }, 12000);
+
+  it('flushes on rapid navigation before debounce elapses', async () => {
+    const user = userEvent.setup();
+    renderStep('UW-A2');
+    const inputs = await screen.findAllByRole('textbox');
+    await user.type(inputs[0] as HTMLInputElement, 'RC-FAST');
+    await user.type(inputs[1] as HTMLInputElement, '5M xs 500k');
+    // Immediately remount (simulate fast tab switch)
+    renderStep('UW-A2');
+    const again = await screen.findAllByRole('textbox');
+    await waitFor(() => {
+      const row = blobStore.find(r => r.submission_id === 'UW-A2' && r.sheet_name === 'UW Limit');
+      expect(row).toBeTruthy();
+      expect(row!.payload.limits[0].risk_code).toBe('RC-FAST');
+      expect(row!.payload.limits[0].limit).toBe('5M xs 500k');
+    });
+    expect((again[0] as HTMLInputElement).value).toBe('RC-FAST');
+  }, 12000);
 });
