@@ -29,11 +29,7 @@
     {
       "tabKey": "climate-exposure",
       "sheetName": "Climate change exposure",
-      "excelColumns": {
-        "sheet_blobs": {
-          "fields": {}
-        }
-      }
+      "excelColumns": {}
     },
     {
       "tabKey": "uw-limit",

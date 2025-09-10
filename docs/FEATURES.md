@@ -107,6 +107,7 @@
 	- Client & server migration: legacy data preserved per row in _legacy.
 	- Validation: required inception/expiry ordering, required insured, non-negative numerics, conditional EML/MPL requirement.
 	- Updated CSV export and UI totals (sums exclude derived net fields).
+	- 2025-09-10: Storage migrated from sheet_blobs JSON to dedicated table `climate_exposure` (one row per record) with row-level security; introduced lazy backfill RPC (`migrate_climate_exposure_from_blob`) invoked only if table empty for a submission to transparently import historical blob data. Autosave pattern unified with other tabular datasets (delete + bulk insert non-empty rows). Added tests covering single-row edit autosave normalization and multi-row paste replacement. Legacy blob entries retained temporarily for safety; planned cleanup after observation window.
 
 ## Testing
 

@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-09T10:32:04.454Z",
+  "generatedAt": "2025-09-10T13:45:57.213Z",
   "tabs": [
     {
       "tabKey": "header",
@@ -148,24 +148,47 @@
       },
       "operations": [
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "op": "upsert",
-          "key": [
-            "submission_id",
-            "sheet_name"
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
           ],
-          "notes": "Climate change exposure"
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "op": "upsert",
-          "key": [
-            "submission_id",
-            "sheet_name"
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
           ],
-          "notes": "Climate change exposure"
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "insert"
         }
       ]
     },

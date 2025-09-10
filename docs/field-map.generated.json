@@ -93,22 +93,29 @@
       "sheetName": "Climate change exposure",
       "storage": [
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadSchema": {}
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadSchema": {}
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
         }
       ]
     },
