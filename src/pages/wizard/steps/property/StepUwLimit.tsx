@@ -43,16 +43,40 @@ export default function StepUwLimit() {
     return () => { mounted = false; };
   }, [submissionId]);
 
-  // Autosave
+  // Autosave with resilient upsert (mirrors Header + other blob sheets)
   useAutosave({ rows, additionalComments }, async (val) => {
     if (!submissionId) return;
+    const payload = { limits: val.rows, additional_comments: val.additionalComments ?? '' } as any;
     const up = await supabase
       .from('sheet_blobs')
       .upsert(
-        [{ submission_id: submissionId, sheet_name: SHEET, payload: { limits: val.rows, additional_comments: val.additionalComments ?? '' } }],
+        [{ submission_id: submissionId, sheet_name: SHEET, payload }],
         { onConflict: 'submission_id,sheet_name' }
       );
-    if (!up.error) setLastSaved(new Date());
+    if (up.error) {
+      // Fallback path if ON CONFLICT not supported (missing composite PK)
+      if (/no unique or exclusion constraint/i.test(String(up.error.message))) {
+        const upd = await supabase
+          .from('sheet_blobs')
+          .update({ payload })
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', SHEET)
+          .select('submission_id');
+        if (upd.error) {
+          // If update found nothing, insert
+            const ins = await supabase
+              .from('sheet_blobs')
+              .insert([{ submission_id: submissionId, sheet_name: SHEET, payload }]);
+            if (!ins.error) setLastSaved(new Date());
+            return;
+        } else if (Array.isArray(upd.data) && upd.data.length > 0) {
+          setLastSaved(new Date());
+          return;
+        }
+      }
+      return; // Give up silently (could add toast/log if needed)
+    }
+    setLastSaved(new Date());
   });
 
   const columns = useMemo(() => [
