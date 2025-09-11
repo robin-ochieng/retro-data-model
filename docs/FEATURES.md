@@ -109,6 +109,18 @@
 	- Updated CSV export and UI totals (sums exclude derived net fields).
 	- 2025-09-10: Storage migrated from sheet_blobs JSON to dedicated table `climate_exposure` (one row per record) with row-level security; introduced lazy backfill RPC (`migrate_climate_exposure_from_blob`) invoked only if table empty for a submission to transparently import historical blob data. Autosave pattern unified with other tabular datasets (delete + bulk insert non-empty rows). Added tests covering single-row edit autosave normalization and multi-row paste replacement. Legacy blob entries retained temporarily for safety; planned cleanup after observation window.
 
+- UW Limit (Property) – Migrated (2025-09-11)
+	- Replaced blob-based storage (`sheet_blobs` payload: limits[], additional_comments) with relational tables: `uw_limits` (risk_code, limit_value) and `uw_limit_meta` (additional_comments).
+	- Added RPCs: `replace_uw_limits` (atomic delete+bulk insert + meta upsert) and `migrate_uw_limit_from_blob` (one-time lazy migration when opening a legacy submission).
+	- Database column uses `limit_value`; JSON/API layer preserves `limit` key to avoid breaking existing exports.
+	- Autosave now calls `replace_uw_limits` directly; Additional Comments moved out of blob for simpler querying.
+
+- Risk Profile Meta (Property) – Migrated (2025-09-11)
+	- Retention and Additional Comments moved from `sheet_blobs` (sheet_name: "Risk Profile") into new table: `risk_profile_meta` (1:1 per submission).
+	- Added lazy backfill RPC `migrate_risk_profile_meta_from_blob` executed only if `risk_profile_meta` row missing; preserves legacy blob (flags payload.meta_migrated=true) without destructive deletion.
+	- Front-end autosave now upserts retention/comments directly to `risk_profile_meta`; banded distribution data remains in `risk_profile_bands` (unchanged).
+	- Submission aggregation function (`get_submission_package`) extended to include `risk_profile_meta` (excluding volatile updated_at) alongside existing datasets; downstream consumers can rely on a stable shape.
+
 ## Testing
 
 We use Vitest + React Testing Library (jsdom) for fast, reliable unit/integration tests.

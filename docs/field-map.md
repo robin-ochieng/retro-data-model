@@ -78,3 +78,22 @@ If you add or remove fields/tabs, update all three files. I can automate this sy
   - Legacy rows detected by presence of region_or_zone/peril fields are transformed to new keys and preserved under _legacy.
   - A server-side SQL migration (`20250909_001_climate_change_exposure_rework.sql`) performs bulk update; client also migrates on load if needed.
   - Old columns (region_or_zone, peril, tsi, premium, notes) are deprecated and no longer shown in UI.
+
+### UW Limit (sheet: "UW Limit")
+- Storage (post 2025-09-11 migration):
+  - Table: `uw_limits` (rows) – columns: risk_code (text), limit_value (text)
+  - Table: `uw_limit_meta` (1:1 per submission) – additional_comments
+- Previous storage (legacy): `sheet_blobs` payload with shape `{ limits: [{ risk_code, limit }], additional_comments }`.
+- Migration strategy:
+  - On first load if no relational rows/meta exist but a legacy blob entry is present, the client calls `migrate_uw_limit_from_blob(p_submission_id)` RPC.
+  - Server function copies rows, writes comments to meta table, and tags blob payload with `migrated: true` (non-destructive).
+- Autosave pattern:
+  - Debounced client calls `replace_uw_limits(p_submission_id, p_rows, p_additional_comments)` which:
+    - Deletes existing rows for the submission.
+    - Bulk inserts non-empty rows (empty strings trimmed by UI already).
+    - Upserts `uw_limit_meta` with latest comments.
+- Export / package:
+  - `get_submission_package` returns `uw_limits` rows (each augmented with a synthetic JSON key `limit` for backward compatibility) and `uw_limit_meta`.
+- Notes:
+  - Column is named `limit_value` in the database to avoid keyword conflicts; UI and JSON continue to use `limit`.
+  - Additional Comments now lives outside the blob system for simpler querying.

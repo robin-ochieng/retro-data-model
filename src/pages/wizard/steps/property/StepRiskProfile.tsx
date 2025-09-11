@@ -25,7 +25,7 @@ type State = {
   gross_turnover: Band[];
   net_pml: Band[];
   net_turnover: Band[];
-  retention: number;
+  retention: string; // allow free-form (percentages, text)
   additional_comments: string;
 };
 
@@ -48,7 +48,7 @@ export default function StepRiskProfile() {
     gross_turnover: [defaultRow],
     net_pml: [defaultRow],
     net_turnover: [defaultRow],
-    retention: 0,
+  retention: '',
     additional_comments: '',
   });
   const [pasteSection, setPasteSection] = useState<Section | null>(null);
@@ -88,14 +88,29 @@ export default function StepRiskProfile() {
   const net_pml = !netPmlRes.error && Array.isArray(netPmlRes.data) && netPmlRes.data.length ? netPmlRes.data.map(mapRow) : [defaultRow];
   const net_turnover = !netTurnRes.error && Array.isArray(netTurnRes.data) && netTurnRes.data.length ? netTurnRes.data.map(mapRow) : [defaultRow];
 
-      const sb = await supabase
-        .from('sheet_blobs')
-        .select('payload')
+      // Try relational meta first
+      const { data: meta, error: metaErr } = await supabase
+        .from('risk_profile_meta')
+        .select('retention, additional_comments')
         .eq('submission_id', submissionId)
-        .eq('sheet_name', 'Risk Profile')
         .maybeSingle();
-      const retention = (!sb.error && sb.data?.payload?.retention) ? Number(sb.data.payload.retention) : 0;
-      const additional_comments = (!sb.error && sb.data?.payload?.additional_comments) ? String(sb.data.payload.additional_comments) : '';
+      let retention = (!metaErr && meta?.retention) ? String(meta.retention) : '';
+      let additional_comments = (!metaErr && meta?.additional_comments) ? String(meta.additional_comments) : '';
+      // Lazy migrate from legacy blob if no relational meta
+      if (!retention && !additional_comments) {
+        const sb = await supabase
+          .from('sheet_blobs')
+          .select('payload')
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', 'Risk Profile')
+          .maybeSingle();
+        const blobPayload: any = (!sb.error && sb.data?.payload && typeof sb.data.payload === 'object') ? sb.data.payload : {};
+        if (blobPayload && (blobPayload.retention || blobPayload.additional_comments)) {
+          await supabase.rpc('migrate_risk_profile_meta_from_blob', { p_submission_id: submissionId });
+          retention = blobPayload.retention ? String(blobPayload.retention) : '';
+          additional_comments = blobPayload.additional_comments ? String(blobPayload.additional_comments) : '';
+        }
+      }
       if (!mounted) return;
   setState({ gross_pml, gross_turnover, net_pml, net_turnover, retention, additional_comments });
     })();
@@ -181,12 +196,12 @@ export default function StepRiskProfile() {
         }))
       );
     }
-    // Save retention/comments
+    // Save retention/comments (relational meta)
     await supabase
-      .from('sheet_blobs')
+      .from('risk_profile_meta')
       .upsert(
-        [{ submission_id: submissionId, sheet_name: 'Risk Profile', payload: { retention: val.retention ?? 0, additional_comments: val.additional_comments ?? '' } }],
-        { onConflict: 'submission_id,sheet_name' }
+        [{ submission_id: submissionId, retention: val.retention ?? '', additional_comments: val.additional_comments ?? '' }],
+        { onConflict: 'submission_id' }
       );
     setLastSaved(new Date());
   });
@@ -281,7 +296,7 @@ export default function StepRiskProfile() {
     <div className="space-y-6">
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">GROSS PROFILES (Net of Fac)</h3>
-        <p className="text-xs text-gray-500 mb-3">Table 1: PML or Sum Insured</p>
+  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
         <FormTable<Band>
           columns={bandColumns as any}
           rows={state.gross_pml}
@@ -298,7 +313,7 @@ export default function StepRiskProfile() {
           <span className="ml-3">Total Annual Premiums (Ex VAT): {grossPmlTotals.total_annual_premiums_ex_vat.toLocaleString()}</span>
         </div>
         <hr className="my-4" />
-        <p className="text-xs text-gray-500 mb-3">Table 2: Turnover amounts</p>
+  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
         <FormTable<Band>
           columns={bandColumns as any}
           rows={state.gross_turnover}
@@ -317,7 +332,7 @@ export default function StepRiskProfile() {
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">NET PROFILES</h3>
-        <p className="text-xs text-gray-500 mb-3">Table 1: PML or Sum Insured</p>
+  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
         <FormTable<Band>
           columns={bandColumns as any}
           rows={state.net_pml}
@@ -334,7 +349,7 @@ export default function StepRiskProfile() {
           <span className="ml-3">Total Annual Premiums (Ex VAT): {netPmlTotals.total_annual_premiums_ex_vat.toLocaleString()}</span>
         </div>
         <hr className="my-4" />
-        <p className="text-xs text-gray-500 mb-3">Table 2: Turnover amounts</p>
+  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
         <FormTable<Band>
           columns={bandColumns as any}
           rows={state.net_turnover}
@@ -354,7 +369,7 @@ export default function StepRiskProfile() {
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Retention</span>
-          <input type="number" step="0.01" min={0} className="input" value={state.retention} onChange={(e) => setState(prev => ({ ...prev, retention: e.target.value === '' ? 0 : Number(e.target.value) }))} />
+          <input type="text" className="input" placeholder="e.g. 5% or 1.5M" value={state.retention} onChange={(e) => setState(prev => ({ ...prev, retention: e.target.value }))} />
         </label>
         <label className="block md:col-span-2">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>

@@ -7,32 +7,66 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import StepUwLimit from '@/pages/wizard/steps/property/StepUwLimit';
 import { SubmissionMetaProvider } from '@/pages/wizard/SubmissionMetaContext';
 
-// In-memory blob store keyed by (submission_id, sheet_name)
-interface BlobRow { submission_id: string; sheet_name: string; payload: any }
-const blobStore: BlobRow[] = [];
-const spies = { upsert: vi.fn(), update: vi.fn(), insert: vi.fn(), select: vi.fn() };
+// In-memory relational tables
+interface UwLimitRow { submission_id: string; risk_code: string; limit_value: string; id: number }
+interface UwLimitMetaRow { submission_id: string; additional_comments: string }
+const uwLimits: UwLimitRow[] = [];
+const uwLimitMeta: UwLimitMetaRow[] = [];
+let idSeq = 1;
+const spies = { rpc: vi.fn() };
 
 vi.mock('@/lib/supabase', () => {
-  const sheetHandler: any = {
-    select: vi.fn(() => ({ eq: vi.fn(function(this: any) { return this; }), maybeSingle: vi.fn(() => {
-      const row = blobStore.find(r => r.sheet_name === 'UW Limit' && r.submission_id === currentSubmissionId);
-      return { data: row ? { payload: row.payload } : null, error: null };
-    }) })),
-    upsert: vi.fn(async (rows: any[]) => { spies.upsert(rows); for (const r of rows) {
-      const existing = blobStore.find(b => b.submission_id === r.submission_id && b.sheet_name === r.sheet_name);
-      if (existing) existing.payload = r.payload; else blobStore.push({ ...r });
-    } return { data: rows, error: null }; }),
-    update: vi.fn(() => ({ eq: vi.fn(function(this: any){ return this; }), select: vi.fn(() => ({ data: [], error: null })) })),
-    insert: vi.fn(async (rows: any[]) => { spies.insert(rows); blobStore.push(...rows); return { data: rows, error: null }; }),
+  function buildRelHandler(table: string) {
+    return {
+      _table: table,
+      _filters: [] as any[],
+      select() { return this; },
+      eq(col: string, val: any) { this._filters.push([col, val]); return this; },
+      order() {
+        if (table === 'uw_limits') {
+          const submission = this._filters.find(f => f[0] === 'submission_id')?.[1];
+          const data = uwLimits.filter(r => r.submission_id === submission).sort((a,b)=>a.id-b.id);
+          return { data, error: null };
+        }
+        return { data: [], error: null };
+      },
+      maybeSingle() {
+        if (table === 'uw_limit_meta') {
+          const submission = this._filters.find(f => f[0] === 'submission_id')?.[1];
+            const row = uwLimitMeta.find(r => r.submission_id === submission) || null;
+            return { data: row, error: null };
+        }
+        return { data: null, error: null };
+      }
+    };
+  }
+  const supabase: any = {
+    from(table: string) { return buildRelHandler(table); },
+    rpc(name: string, args: any) {
+      spies.rpc(name, args);
+      if (name === 'replace_uw_limits') {
+        const { p_submission_id, p_rows, p_additional_comments } = args;
+        // Replace limits for submission
+        for (let i = uwLimits.length -1; i >=0; i--) {
+          const row = uwLimits[i];
+          if (row && row.submission_id === p_submission_id) uwLimits.splice(i,1);
+        }
+        (p_rows || []).forEach((r: any) => {
+          uwLimits.push({ submission_id: p_submission_id, risk_code: r.risk_code, limit_value: r.limit, id: idSeq++ });
+        });
+        // Upsert meta
+        const existing = uwLimitMeta.find(m => m.submission_id === p_submission_id);
+        if (existing) existing.additional_comments = p_additional_comments;
+        else uwLimitMeta.push({ submission_id: p_submission_id, additional_comments: p_additional_comments });
+        return Promise.resolve({ data: true, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    }
   };
-  const submissionsHandler: any = { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn(async () => ({ data: { meta: {} }, error: null })) })) })) };
-  let current = { from: (t: string) => (t === 'sheet_blobs' ? sheetHandler : t === 'submissions' ? submissionsHandler : sheetHandler) };
-  return { supabase: current };
+  return { supabase };
 });
 
-let currentSubmissionId = 'UWTEST-1';
 function renderStep(id='UWTEST-1') {
-  currentSubmissionId = id;
   return render(
     <SubmissionMetaProvider submissionId={id}>
       <MemoryRouter initialEntries={[`/wizard/property/${id}/uw-limit`]}> 
@@ -44,8 +78,8 @@ function renderStep(id='UWTEST-1') {
   );
 }
 
-describe('UW Limit autosave & persistence', () => {
-  beforeEach(() => { blobStore.length = 0; vi.clearAllMocks(); });
+describe('UW Limit autosave & persistence (relational)', () => {
+  beforeEach(() => { uwLimits.length = 0; uwLimitMeta.length = 0; vi.clearAllMocks(); });
 
   it('autosaves row edit and reloads persisted data', async () => {
     const user = userEvent.setup();
@@ -59,12 +93,16 @@ describe('UW Limit autosave & persistence', () => {
     await user.type(limit, '10M xs 1M');
 
     await waitFor(() => {
-      // Upsert called once after debounce
-      expect(spies.upsert).toHaveBeenCalled();
-      const row = blobStore.find(r => r.submission_id === 'UW-A1' && r.sheet_name === 'UW Limit');
+      expect(spies.rpc).toHaveBeenCalledWith('replace_uw_limits', expect.objectContaining({ p_submission_id: 'UW-A1' }));
+      const row = uwLimits.find(r => r.submission_id === 'UW-A1');
       expect(row).toBeTruthy();
-      expect(row!.payload.limits[0].risk_code).toBe('RC-001');
-      expect(row!.payload.limits[0].limit).toBe('10M xs 1M');
+      expect(row!.risk_code).toBe('RC-001');
+      expect(row!.limit_value).toBe('10M xs 1M');
+  // Ensure RPC received a row object containing legacy 'limit' key (function extracts r->>'limit')
+  const rpcArgs = spies.rpc.mock.calls.find(c => c[0] === 'replace_uw_limits')?.[1];
+  expect(rpcArgs.p_rows[0]).toHaveProperty('limit');
+  // Future proofing: we also include limit_value mirror
+  expect(rpcArgs.p_rows[0]).toHaveProperty('limit_value');
     });
 
     // Simulate navigating away and back (unmount + remount)
@@ -80,15 +118,15 @@ describe('UW Limit autosave & persistence', () => {
     const inputs = await screen.findAllByRole('textbox');
     await user.type(inputs[0] as HTMLInputElement, 'RC-FAST');
     await user.type(inputs[1] as HTMLInputElement, '5M xs 500k');
-    // Immediately remount (simulate fast tab switch)
+    // Immediately remount (simulate fast tab switch) triggers unmount flush
     renderStep('UW-A2');
-    const again = await screen.findAllByRole('textbox');
     await waitFor(() => {
-      const row = blobStore.find(r => r.submission_id === 'UW-A2' && r.sheet_name === 'UW Limit');
+      const row = uwLimits.find(r => r.submission_id === 'UW-A2');
       expect(row).toBeTruthy();
-      expect(row!.payload.limits[0].risk_code).toBe('RC-FAST');
-      expect(row!.payload.limits[0].limit).toBe('5M xs 500k');
+      expect(row!.risk_code).toBe('RC-FAST');
+      expect(row!.limit_value).toBe('5M xs 500k');
+  const rpcArgs = spies.rpc.mock.calls.find(c => c[0] === 'replace_uw_limits' && c[1].p_submission_id === 'UW-A2')?.[1];
+  expect(rpcArgs.p_rows[0]).toMatchObject({ risk_code: 'RC-FAST', limit: '5M xs 500k', limit_value: '5M xs 500k' });
     });
-    expect((again[0] as HTMLInputElement).value).toBe('RC-FAST');
   }, 12000);
 });

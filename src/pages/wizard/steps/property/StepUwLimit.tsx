@@ -22,61 +22,80 @@ export default function StepUwLimit() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPaste, setShowPaste] = useState(false);
 
-  // Load existing sheet payload
+  // Load relational data; fallback migrate from blob if needed
   useEffect(() => {
     let mounted = true;
     (async () => {
       if (!submissionId) return;
-      const { data, error } = await supabase
-        .from('sheet_blobs')
-        .select('payload')
+      // 1. Try relational rows
+      const { data: limits, error: limitsErr } = await supabase
+        .from('uw_limits')
+        .select('risk_code,limit_value')
         .eq('submission_id', submissionId)
-        .eq('sheet_name', SHEET)
+        .order('id', { ascending: true });
+      if (!mounted) return;
+      if (!limitsErr && limits && limits.length) {
+        setRows(limits.map((l: any) => ({ risk_code: l.risk_code ?? '', limit: (l as any).limit_value ?? '' })));
+      }
+
+      // 2. Meta (comments)
+      const { data: meta, error: metaErr } = await supabase
+        .from('uw_limit_meta')
+        .select('additional_comments')
+        .eq('submission_id', submissionId)
         .maybeSingle();
       if (!mounted) return;
-      if (!error && data?.payload) {
-        const payload: any = data.payload;
-        setRows(Array.isArray(payload.limits) && payload.limits.length ? payload.limits : [{ risk_code: '', limit: '' }]);
-        setAdditionalComments(String(payload.additional_comments ?? ''));
+      if (!metaErr && meta) {
+        setAdditionalComments(meta.additional_comments ?? '');
+      }
+
+      // 3. If no relational data loaded AND legacy blob exists, attempt server migration
+      if ((!limits || limits.length === 0) && (!meta || !meta.additional_comments)) {
+        const { data: blob, error: blobErr } = await supabase
+          .from('sheet_blobs')
+          .select('payload')
+          .eq('submission_id', submissionId)
+          .eq('sheet_name', SHEET)
+          .maybeSingle();
+        if (!mounted) return;
+        if (!blobErr && blob?.payload) {
+          // Attempt RPC migration
+            await supabase.rpc('migrate_uw_limit_from_blob', { p_submission_id: submissionId });
+            // Reload relational after migration
+            const { data: limits2 } = await supabase
+              .from('uw_limits')
+              .select('risk_code,limit_value')
+              .eq('submission_id', submissionId)
+              .order('id', { ascending: true });
+            if (!mounted) return;
+            if (limits2 && limits2.length) setRows(limits2.map((l: any) => ({ risk_code: l.risk_code ?? '', limit: (l as any).limit_value ?? '' })));
+            const { data: meta2 } = await supabase
+              .from('uw_limit_meta')
+              .select('additional_comments')
+              .eq('submission_id', submissionId)
+              .maybeSingle();
+            if (meta2) setAdditionalComments(meta2.additional_comments ?? '');
+        }
       }
     })();
     return () => { mounted = false; };
   }, [submissionId]);
 
-  // Autosave with resilient upsert (mirrors Header + other blob sheets)
+  // Autosave to relational tables via RPC replace_uw_limits
   useAutosave({ rows, additionalComments }, async (val) => {
     if (!submissionId) return;
-    const payload = { limits: val.rows, additional_comments: val.additionalComments ?? '' } as any;
-    const up = await supabase
-      .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: SHEET, payload }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
-    if (up.error) {
-      // Fallback path if ON CONFLICT not supported (missing composite PK)
-      if (/no unique or exclusion constraint/i.test(String(up.error.message))) {
-        const upd = await supabase
-          .from('sheet_blobs')
-          .update({ payload })
-          .eq('submission_id', submissionId)
-          .eq('sheet_name', SHEET)
-          .select('submission_id');
-        if (upd.error) {
-          // If update found nothing, insert
-            const ins = await supabase
-              .from('sheet_blobs')
-              .insert([{ submission_id: submissionId, sheet_name: SHEET, payload }]);
-            if (!ins.error) setLastSaved(new Date());
-            return;
-        } else if (Array.isArray(upd.data) && upd.data.length > 0) {
-          setLastSaved(new Date());
-          return;
-        }
-      }
-      return; // Give up silently (could add toast/log if needed)
+    // Provide both legacy 'limit' JSON key (used by replace_uw_limits function) and an explicit 'limit_value' mirror for future-proofing.
+    const cleaned = (val.rows || []).map(r => ({ risk_code: r.risk_code ?? '', limit: r.limit ?? '', limit_value: r.limit ?? '' }));
+    const { error } = await supabase.rpc('replace_uw_limits', {
+      p_submission_id: submissionId,
+      p_rows: cleaned as any, // supabase-js will jsonb encode
+      p_additional_comments: val.additionalComments ?? ''
+    });
+    if (!error) setLastSaved(new Date()); else {
+      // Basic diagnostic logging (could be surfaced in UI if needed later)
+      // eslint-disable-next-line no-console
+      console.error('replace_uw_limits failed', error.message);
     }
-    setLastSaved(new Date());
   });
 
   const columns = useMemo(() => [

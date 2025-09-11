@@ -52,6 +52,15 @@ Authoritative reference describing how the app persists user input to Supabase w
 - Operation 2: upsert into sheet_blobs
   - Payload: additional_comments
 
+### UW Limit (sheet: "UW Limit") – Migrated 2025-09-11
+- Operation (current): single RPC `replace_uw_limits` performing transactional replace
+  - Deletes existing `uw_limits` rows for submission
+  - Inserts rows (risk_code, limit_value) for each non-empty pair
+  - Upserts `uw_limit_meta` (additional_comments)
+- Legacy (pre-migration) behavior: upsert into `sheet_blobs` with payload `{ limits: [...], additional_comments }`.
+- Lazy backfill: If relational tables empty but blob present, client invokes `migrate_uw_limit_from_blob` RPC once.
+- Rationale: aligns with other tabular datasets, enabling direct SQL analytics and reducing JSON processing overhead.
+
 ## Keeping this document in sync
 - When you add/remove a field or tab, update:
   - docs/supabase-storage-map.json

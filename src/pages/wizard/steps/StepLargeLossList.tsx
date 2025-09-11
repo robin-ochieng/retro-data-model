@@ -143,7 +143,8 @@ export default function StepLargeLossList() {
       { key: 'loss_id', label: 'loss id', type: 'number' },
       { key: 'uw_year', label: 'UNDERWRITING YEAR', type: 'number', step: '1', min: 1900 },
       { key: 'name', label: 'NAME' },
-      { key: 'dol', label: 'DOL', type: 'date' },
+  // DOL changed from date input to text to enable seamless Excel multi-cell paste
+  { key: 'dol', label: 'DOL' },
       { key: 'type_of_loss', label: 'TYPE OF LOSS' },
       { key: 'gross_sum_insured', label: 'GROSS SUM INSURED', type: 'number', step: '0.01', min: 0 },
       { key: 'gross_incurred', label: 'GROSS INCURRED', type: 'number', step: '0.01', min: 0 },
