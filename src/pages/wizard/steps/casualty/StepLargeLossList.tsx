@@ -40,33 +40,76 @@ export default function StepLargeLossList() {
     let mounted = true;
     (async () => {
       if (!submissionId) return;
-      const { data } = await supabase
-        .from('sheet_blobs')
-        .select('payload')
+      const { data: list } = await (supabase as any)
+        .from('large_loss_list_cas')
+        .select('*')
         .eq('submission_id', submissionId)
-        .eq('sheet_name', SHEET)
-        .maybeSingle();
+        .order('id', { ascending: true });
       if (!mounted) return;
-      if (data?.payload) {
-        const payload = (typeof data.payload === 'object' && !Array.isArray(data.payload)) ? (data.payload as any) : null;
-        const pRows = payload?.rows as Row[] | undefined;
-        const pComments = payload?.comments as string | undefined;
-        setRows(Array.isArray(pRows) && pRows.length ? pRows : rows);
-        setComments(String(pComments ?? ''));
+      if (Array.isArray(list) && list.length) {
+        const mapped = list.map((r: any) => ({
+          date_of_loss: r.dol ?? '',
+          uw_year: r.uw_year ?? '',
+          insured: r.insured ?? '',
+          cause_of_loss: r.cause_of_loss ?? '',
+          incurred_fgu: r.incurred_fgu ?? '',
+          paid_fgu: r.paid_fgu ?? '',
+          os_fgu: r.os_fgu ?? '',
+          fac_paid: r.fac_paid ?? '',
+          fac_os: r.fac_os ?? '',
+          surplus_paid: r.surplus_paid ?? '',
+          surplus_os: r.surplus_os ?? '',
+          quota_share_paid: r.qs_paid ?? '',
+          quota_share_os: r.qs_os ?? '',
+          net_paid: r.net_paid ?? '',
+          net_os: r.net_os ?? '',
+        } as Row));
+        setRows(mapped);
       }
+      const { data: meta } = await (supabase as any)
+        .from('large_loss_list_meta_cas')
+        .select('notes')
+        .eq('submission_id', submissionId)
+        .maybeSingle();
+      if (meta) setComments(String((meta as any).notes ?? ''));
     })();
     return () => { mounted = false; };
   }, [submissionId]);
 
   useAutosave({ rows, comments }, async (val) => {
     if (!submissionId) return;
-    const up = await supabase
-      .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: SHEET, payload: { rows: val.rows, comments: val.comments } }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
-    if (!up.error) setLastSaved(new Date());
+    // Replace pattern: delete old rows then insert current
+    await (supabase as any).from('large_loss_list_cas').delete().eq('submission_id', submissionId);
+    if (Array.isArray(val.rows) && val.rows.length) {
+      const toInsert = val.rows.map((r) => ({
+        submission_id: submissionId,
+        dol: r.date_of_loss || null,
+        uw_year: r.uw_year === '' ? null : Number(r.uw_year),
+        insured: r.insured || null,
+        cause_of_loss: r.cause_of_loss || null,
+        incurred_fgu: r.incurred_fgu === '' ? null : Number(r.incurred_fgu),
+        paid_fgu: r.paid_fgu === '' ? null : Number(r.paid_fgu),
+        os_fgu: r.os_fgu === '' ? null : Number(r.os_fgu),
+        fac_paid: r.fac_paid === '' ? null : Number(r.fac_paid),
+        fac_os: r.fac_os === '' ? null : Number(r.fac_os),
+        surplus_paid: r.surplus_paid === '' ? null : Number(r.surplus_paid),
+        surplus_os: r.surplus_os === '' ? null : Number(r.surplus_os),
+        qs_paid: r.quota_share_paid === '' ? null : Number(r.quota_share_paid),
+        qs_os: r.quota_share_os === '' ? null : Number(r.quota_share_os),
+        net_paid: r.net_paid === '' ? null : Number(r.net_paid),
+        net_os: r.net_os === '' ? null : Number(r.net_os),
+      }));
+      await (supabase as any).from('large_loss_list_cas').insert(toInsert);
+    }
+    const upd = await (supabase as any)
+      .from('large_loss_list_meta_cas')
+      .update({ notes: val.comments ?? '', updated_at: new Date().toISOString() })
+      .eq('submission_id', submissionId)
+      .select('submission_id');
+    if (!upd.data || (Array.isArray(upd.data) && upd.data.length === 0)) {
+      await (supabase as any).from('large_loss_list_meta_cas').insert([{ submission_id: submissionId, notes: val.comments ?? '' }]);
+    }
+    setLastSaved(new Date());
   });
 
   const columns = useMemo(() => [

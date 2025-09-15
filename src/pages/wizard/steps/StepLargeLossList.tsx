@@ -42,8 +42,8 @@ export default function StepLargeLossList() {
     let mounted = true;
     (async () => {
       if (!submissionId) return;
-      const { data, error } = await supabase
-        .from('large_loss_list')
+      const { data, error } = await (supabase as any)
+        .from('large_loss_list_prop')
         .select('*')
         .eq('submission_id', submissionId);
       if (!mounted) return;
@@ -74,18 +74,14 @@ export default function StepLargeLossList() {
         } as Row));
         setRows(mapped);
       }
-      // Load comments from sheet_blobs
-      const cm = await supabase
-        .from('sheet_blobs')
-        .select('payload')
+      // Load comments from meta table
+      const cm = await (supabase as any)
+        .from('large_loss_list_meta_prop')
+        .select('notes')
         .eq('submission_id', submissionId)
-        .eq('sheet_name', 'Large Loss List')
         .maybeSingle();
-      if (!cm.error && cm.data?.payload) {
-        const payload = cm.data.payload as any;
-        if (payload && Object.prototype.hasOwnProperty.call(payload, 'additional_comments')) {
-          setAdditionalComments(String(payload.additional_comments ?? ''));
-        }
+      if (!cm.error && cm.data) {
+        setAdditionalComments(String((cm.data as any).notes ?? ''));
       }
     })();
     return () => { mounted = false; };
@@ -95,7 +91,7 @@ export default function StepLargeLossList() {
     if (!submissionId) return;
     setSaving(true);
     // Save rows
-    await supabase.from('large_loss_list').delete().eq('submission_id', submissionId);
+  await (supabase as any).from('large_loss_list_prop').delete().eq('submission_id', submissionId);
     if (value.rows.length) {
       const toInsertAll = value.rows.map((v: any) => ({
         submission_id: submissionId,
@@ -114,7 +110,7 @@ export default function StepLargeLossList() {
         net_of_proportional: v.net_of_proportional ?? 0,
         xol_payment: v.xol_payment ?? 0,
       }));
-      let ins = await supabase.from('large_loss_list').insert(toInsertAll as any[]);
+  let ins = await (supabase as any).from('large_loss_list_prop').insert(toInsertAll as any[]);
       if (ins.error && /does not exist/i.test(ins.error.message)) {
         // Retry without optional columns if DB hasn’t been extended yet
         const toInsertFallback = toInsertAll.map((o) => {
@@ -124,16 +120,19 @@ export default function StepLargeLossList() {
           if (ins.error!.message.includes('xol_payment')) delete c.xol_payment;
           return c;
         });
-        await supabase.from('large_loss_list').insert(toInsertFallback);
+  await (supabase as any).from('large_loss_list_prop').insert(toInsertFallback);
       }
     }
     // Save comments
-    await supabase
-      .from('sheet_blobs')
-      .upsert(
-        [{ submission_id: submissionId, sheet_name: 'Large Loss List', payload: { additional_comments: value.additionalComments ?? '' } }],
-        { onConflict: 'submission_id,sheet_name' }
-      );
+    // Upsert meta row (update else insert)
+    const upd = await (supabase as any)
+      .from('large_loss_list_meta_prop')
+      .update({ notes: value.additionalComments ?? '', updated_at: new Date().toISOString() })
+      .eq('submission_id', submissionId)
+      .select('submission_id');
+    if (!upd.data || (Array.isArray(upd.data) && upd.data.length === 0)) {
+      await (supabase as any).from('large_loss_list_meta_prop').insert([{ submission_id: submissionId, notes: value.additionalComments ?? '' }]);
+    }
   setSaving(false);
   setLastSaved(new Date());
   });
