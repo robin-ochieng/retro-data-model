@@ -110,6 +110,11 @@
 			"command": "npm run build",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Generate Docs",
+			"type": "shell",
+			"command": "npm run generate:docs"
 		}
 	]
 }

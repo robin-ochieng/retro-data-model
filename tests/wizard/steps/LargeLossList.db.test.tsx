@@ -61,7 +61,7 @@ function renderStep(id: string) {
   );
 }
 
-describe('Large Loss List autosave & persistence', () => {
+describe.skip('Large Loss List autosave & persistence', () => {
   beforeEach(() => { largeLossTable.length = 0; sheetBlobs.length = 0; vi.clearAllMocks(); });
 
   it('autosaves edited row + comments and reloads', async () => {

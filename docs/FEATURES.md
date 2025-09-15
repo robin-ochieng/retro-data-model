@@ -76,13 +76,21 @@
 	- Persistence: rows saved to table `epi_summary`; GWP Split and Additional Comments saved under `sheet_blobs` (sheet_name: "EPI Summary") using update‑then‑insert so autosave never blocks or duplicates.
 	- Autosave flushes on tab switch to capture last‑second edits reliably.
 
-- Large Loss Triangulation (Property)
-	- UI mirrors Casualty: header list (per‑loss metadata) plus a multi‑row development grid with measure selector (Paid / Reserved / Incurred).
-	- Dynamic development columns (12‑month increments) with per‑column totals.
-	- Paste from Excel supported for both header rows and multi‑row grid.
-	- Persistence model:
-		- Core values saved to table `large_loss_triangle_values` by (loss_identifier, measure, dev_months).
-		- Extra header fields (date_of_loss, claim_no) saved to `sheet_blobs` under "Large Loss Triangulation (Property)".
+- Large Loss Triangulation (Property) – Migrated (2025-09-15)
+	- UI: header list (per‑loss metadata) plus three stacked development grids: Paid, Reserved, and Incurred (auto‑calculated as Paid + Reserved). Users edit Paid/Reserved; Incurred is computed and persisted for reporting.
+	- Dynamic development columns (12‑month increments) with per‑column totals; “Add 12m” control on Paid/Reserved.
+	- Paste from Excel supported for header rows and for Paid/Reserved grids; Incurred paste blocked with guidance.
+	- Persistence model (relational):
+		- Header saved to `large_loss_triangle_header_prop` with new fields `date_of_loss` (date) and `claim_policy_no` (text), plus `uw_or_acc_year`, `loss_description`, `threshold`, `claim_status`. Unique per `(submission_id, loss_identifier)`.
+		- Development values split into `large_loss_triangle_paid_prop`, `large_loss_triangle_reserved_prop`, and `large_loss_triangle_incurred_prop` with composite unique `(submission_id, loss_identifier, development_months)` and owner‑only RLS.
+	- Autosave: replaces header rows and each grid table (delete + bulk insert, chunked). Incurred recalculated on save to guarantee consistency.
+	- Tests: verifies header persistence (including `date_of_loss`, `claim_policy_no`), Paid/Reserved save, Incurred auto‑calc and reload.
+
+- Cat Loss List (Property) – Migrated (2025-09-15)
+	- UI: DOL is a plain text input to optimize Excel paste (accepts YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY). Values are normalized to ISO on save when recognizable; otherwise stored as given.
+	- Persistence model (relational): rows saved to `cat_loss_list_prop` with columns (uw_year, name, dol, type_of_loss, gross_sum_insured, gross_incurred, paid_to_date, gross_outstanding, fac_amount, net_of_fac, surplus_cession, qs_cession, net_of_proportional, xol_payment, currency). Additional Comments stored in `cat_loss_list_meta_prop`.
+	- Autosave: delete‑then‑insert for rows; meta saved via update‑then‑insert pattern.
+	- Migration: `20250915_006_cat_loss_list_prop.sql` (tables, index on submission_id, owner‑only RLS policies).
 
 - Cresta Zone Control (Property)
 	- Five tables:

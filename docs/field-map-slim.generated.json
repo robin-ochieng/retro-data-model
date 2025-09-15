@@ -54,13 +54,7 @@
     {
       "tabKey": "cat-loss-list",
       "sheetName": "Cat Loss List",
-      "excelColumns": {
-        "sheet_blobs": {
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
-      }
+      "excelColumns": {}
     },
     {
       "tabKey": "triangulation",

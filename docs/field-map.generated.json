@@ -228,23 +228,7 @@
     {
       "tabKey": "large-loss-triangulation",
       "sheetName": "Large Loss Triangulation",
-      "storage": [
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "rowSchema": {}
-        }
-      ]
+      "storage": []
     },
     {
       "tabKey": "cat-loss-list",
@@ -252,44 +236,38 @@
       "storage": [
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "rowSchema": {}
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadSchema": {
-            "additional_comments": "unknown"
-          }
+          "type": "table",
+          "table": "cat_loss_list_meta_prop",
+          "rowSchema": {}
         }
       ]
     },

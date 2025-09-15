@@ -48,7 +48,7 @@ export const propertyTabs: SheetTab[] = [
   { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
   { key: 'uw-limit', label: 'UW Limit', component: 'UwLimit' },
   { key: 'risk-profile', label: 'Risk Profile', component: 'RiskProfile' },
-  { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list', component: 'LargeLossList' },
+  { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list_prop', component: 'LargeLossList' },
   // Place Large Loss Triangulation immediately after Large Loss List
   { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'LargeLossTriangulation' },
   { key: 'cat-loss-list', label: 'Cat Loss List', component: 'CatLossList' },
@@ -73,7 +73,7 @@ export const casualtyTabs: SheetTab[] = [
   { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
   { key: 'motor-fleet-list', label: 'Motor Fleet List', component: 'CasualtyMotorFleetList' },
   // Then continue with loss and triangulation tabs
-  { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list', component: 'CasualtyLargeLossList' },
+  { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list_cas', component: 'CasualtyLargeLossList' },
   { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'CasualtyLargeLossTriangulation' },
   { key: 'aggregate-triangulation', label: 'Aggregate Triangulation', component: 'CasualtyAggregateTriangulation' },
   { key: 'cat-loss-triangulation', label: 'CAT Loss Triangulation', component: 'CasualtyCatLossTriangulation' },

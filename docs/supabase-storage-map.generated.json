@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-09-15T08:02:41.077Z",
+  "generatedAt": "2025-09-15T13:41:11.197Z",
   "tabs": [
     {
       "tabKey": "header",
@@ -391,23 +391,7 @@
       "autosave": {
         "strategy": "debounced"
       },
-      "operations": [
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "large_loss_triangle_values",
-          "op": "insert"
-        }
-      ]
+      "operations": []
     },
     {
       "tabKey": "cat-loss-list",
@@ -418,7 +402,7 @@
       "operations": [
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "deleteInsert",
           "deleteWhere": [
             "submission_id = :submissionId"
@@ -429,12 +413,12 @@
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "insert"
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "deleteInsert",
           "deleteWhere": [
             "submission_id = :submissionId"
@@ -445,7 +429,7 @@
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "deleteInsert",
           "deleteWhere": [
             "submission_id = :submissionId"
@@ -456,26 +440,18 @@
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "insert"
         },
         {
           "type": "table",
-          "table": "cat_loss_list",
+          "table": "cat_loss_list_prop",
           "op": "insert"
         },
         {
-          "type": "sheet_blobs",
-          "table": "sheet_blobs",
-          "op": "upsert",
-          "key": [
-            "submission_id",
-            "sheet_name"
-          ],
-          "payloadShape": {
-            "additional_comments": "unknown"
-          },
-          "notes": "Cat Loss List"
+          "type": "table",
+          "table": "cat_loss_list_meta_prop",
+          "op": "insert"
         }
       ]
     },

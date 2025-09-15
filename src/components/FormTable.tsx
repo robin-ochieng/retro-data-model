@@ -84,6 +84,7 @@ export function FormTable<T extends Record<string, any>>({
                     type={col.type ?? 'text'}
                     step={col.step}
                     min={col.min}
+                    aria-label={col.label}
                     value={row[col.key] ?? ''}
                     onChange={e => {
                       const value = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;

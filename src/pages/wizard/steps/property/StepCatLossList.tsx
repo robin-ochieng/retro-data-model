@@ -4,6 +4,7 @@ import { z } from 'zod';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
+import { normalizeDateString } from '../../../../types/climateExposure';
 import { useAutosave } from '../../../../hooks/useAutosave';
 
 const RowSchema = z.object({
@@ -40,14 +41,14 @@ export default function StepCatLossList() {
     let mounted = true;
     (async () => {
       if (!submissionId) return;
-      const { data, error } = await supabase.from('cat_loss_list').select('*').eq('submission_id', submissionId);
+  const { data, error } = await (supabase as any).from('cat_loss_list_prop').select('*').eq('submission_id', submissionId);
       if (!mounted) return;
       if (!error && Array.isArray(data) && data.length) {
         const mapped = data.map((d: any, i: number) => ({
           loss_id: i + 1,
           uw_year: d.uw_year ?? undefined,
-          name: d.event_name ?? '',
-          dol: d.event_start ?? d.dol ?? undefined,
+          name: d.name ?? d.event_name ?? '',
+          dol: d.dol ?? d.event_start ?? undefined,
           type_of_loss: d.type_of_loss ?? '',
           gross_sum_insured: Number(d.gross_sum_insured) || 0,
           gross_incurred: Number(d.gross_incurred ?? d.gross_amount) || 0,
@@ -62,21 +63,25 @@ export default function StepCatLossList() {
         } as Row));
         setRows(mapped);
       }
-      const cm = await supabase.from('sheet_blobs').select('payload').eq('submission_id', submissionId).eq('sheet_name', 'Cat Loss List').maybeSingle();
-      if (!cm.error && cm.data?.payload?.additional_comments) setAdditionalComments(String(cm.data.payload.additional_comments));
+      const cm = await (supabase as any)
+        .from('cat_loss_list_meta_prop')
+        .select('notes')
+        .eq('submission_id', submissionId)
+        .maybeSingle();
+      if (!cm.error && cm.data) setAdditionalComments(String((cm.data as any).notes ?? ''));
     })();
     return () => { mounted = false; };
   }, [submissionId]);
 
   useAutosave({ rows, additionalComments }, async (val) => {
     if (!submissionId) return;
-    await supabase.from('cat_loss_list').delete().eq('submission_id', submissionId);
+  await (supabase as any).from('cat_loss_list_prop').delete().eq('submission_id', submissionId);
     if (val.rows.length) {
       const toInsert = val.rows.map((r: any) => ({
         submission_id: submissionId,
         uw_year: r.uw_year ?? null,
-        event_name: r.name ?? null,
-        event_start: r.dol ?? null,
+        name: r.name ?? null,
+        dol: normalizeDateString(r.dol ?? null),
         type_of_loss: r.type_of_loss ?? null,
         gross_sum_insured: r.gross_sum_insured ?? 0,
         gross_incurred: r.gross_incurred ?? 0,
@@ -89,21 +94,30 @@ export default function StepCatLossList() {
         net_of_proportional: r.net_of_proportional ?? 0,
         xol_payment: r.xol_payment ?? 0,
       }));
-      let ins = await supabase.from('cat_loss_list').insert(toInsert as any[]);
+  let ins = await (supabase as any).from('cat_loss_list_prop').insert(toInsert as any[]);
       if (ins.error && /does not exist/i.test(ins.error.message)) {
         // Fallback to base cols used earlier
         const fallback = val.rows.map((r: any) => ({
           submission_id: submissionId,
-          event_name: r.name ?? null,
-          event_start: r.dol ?? null,
-          gross_amount: r.gross_incurred ?? 0,
-          net_amount: r.net_of_proportional ?? 0,
+          name: r.name ?? null,
+          dol: normalizeDateString(r.dol ?? null),
+          gross_incurred: r.gross_incurred ?? 0,
+          net_of_proportional: r.net_of_proportional ?? 0,
           notes: null,
         }));
-        await supabase.from('cat_loss_list').insert(fallback);
+  await (supabase as any).from('cat_loss_list_prop').insert(fallback);
       }
     }
-    await supabase.from('sheet_blobs').upsert([{ submission_id: submissionId, sheet_name: 'Cat Loss List', payload: { additional_comments: val.additionalComments ?? '' } }], { onConflict: 'submission_id,sheet_name' });
+    // Upsert meta notes
+    const upd = await (supabase as any)
+      .from('cat_loss_list_meta_prop')
+      .update({ notes: val.additionalComments ?? '', updated_at: new Date().toISOString() })
+      .eq('submission_id', submissionId)
+      .select('submission_id');
+    if (upd.error) { setLastSaved(new Date()); return; }
+    if (!upd.data || (Array.isArray(upd.data) && upd.data.length === 0)) {
+      await (supabase as any).from('cat_loss_list_meta_prop').insert([{ submission_id: submissionId, notes: val.additionalComments ?? '' }]);
+    }
     setLastSaved(new Date());
   });
 
@@ -111,7 +125,8 @@ export default function StepCatLossList() {
     { key: 'loss_id', label: 'loss id', type: 'number' },
     { key: 'uw_year', label: 'UNDERWRITING YEAR', type: 'number', step: '1', min: 1900 },
     { key: 'name', label: 'NAME' },
-    { key: 'dol', label: 'DOL', type: 'date' },
+    // DOL as text to allow Excel-style pasted dates (e.g., dd/mm/yyyy)
+    { key: 'dol', label: 'DOL' },
     { key: 'type_of_loss', label: 'TYPE OF LOSS' },
     { key: 'gross_sum_insured', label: 'GROSS SUM INSURED', type: 'number', step: '0.01', min: 0 },
     { key: 'gross_incurred', label: 'GROSS INCURRED', type: 'number', step: '0.01', min: 0 },

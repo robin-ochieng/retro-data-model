@@ -37,6 +37,40 @@ export default function StepLargeLossList() {
   const [showPaste, setShowPaste] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const normalizeDate = (s: string | undefined | null): string | null => {
+    if (!s) return null;
+    const v = String(s).trim();
+    if (!v) return null;
+    // Already ISO like 2024-07-01
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    // dd/mm/yyyy or dd-mm-yyyy (also handle mm/dd/yyyy where month<=12 and day>12 ambiguity by assuming dd/mm)
+    const m = v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+    if (m) {
+      const d = parseInt(m[1] ?? '0', 10);
+      const mo = parseInt(m[2] ?? '0', 10);
+      const y = parseInt(m[3] ?? '0', 10);
+      if (y >= 1900 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        const mm = String(mo).padStart(2, '0');
+        const dd = String(d).padStart(2, '0');
+        return `${y}-${mm}-${dd}`;
+      }
+    }
+    // yyyy/mm/dd or yyyy.mm.dd
+    const m2 = v.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/);
+    if (m2) {
+      const y = parseInt(m2[1] ?? '0', 10);
+      const mo = parseInt(m2[2] ?? '0', 10);
+      const d = parseInt(m2[3] ?? '0', 10);
+      if (y >= 1900 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        const mm = String(mo).padStart(2, '0');
+        const dd = String(d).padStart(2, '0');
+        return `${y}-${mm}-${dd}`;
+      }
+    }
+    return null;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -47,7 +81,7 @@ export default function StepLargeLossList() {
         .select('*')
         .eq('submission_id', submissionId);
       if (!mounted) return;
-      if (!error && Array.isArray(data) && data.length) {
+  if (!error && Array.isArray(data) && data.length) {
         // Detect optional columns presence from first row
         const first = data[0] as any;
         setOptionalCols({
@@ -58,8 +92,8 @@ export default function StepLargeLossList() {
         const mapped = data.map((d: any, i: number) => ({
           loss_id: i + 1,
           uw_year: d.uw_year ?? undefined,
-          name: d.insured ?? '',
-          dol: d.loss_date ?? undefined,
+          name: d.name ?? '',
+          dol: d.dol ?? undefined,
           type_of_loss: d.type_of_loss ?? '',
           gross_sum_insured: Number(d.gross_sum_insured) || 0,
           gross_incurred: Number(d.gross_incurred) || 0,
@@ -90,14 +124,21 @@ export default function StepLargeLossList() {
   useAutosave({ rows, additionalComments }, async (value) => {
     if (!submissionId) return;
     setSaving(true);
+    setSaveError(null);
     // Save rows
-  await (supabase as any).from('large_loss_list_prop').delete().eq('submission_id', submissionId);
+    try {
+      await (supabase as any).from('large_loss_list_prop').delete().eq('submission_id', submissionId);
+    } catch (e: any) {
+      setSaving(false);
+      setSaveError(e?.message ?? 'Failed deleting existing rows');
+      return;
+    }
     if (value.rows.length) {
       const toInsertAll = value.rows.map((v: any) => ({
         submission_id: submissionId,
         uw_year: v.uw_year ?? null,
-        insured: v.name ?? null,
-        loss_date: v.dol ?? null,
+        name: v.name ?? null,
+        dol: normalizeDate(v.dol) /* may be null if unparsable */,
         type_of_loss: v.type_of_loss ?? null,
         gross_sum_insured: v.gross_sum_insured ?? 0,
         gross_incurred: v.gross_incurred ?? 0,
@@ -110,7 +151,7 @@ export default function StepLargeLossList() {
         net_of_proportional: v.net_of_proportional ?? 0,
         xol_payment: v.xol_payment ?? 0,
       }));
-  let ins = await (supabase as any).from('large_loss_list_prop').insert(toInsertAll as any[]);
+      let ins = await (supabase as any).from('large_loss_list_prop').insert(toInsertAll as any[]);
       if (ins.error && /does not exist/i.test(ins.error.message)) {
         // Retry without optional columns if DB hasn’t been extended yet
         const toInsertFallback = toInsertAll.map((o) => {
@@ -120,7 +161,16 @@ export default function StepLargeLossList() {
           if (ins.error!.message.includes('xol_payment')) delete c.xol_payment;
           return c;
         });
-  await (supabase as any).from('large_loss_list_prop').insert(toInsertFallback);
+        const ins2 = await (supabase as any).from('large_loss_list_prop').insert(toInsertFallback);
+        if (ins2.error) {
+          setSaving(false);
+          setSaveError(ins2.error.message ?? 'Insert failed');
+          return;
+        }
+      } else if (ins.error) {
+        setSaving(false);
+        setSaveError(ins.error.message ?? 'Insert failed');
+        return;
       }
     }
     // Save comments
@@ -130,11 +180,21 @@ export default function StepLargeLossList() {
       .update({ notes: value.additionalComments ?? '', updated_at: new Date().toISOString() })
       .eq('submission_id', submissionId)
       .select('submission_id');
-    if (!upd.data || (Array.isArray(upd.data) && upd.data.length === 0)) {
-      await (supabase as any).from('large_loss_list_meta_prop').insert([{ submission_id: submissionId, notes: value.additionalComments ?? '' }]);
+    if (upd.error) {
+      setSaving(false);
+      setSaveError(upd.error.message ?? 'Meta update failed');
+      return;
     }
-  setSaving(false);
-  setLastSaved(new Date());
+    if (!upd.data || (Array.isArray(upd.data) && upd.data.length === 0)) {
+      const insMeta = await (supabase as any).from('large_loss_list_meta_prop').insert([{ submission_id: submissionId, notes: value.additionalComments ?? '' }]);
+      if (insMeta.error) {
+        setSaving(false);
+        setSaveError(insMeta.error.message ?? 'Meta insert failed');
+        return;
+      }
+    }
+    setSaving(false);
+    setLastSaved(new Date());
   });
 
   const columns = useMemo(() => {
@@ -260,7 +320,7 @@ export default function StepLargeLossList() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Large Loss List</h2>
-        <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
+  <div className="text-xs text-gray-500">{saveError ? `Error: ${saveError}` : saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
       </div>
       <FormTable<Row>
         columns={columns as any}

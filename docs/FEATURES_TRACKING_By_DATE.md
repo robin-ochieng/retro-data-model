@@ -106,3 +106,27 @@
 
 - No removals; legacy `sheet_blobs` entries retained for safety and lazy migration paths.
 
+## 2025-09-15
+
+### Added
+
+- Property: Large Loss Triangulation migrated from a single generic values table + `sheet_blobs` extras to dedicated relational tables with owner‑only RLS and indexes:
+	- Header table `large_loss_triangle_header_prop` (adds `date_of_loss` and `claim_policy_no`; includes `uw_or_acc_year`, `loss_description`, `threshold`, `claim_status`).
+	- Split development tables `large_loss_triangle_paid_prop`, `large_loss_triangle_reserved_prop`, and `large_loss_triangle_incurred_prop` with unique `(submission_id, loss_identifier, development_months)`.
+- Front‑end refactor: step now shows three grids (Paid, Reserved, Incurred). Incurred is derived from Paid + Reserved and persisted for reporting.
+- Paste UX updated: header paste retained; Paid/Reserved supported; Incurred paste blocked with guidance.
+- Tests: integration test added to verify header persistence (including new fields), Paid/Reserved save, Incurred auto‑calc, and reload.
+
+- Property: Cat Loss List migrated to relational tables with meta and RLS:
+	- Tables: `cat_loss_list_prop` (rows) and `cat_loss_list_meta_prop` (Additional Comments) with index on submission_id and owner‑only policies.
+	- UI: DOL input switched to free‑text for better Excel paste; normalization to ISO occurs at save when possible.
+	- Migration: [supabase/migrations/20250915_006_cat_loss_list_prop.sql](../supabase/migrations/20250915_006_cat_loss_list_prop.sql).
+
+### Changed
+
+- LLT (Property): Autosave now clears and reinserts header rows (delete + chunked insert) to avoid unique constraint cleanup edge cases; a verify `select(...).limit(1)` check was added to surface RLS ownership issues explicitly. Grid saves changed from delete+insert to idempotent upsert with in‑memory deduping on `(loss_identifier, development_months)` to eliminate duplicate key errors.
+
+### Removed
+
+- Property LL Triangulation no longer stores header extras in `sheet_blobs`; date_of_loss and claim/policy are now relational.
+
