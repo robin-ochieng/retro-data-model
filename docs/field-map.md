@@ -97,3 +97,17 @@ If you add or remove fields/tabs, update all three files. I can automate this sy
 - Notes:
   - Column is named `limit_value` in the database to avoid keyword conflicts; UI and JSON continue to use `limit`.
   - Additional Comments now lives outside the blob system for simpler querying.
+
+### Cresta Zone Control (sheet: "Cresta Zone Control (Property)") – Migrated 2025-09-19
+- Storage (current): table `property_cresta_zone_values`
+  - Columns: submission_id, section, zone, zone_description, category, gross, net, created_at, updated_at
+  - Unique: (submission_id, section, zone, category)
+  - Sections: 'sum_insured' | 'personal' | 'commercial' | 'industrial' | 'engineering'
+  - Zone: 1..19; use 0 for 'Unallocated'.
+  - Category: null for sum_insured; for other sections: 'buildings', 'content', 'buildings_contents', 'motor', 'bi' (where applicable), 'others', 'engineering'.
+- RPCs:
+  - `upsert_property_cresta_zone_value(p_submission_id, p_section, p_zone, p_category, p_zone_description, p_gross, p_net)`
+  - `replace_property_cresta_zone_section(p_submission_id, p_section, p_rows, p_delete_missing=false)`
+  - `get_property_cresta_zone_values(p_submission_id)` (optional convenience)
+- Legacy storage (pre-migration): `sheet_blobs` payload with shape `{ sum_insured: [...], personal: [...], commercial: [...], industrial: [...], engineering: [...] }`.
+- Migration strategy: call `migrate_property_cresta_from_blob` once per submission when relational rows are missing but a blob exists.

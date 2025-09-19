@@ -40,8 +40,40 @@ export function FormTable<T extends Record<string, any>>({
   isSaving,
   lastSavedAt,
 }: FormTableProps<T>) {
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollLeftRef = React.useRef(0);
+  const isRestoringRef = React.useRef(false);
+
+  // Capture horizontal scroll position
+  React.useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (isRestoringRef.current) return;
+      scrollLeftRef.current = el.scrollLeft;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Restore scroll on mount and when table shape changes
+  const rowCount = rows?.length ?? 0;
+  const colCount = columns?.length ?? 0;
+  React.useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    isRestoringRef.current = true;
+    // Clamp to new max scrollWidth
+    const max = Math.max(0, el.scrollWidth - el.clientWidth);
+    const target = Math.min(max, scrollLeftRef.current);
+    el.scrollLeft = target;
+    // End restore on next frame
+    const id = requestAnimationFrame(() => { isRestoringRef.current = false; });
+    return () => cancelAnimationFrame(id);
+  }, [rowCount, colCount]);
+
   return (
-    <div className="overflow-x-auto">
+    <div ref={scrollerRef} className="overflow-x-auto overscroll-contain" style={{ scrollbarGutter: 'stable both-edges' }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex gap-2">
           {onPaste && (

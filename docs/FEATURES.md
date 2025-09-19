@@ -92,12 +92,20 @@
 	- Autosave: delete‑then‑insert for rows; meta saved via update‑then‑insert pattern.
 	- Migration: `20250915_006_cat_loss_list_prop.sql` (tables, index on submission_id, owner‑only RLS policies).
 
-- Cresta Zone Control (Property)
-	- Five tables:
-		- Sum Insured (new, placed above Personal Lines): Zone Description + Gross/Net with totals.
+ - Cresta Zone Control (Property) – Migrated (2025-09-19)
+	- Five tables displayed in UI:
+		- Sum Insured (above Personal Lines): Zone Description + Gross/Net with totals.
 		- Personal Lines, Commercial Lines, Industrial, Engineering: each with category pairs (Gross/Net) per zone, plus totals.
 	- Paste from Excel on all five tables with header detection and tolerant numeric parsing.
-	- Autosaves the entire payload in `sheet_blobs` under "Cresta Zone Control (Property)".
+	- Persistence model (relational):
+		- `property_cresta_zone_values` with unique (submission_id, section, zone, category)
+		- Sections: 'sum_insured' | 'personal' | 'commercial' | 'industrial' | 'engineering'
+		- Zone: 1..19, with 0 representing 'Unallocated'
+		- For `sum_insured`, `category` is null; other sections use the configured category keys.
+	- Autosave:
+		- Per-cell edits call `upsert_property_cresta_zone_value(...)` (debounced).
+		- Paste/import per section calls `replace_property_cresta_zone_section(...)` for atomic bulk upsert.
+	- One-off backfill RPC `migrate_property_cresta_from_blob(p_submission_id)` available to import legacy `sheet_blobs` payloads.
 
 - Developer experience
 	- Vite + HMR development workflow; npm tasks for dev/build.

@@ -46,11 +46,11 @@ export default function StepAggregateTriangulation() {
       if (!submissionId) return;
       const { data } = await supabase
         .from('sheet_blobs')
-        .select('data')
+        .select('payload')
         .eq('submission_id', submissionId)
         .eq('sheet_name', 'Aggregate Triangulation (Casualty)')
         .maybeSingle();
-      const payload = (data as any)?.data as any | undefined;
+      const payload = (data as any)?.payload as any | undefined;
       if (payload) {
         setYears(payload.years ?? years);
         setDevMonths(payload.devMonths ?? devMonths);
@@ -65,7 +65,7 @@ export default function StepAggregateTriangulation() {
     if (!submissionId) return;
     await supabase
       .from('sheet_blobs')
-      .upsert({ submission_id: submissionId, sheet_name: 'Aggregate Triangulation (Casualty)', data: val, updated_at: new Date().toISOString() }, { onConflict: 'submission_id,sheet_name' });
+      .upsert({ submission_id: submissionId, sheet_name: 'Aggregate Triangulation (Casualty)', payload: val, updated_at: new Date().toISOString() }, { onConflict: 'submission_id,sheet_name' });
     setLastSaved(new Date());
   });
 

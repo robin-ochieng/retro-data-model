@@ -61,6 +61,17 @@ Authoritative reference describing how the app persists user input to Supabase w
 - Lazy backfill: If relational tables empty but blob present, client invokes `migrate_uw_limit_from_blob` RPC once.
 - Rationale: aligns with other tabular datasets, enabling direct SQL analytics and reducing JSON processing overhead.
 
+### Cresta Zone Control (sheet: "Cresta Zone Control (Property)") – Migrated 2025-09-19
+- Operation (current):
+  - Per-cell upsert via RPC `upsert_property_cresta_zone_value` into `property_cresta_zone_values`.
+  - Paste/import per section via RPC `replace_property_cresta_zone_section` (atomic upsert of many rows, optional delete-missing).
+- Table: `property_cresta_zone_values`
+  - Unique: (submission_id, section, zone, category)
+  - Section: 'sum_insured' | 'personal' | 'commercial' | 'industrial' | 'engineering'
+  - Zone: 1..19 (0 = Unallocated)
+  - Category: null for sum_insured; else one of the section’s categories.
+- Legacy behavior: upsert to `sheet_blobs` under the sheet name; an RPC `migrate_property_cresta_from_blob` can backfill legacy payloads.
+
 ## Keeping this document in sync
 - When you add/remove a field or tab, update:
   - docs/supabase-storage-map.json

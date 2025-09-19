@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { getCresta, replaceCrestaSection, upsertCrestaCell } from '../../../../lib/cresta';
 import PasteModal from '../../../../components/PasteModal';
 
 type Pair = { gross: number; net: number };
@@ -82,32 +83,139 @@ export default function StepCrestaZoneControl() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteTarget, setPasteTarget] = useState<keyof State | null>(null);
 
-  // Load persisted payload (sheet_blobs is flexible for evolving schema)
+  // Load normalized values and map into UI state
   useEffect(() => {
     (async () => {
       if (!submissionId) return;
-      const { data } = await supabase
-        .from('sheet_blobs')
-        .select('payload')
-        .eq('submission_id', submissionId)
-        .eq('sheet_name', 'Cresta Zone Control (Property)')
-        .maybeSingle();
-      const payload = (data as any)?.payload as Partial<State> | undefined;
-      if (payload) setState((prev) => ({ ...prev, ...payload }));
+      const rows = await getCresta(submissionId);
+      if (!rows || rows.length === 0) return; // fresh submission; state remains defaults
+
+      // Build empty shells first
+      const next: State = {
+        sum_insured: makeSimpleRows(),
+        personal: makeDefaultRows(PERSONAL_CATEGORIES),
+        commercial: makeDefaultRows(COMMERCIAL_CATEGORIES),
+        industrial: makeDefaultRows(INDUSTRIAL_CATEGORIES),
+        engineering: makeDefaultRows(ENGINEERING_CATEGORIES),
+      };
+      const zoneToIndex = (z: number) => (z === 0 ? 19 : Math.max(0, Math.min(18, z - 1)));
+
+      for (const r of rows) {
+        const zi = zoneToIndex(r.zone);
+        if (r.section === 'sum_insured') {
+          const s = next.sum_insured[zi]!;
+          next.sum_insured[zi] = {
+            zone: s.zone,
+            zone_description: r.zone_description ?? '',
+            gross: Number(r.gross ?? 0),
+            net: Number(r.net ?? 0),
+          };
+        } else {
+          const target = next[r.section as keyof Omit<State,'sum_insured'>] as Row[];
+          const row = target[zi]!;
+          target[zi] = {
+            zone: row.zone,
+            zone_description: r.zone_description ?? '',
+            values: {
+              ...row.values,
+              [r.category ?? (r.section === 'engineering' ? 'engineering' : '')]: {
+                gross: Number(r.gross ?? 0),
+                net: Number(r.net ?? 0),
+              },
+            },
+          };
+        }
+      }
+      setState(next);
     })();
   }, [submissionId]);
 
-  // Autosave entire structure
-  useAutosave(state, async (val) => {
-    if (!submissionId) return;
-    await supabase
-      .from('sheet_blobs')
-      .upsert({ submission_id: submissionId, sheet_name: 'Cresta Zone Control (Property)', payload: val }, { onConflict: 'submission_id,sheet_name' });
-    setLastSaved(new Date());
-  }, 800);
+  // Per-cell autosave: store last edited payload and flush via RPC
+  const [pendingCell, setPendingCell] = useState<null | {
+    section: keyof State;
+    rowIdx: number;
+    category: string | null;
+  }>(null);
 
-  const numberInput = 'w-full border rounded px-2 py-1 text-right';
-  const textInput = 'w-full border rounded px-2 py-1';
+  const [pendingZoneDesc, setPendingZoneDesc] = useState<null | {
+    section: keyof State;
+    rowIdx: number;
+  }>(null);
+
+  useAutosave(pendingCell, async (cell) => {
+    if (!submissionId || !cell) return;
+    const zone = cell.rowIdx === 19 ? 0 : cell.rowIdx + 1;
+    if (cell.section === 'sum_insured') {
+      const r = state.sum_insured[cell.rowIdx]!;
+      await upsertCrestaCell({
+        submissionId,
+        section: 'sum_insured',
+        zone,
+        category: null,
+        zoneDescription: r.zone_description,
+        gross: Number(r.gross) || 0,
+        net: Number(r.net) || 0,
+      });
+    } else {
+      const rows = state[cell.section] as Row[];
+      const row = rows[cell.rowIdx]!;
+      const v = row.values[cell.category as string] || { gross: 0, net: 0 };
+      await upsertCrestaCell({
+        submissionId,
+        section: cell.section as any,
+        zone,
+        category: cell.category,
+        zoneDescription: row.zone_description,
+        gross: Number(v.gross) || 0,
+        net: Number(v.net) || 0,
+      });
+    }
+    setLastSaved(new Date());
+  }, 600);
+
+  // Autosave for zone description edits: update all categories for the row
+  useAutosave(pendingZoneDesc, async (desc) => {
+    if (!submissionId || !desc) return;
+    const zone = desc.rowIdx === 19 ? 0 : desc.rowIdx + 1;
+    if (desc.section === 'sum_insured') {
+      const r = state.sum_insured[desc.rowIdx]!;
+      await upsertCrestaCell({
+        submissionId,
+        section: 'sum_insured',
+        zone,
+        category: null,
+        zoneDescription: r.zone_description,
+        gross: Number(r.gross) || 0,
+        net: Number(r.net) || 0,
+      });
+    } else {
+      const cats = desc.section === 'personal' ? PERSONAL_CATEGORIES
+        : desc.section === 'commercial' ? COMMERCIAL_CATEGORIES
+        : desc.section === 'industrial' ? INDUSTRIAL_CATEGORIES
+        : ENGINEERING_CATEGORIES;
+      const rows = state[desc.section] as Row[];
+      const row = rows[desc.rowIdx]!;
+      for (const c of cats) {
+        const v = row.values[c.key] || { gross: 0, net: 0 };
+        await upsertCrestaCell({
+          submissionId,
+          section: desc.section as any,
+          zone,
+          category: c.key,
+          zoneDescription: row.zone_description,
+          gross: Number(v.gross) || 0,
+          net: Number(v.net) || 0,
+        });
+      }
+    }
+    setLastSaved(new Date());
+  }, 600);
+
+  const numberInput = 'w-full border rounded px-3 py-2 text-right text-base h-10';
+  const textInput = 'w-full border rounded px-3 py-2 text-base h-10';
+  const numberInputBase = 'border rounded px-3 py-2 text-base h-10';
+  const czcNumCol = 'min-w-[88px] w-[88px] md:min-w-[104px] md:w-[104px]';
+  const czcNumInput = 'min-w-[88px] w-[88px] md:min-w-[104px] md:w-[104px] text-center';
 
   function setZoneDesc(tab: keyof State, rowIdx: number, v: string) {
     setState((prev) => {
@@ -120,6 +228,7 @@ export default function StepCrestaZoneControl() {
       }
       return copy;
     });
+  setPendingZoneDesc({ section: tab, rowIdx });
   }
   function setCell(tab: Exclude<keyof State, 'sum_insured'>, rowIdx: number, catKey: string, field: keyof Pair, v: number | string) {
     setState((prev) => {
@@ -132,6 +241,7 @@ export default function StepCrestaZoneControl() {
       (copy[tab] as Row[]) = rows;
       return copy;
     });
+    setPendingCell({ section: tab, rowIdx, category: catKey });
   }
 
   // Simple table setters
@@ -141,6 +251,7 @@ export default function StepCrestaZoneControl() {
       copy.sum_insured = copy.sum_insured.map((r, i) => (i === rowIdx ? { ...r, zone_description: v } : r));
       return copy;
     });
+    setPendingCell({ section: 'sum_insured', rowIdx, category: null });
   }
   function setSimpleCell(rowIdx: number, field: keyof Omit<SimpleRow, 'zone' | 'zone_description'>, v: number | string) {
     setState((prev) => {
@@ -148,6 +259,7 @@ export default function StepCrestaZoneControl() {
       copy.sum_insured = copy.sum_insured.map((r, i) => (i === rowIdx ? { ...r, [field]: v === '' ? 0 : Number(v) } : r));
       return copy;
     });
+    setPendingCell({ section: 'sum_insured', rowIdx, category: null });
   }
 
   function totals(rows: Row[], categories: { key: string; label: string }[]) {
@@ -201,6 +313,24 @@ export default function StepCrestaZoneControl() {
       copy.sum_insured = rows;
       return copy;
     });
+    // batch replace using newly parsed grid -> computed rows
+    if (submissionId) {
+      const rowsNew: Array<{ zone: number; zone_description: string; category: string | null; gross: number; net: number }> = [];
+      for (let i = 0; i < 20; i++) {
+        const zone = i === 19 ? 0 : i + 1;
+        const r = i < grid.length - start ? grid[i + start] ?? [] : [];
+        let c = 0;
+        if (/^\d+$/.test(String(r[0] ?? ''))) c = 1;
+        rowsNew.push({
+          zone,
+          zone_description: String(r[c + 0] ?? '').trim(),
+          category: null,
+          gross: toNumber(r[c + 1]),
+          net: toNumber(r[c + 2]),
+        });
+      }
+      replaceCrestaSection({ submissionId, section: 'sum_insured', rows: rowsNew }).then(() => setLastSaved(new Date()));
+    }
   }
   function applyPasteComplex(key: Exclude<keyof State, 'sum_insured'>, def: { categories: { key: string; label: string }[] }, grid: string[][]) {
     if (!grid || grid.length === 0) return;
@@ -229,11 +359,31 @@ export default function StepCrestaZoneControl() {
       (copy[key] as Row[]) = rows;
       return copy;
     });
+    // batch replace section using parsed grid
+    if (submissionId) {
+      const rowsArr: Array<{ zone: number; zone_description: string; category: string | null; gross: number; net: number }> = [];
+      for (let i = 0; i < 20; i++) {
+        const zone = i === 19 ? 0 : i + 1;
+        const r = i < grid.length - start ? grid[i + start] ?? [] : [];
+        let ci = 0;
+        if (/^\d+$/.test(String(r[0] ?? ''))) ci = 1;
+        const desc = String(r[ci++] ?? '').trim();
+        for (const cat of def.categories) {
+          const g = toNumber(r[ci++]);
+          const n = toNumber(r[ci++]);
+          rowsArr.push({ zone, zone_description: desc, category: cat.key, gross: g, net: n });
+        }
+      }
+      replaceCrestaSection({ submissionId, section: key as any, rows: rowsArr }).then(() => setLastSaved(new Date()));
+    }
   }
 
   const Table = ({ def }: { def: TableDef }) => {
     const rows = state[def.key] as Row[];
     const t = useMemo(() => totals(rows, def.categories), [rows, def.categories]);
+    const isTargetTable = def.key === 'personal' || def.key === 'commercial' || def.key === 'industrial';
+    const isTargetCategory = (catKey: string) =>
+      isTargetTable && (catKey === 'buildings' || catKey === 'content' || catKey === 'buildings_contents' || catKey === 'motor');
     return (
       <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-3">
         <div className="flex items-center justify-between mb-2">
@@ -243,15 +393,15 @@ export default function StepCrestaZoneControl() {
         <table className="min-w-full table-auto border">
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-2 py-1 w-20"></th>
-              <th className="px-2 py-1"></th>
-              <th className="px-2 py-1 text-center" colSpan={def.categories.length * 2}>{def.title}</th>
+              <th className="px-3 py-2 w-20"></th>
+              <th className="px-3 py-2"></th>
+              <th className="px-3 py-2 text-center text-sm md:text-base" colSpan={def.categories.length * 2}>{def.title}</th>
             </tr>
             <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-2 py-1 text-left">Zone</th>
-              <th className="px-2 py-1 text-left">Zone Description</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Zone</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Zone Description</th>
               {def.categories.map((c) => (
-                <th key={`${c.key}-gross`} className="px-2 py-1 text-left" colSpan={2}>{c.label}</th>
+                <th key={`${c.key}-gross`} className="px-3 py-2 text-left text-sm md:text-base" colSpan={2}>{c.label}</th>
               ))}
             </tr>
             <tr className="bg-gray-100 dark:bg-gray-700">
@@ -259,8 +409,18 @@ export default function StepCrestaZoneControl() {
               <th></th>
               {def.categories.map((c) => (
                 <>
-                  <th key={`${c.key}-gross-h`} className="px-2 py-1 text-left">Gross (net of Fac)</th>
-                  <th key={`${c.key}-net-h`} className="px-2 py-1 text-left">Net</th>
+                  <th
+                    key={`${c.key}-gross-h`}
+                    className={`px-3 py-2 text-left text-sm md:text-base ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}
+                  >
+                    Gross (net of Fac)
+                  </th>
+                  <th
+                    key={`${c.key}-net-h`}
+                    className={`px-3 py-2 text-left text-sm md:text-base ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}
+                  >
+                    Net
+                  </th>
                 </>
               ))}
             </tr>
@@ -268,24 +428,42 @@ export default function StepCrestaZoneControl() {
           <tbody>
             {rows.map((r, i) => (
               <tr key={String(r.zone)} className="border-t">
-                <td className="px-2 py-1 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
-                <td className="px-2 py-1"><input className={textInput} value={r.zone_description} onChange={(e) => setZoneDesc(def.key, i, e.target.value)} /></td>
+                <td className="px-3 py-2 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
+                <td className="px-3 py-2"><input className={textInput + ' w-[14rem]'} value={r.zone_description} onChange={(e) => setZoneDesc(def.key, i, e.target.value)} /></td>
                 {def.categories.map((c) => (
                   <React.Fragment key={`${i}-${c.key}-frag`}>
-                    <td className="px-2 py-1 w-32"><input className={numberInput} type="number" step="0.01" min="0" value={r.values[c.key]?.gross ?? 0} onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'gross', e.target.value)} /></td>
-                    <td className="px-2 py-1 w-32"><input className={numberInput} type="number" step="0.01" min="0" value={r.values[c.key]?.net ?? 0} onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'net', e.target.value)} /></td>
+                    <td className={`px-3 py-2 ${isTargetCategory(c.key) ? czcNumCol : 'w-40'}`}>
+                      <input
+                        className={isTargetCategory(c.key) ? `${numberInputBase} ${czcNumInput}` : numberInput}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={r.values[c.key]?.gross ?? 0}
+                        onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'gross', e.target.value)}
+                      />
+                    </td>
+                    <td className={`px-3 py-2 ${isTargetCategory(c.key) ? czcNumCol : 'w-40'}`}>
+                      <input
+                        className={isTargetCategory(c.key) ? `${numberInputBase} ${czcNumInput}` : numberInput}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={r.values[c.key]?.net ?? 0}
+                        onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'net', e.target.value)}
+                      />
+                    </td>
                   </React.Fragment>
                 ))}
               </tr>
             ))}
             {/* Total row */}
             <tr className="border-t bg-gray-50 dark:bg-gray-900">
-              <td className="px-2 py-1 font-semibold">Total</td>
-              <td className="px-2 py-1"></td>
+              <td className="px-3 py-2 font-semibold">Total</td>
+              <td className="px-3 py-2"></td>
               {def.categories.map((c) => (
                 <React.Fragment key={`tot-${c.key}-frag`}>
-                  <td className="px-2 py-1 text-right font-semibold">{t[c.key]!.gross.toLocaleString()}</td>
-                  <td className="px-2 py-1 text-right font-semibold">{t[c.key]!.net.toLocaleString()}</td>
+                  <td className={`px-3 py-2 text-right font-semibold ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}>{t[c.key]!.gross.toLocaleString()}</td>
+                  <td className={`px-3 py-2 text-right font-semibold ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}>{t[c.key]!.net.toLocaleString()}</td>
                 </React.Fragment>
               ))}
             </tr>
@@ -307,31 +485,31 @@ export default function StepCrestaZoneControl() {
         <table className="min-w-full table-auto border">
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-2 py-1 w-20"></th>
-              <th className="px-2 py-1"></th>
-              <th className="px-2 py-1 text-center" colSpan={2}>Sum Insured</th>
+              <th className="px-3 py-2 w-20"></th>
+              <th className="px-3 py-2"></th>
+              <th className="px-3 py-2 text-center text-sm md:text-base" colSpan={2}>Sum Insured</th>
             </tr>
             <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-2 py-1 text-left">Zone</th>
-              <th className="px-2 py-1 text-left">Zone Description</th>
-              <th className="px-2 py-1 text-left">Gross (net of Fac)</th>
-              <th className="px-2 py-1 text-left">Net</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Zone</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Zone Description</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Gross (net of Fac)</th>
+              <th className="px-3 py-2 text-left text-sm md:text-base">Net</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={String(r.zone)} className="border-t">
-                <td className="px-2 py-1 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
-                <td className="px-2 py-1"><input className={textInput} value={r.zone_description} onChange={(e) => setSimpleDesc(i, e.target.value)} /></td>
-                <td className="px-2 py-1 w-32"><input className={numberInput} type="number" step="0.01" min="0" value={r.gross} onChange={(e) => setSimpleCell(i, 'gross', e.target.value)} /></td>
-                <td className="px-2 py-1 w-32"><input className={numberInput} type="number" step="0.01" min="0" value={r.net} onChange={(e) => setSimpleCell(i, 'net', e.target.value)} /></td>
+                <td className="px-3 py-2 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
+                <td className="px-3 py-2"><input className={textInput + ' w-[14rem]'} value={r.zone_description} onChange={(e) => setSimpleDesc(i, e.target.value)} /></td>
+                <td className="px-3 py-2 w-40"><input className={numberInput} type="number" step="0.01" min="0" value={r.gross} onChange={(e) => setSimpleCell(i, 'gross', e.target.value)} /></td>
+                <td className="px-3 py-2 w-40"><input className={numberInput} type="number" step="0.01" min="0" value={r.net} onChange={(e) => setSimpleCell(i, 'net', e.target.value)} /></td>
               </tr>
             ))}
             <tr className="border-t bg-gray-50 dark:bg-gray-900">
-              <td className="px-2 py-1 font-semibold">Total</td>
-              <td className="px-2 py-1" />
-              <td className="px-2 py-1 text-right font-semibold">{t.gross.toLocaleString()}</td>
-              <td className="px-2 py-1 text-right font-semibold">{t.net.toLocaleString()}</td>
+              <td className="px-3 py-2 font-semibold">Total</td>
+              <td className="px-3 py-2" />
+              <td className="px-3 py-2 text-right font-semibold">{t.gross.toLocaleString()}</td>
+              <td className="px-3 py-2 text-right font-semibold">{t.net.toLocaleString()}</td>
             </tr>
           </tbody>
         </table>

@@ -1,5 +1,27 @@
 # Features Tracking by Date
 
+## 2025-09-19
+
+### Added
+
+- Property: Cresta Zone Control migrated from `sheet_blobs` JSON to normalized relational storage with autosave and batch import.
+	- Table: `public.property_cresta_zone_values` with owner-only RLS, constraints, indexes, and `updated_at` trigger ([supabase/migrations/20250919_003_property_cresta_zone_values.sql](../supabase/migrations/20250919_003_property_cresta_zone_values.sql)).
+	- RPCs: `upsert_property_cresta_zone_value`, `replace_property_cresta_zone_section`, `get_property_cresta_zone_values`, and `migrate_property_cresta_from_blob`.
+	- Frontend service: encapsulated API in `getCresta`, `upsertCrestaCell`, `replaceCrestaSection` ([src/lib/cresta.ts](../src/lib/cresta.ts)).
+	- UI refactor: per‑cell autosave for grid edits; batch replace on paste/import; separate autosave for zone description ([src/pages/wizard/steps/property/StepCrestaZoneControl.tsx](../src/pages/wizard/steps/property/StepCrestaZoneControl.tsx)).
+	- Types: Supabase types extended for new table and RPCs ([src/types/supabase.ts](../src/types/supabase.ts)).
+	- Tests: Service unit tests for RPC payloads ([tests/lib/cresta.service.test.ts](../tests/lib/cresta.service.test.ts)).
+
+### Changed
+
+- Documentation: Updated to reflect normalized Cresta persistence and RPCs.
+	- Features and storage maps updated ([docs/FEATURES.md](./FEATURES.md), [docs/field-map.md](./field-map.md), [docs/supabase-storage-map.md](./supabase-storage-map.md)).
+	- New table doc added and linked from database overview ([docs/database/tables/property_cresta_zone_values.md](./database/tables/property_cresta_zone_values.md), [docs/database/overview.md](./database/overview.md)).
+
+### Fixed
+
+- SQL: Resolved `syntax error at or near "declare"` in `migrate_property_cresta_from_blob` by removing nested procedure declarations and inlining loops ([supabase/migrations/20250919_003_property_cresta_zone_values.sql](../supabase/migrations/20250919_003_property_cresta_zone_values.sql)).
+
 ## 2025-09-03
 
 ### Added

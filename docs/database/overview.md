@@ -28,6 +28,7 @@ Tables (see docs in tables/):
 - [large_loss_triangle_values](./tables/large_loss_triangle_values.md) — Large loss development values
 - [top_risks](./tables/top_risks.md) — Top 20 risks with unique (submission_id, rank)
 - [profiles](./tables/profiles.md) — User profile (theme preference added in 2025‑09‑07 migration)
+- [property_cresta_zone_values](./tables/property_cresta_zone_values.md) — Normalized Cresta Zone Control values (Property)
 
 ## JSONB usage and computed indexes
 
