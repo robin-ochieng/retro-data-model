@@ -12,9 +12,10 @@ export default function StepSubmit() {
     if (!submissionId) return;
     setLoading(true);
     setMessage('');
+    // Update status only (submitted_at column not present yet). Add it via migration if needed.
     const upd = await supabase
       .from('submissions')
-      .update({ status: 'submitted', submitted_at: new Date().toISOString() })
+      .update({ status: 'submitted' })
       .eq('id', submissionId);
     if (upd.error) {
       setMessage(`Error: ${upd.error.message}`);
