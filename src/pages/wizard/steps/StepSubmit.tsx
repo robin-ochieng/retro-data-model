@@ -12,17 +12,38 @@ export default function StepSubmit() {
     if (!submissionId) return;
     setLoading(true);
     setMessage('');
-    const upd = await supabase.from('submissions').update({ status: 'submitted' }).eq('id', submissionId);
+    const upd = await supabase
+      .from('submissions')
+      .update({ status: 'submitted', submitted_at: new Date().toISOString() })
+      .eq('id', submissionId);
     if (upd.error) {
       setMessage(`Error: ${upd.error.message}`);
       setLoading(false);
       return;
     }
-    const res = await generateExcel(submissionId);
-    if (res.ok) {
-      setMessage('Generation triggered (stub).');
-    } else {
-      setMessage('Generation failed (stub).');
+    // Fire n8n webhook (non-blocking). Failures are logged but not shown as hard errors.
+    const webhookUrl = import.meta.env.VITE_N8N_SUBMISSION_WEBHOOK_URL as string | undefined;
+    const secret = import.meta.env.VITE_N8N_WEBHOOK_SECRET as string | undefined;
+    if (webhookUrl && secret) {
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-secret': secret,
+        },
+        body: JSON.stringify({ submissionId }),
+      }).catch((err) => console.warn('n8n webhook failed', err));
+    }
+    // Optional local stub generation (can remove later)
+    try {
+      const res = await generateExcel(submissionId);
+      if (res.ok) {
+        setMessage('Submission locked. Export pipeline triggered.');
+      } else {
+        setMessage('Submitted. Remote export queued; local stub failed.');
+      }
+    } catch (e) {
+      setMessage('Submitted. Remote export queued.');
     }
     setLoading(false);
   };
