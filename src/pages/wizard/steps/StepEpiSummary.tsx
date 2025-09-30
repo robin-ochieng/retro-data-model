@@ -18,7 +18,12 @@ const RowSchema = z.object({
   epi_value: z.number().min(0, 'Must be >= 0'),
 });
 
-const GwpsSchema = z.object({ section: z.string().min(1, 'Required'), premium: z.number().nonnegative() });
+// Include id for Option B (duplicate sections allowed) - id generated client side for stability
+const GwpsSchema = z.object({
+  id: z.string().optional(),
+  section: z.string().min(1, 'Required'),
+  premium: z.number().nonnegative()
+});
 const FormSchema = z.object({
   rows: z.array(RowSchema),
   gwp_split: z.array(GwpsSchema).optional(),
@@ -90,7 +95,7 @@ export default function StepEpiSummary() {
         const meta = await getEpiSummaryMeta(submissionId);
         reset(curr => ({
           ...curr,
-          gwp_split: gwpRows.map(r => ({ section: r.section, premium: Number(r.premium) })) ?? [],
+          gwp_split: gwpRows.map(r => ({ id: r.id, section: r.section, premium: Number(r.premium) })) ?? [],
           additional_comments: meta?.additional_comments ?? '',
         }));
       } catch (e) {
@@ -145,7 +150,10 @@ export default function StepEpiSummary() {
     }
     // Relational save for GWP + meta
     try {
-      await replaceEpiGwpSplit(submissionId, (values.gwp_split ?? []).map(r => ({ section: r.section || '', premium: r.premium || 0 })));
+      await replaceEpiGwpSplit(
+        submissionId,
+        (values.gwp_split ?? []).map((r, idx) => ({ id: r.id, section: r.section || '', premium: r.premium || 0, position: idx }))
+      );
       await upsertEpiSummaryMeta(submissionId, { additional_comments: values.additional_comments ?? '', treaty_type: treatyType || 'Quota Share Treaty' });
     } catch (e: any) {
       setSaveError(String(e.message || e));
@@ -202,11 +210,12 @@ export default function StepEpiSummary() {
     const mapped = rows
       .slice(start)
       .map((r) => ({
+        id: crypto.randomUUID(),
         section: (r[0] ?? '').trim(),
         premium: toNumber((r[1] ?? '').trim()),
       }))
       .filter((r) => (r.section?.trim() || r.premium > 0));
-    setValue('gwp_split', mapped.length > 0 ? mapped : [{ section: '', premium: 0 }], { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+    setValue('gwp_split', mapped.length > 0 ? mapped : [{ id: crypto.randomUUID(), section: '', premium: 0 }], { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   return (
@@ -354,7 +363,7 @@ export default function StepEpiSummary() {
           </tbody>
         </table>
         <div className="flex justify-between items-center mt-4">
-          <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => gwpAppend({ section: '', premium: 0 })}>
+          <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => gwpAppend({ id: crypto.randomUUID(), section: '', premium: 0 })}>
             Add Section
           </button>
         </div>

@@ -3,36 +3,63 @@ import { supabase } from './supabase';
 const sb: any = supabase;
 
 export interface EpiGwpSplitRow {
+  id?: string; // uuid primary key (may be undefined before first save)
   submission_id: string;
   section: string;
   premium: number;
+  position?: number | null;
+}
+
+// Helper to compute differential sets for GWP split rows by id (or synthetic key if id missing)
+export function diffGwpRows(existing: EpiGwpSplitRow[], incoming: EpiGwpSplitRow[]) {
+  const key = (r: EpiGwpSplitRow, idx: number) => r.id || `__new_${idx}_${r.section}_${r.position}`;
+  const existingMap = new Map(existing.map((r, i) => [key(r, i), r]));
+  const incomingMap = new Map(incoming.map((r, i) => [key(r, i), r]));
+  const toDelete: EpiGwpSplitRow[] = [];
+  for (const [k, ex] of existingMap.entries()) {
+    if (!incomingMap.has(k) && ex.id) toDelete.push(ex);
+  }
+  return { toDelete };
 }
 
 export async function getEpiGwpSplit(submissionId: string): Promise<EpiGwpSplitRow[]> {
-  const { data, error } = await sb.from('epi_gwp_split').select('*').eq('submission_id', submissionId).order('section');
+  const { data, error } = await sb
+    .from('epi_gwp_split')
+    .select('id, submission_id, section, premium, position')
+    .eq('submission_id', submissionId)
+    .order('position', { ascending: true, nullsFirst: true })
+    .order('created_at');
   if (error) throw error;
   return data as EpiGwpSplitRow[];
 }
-
-export async function upsertEpiGwpSplit(submissionId: string, rows: { section: string; premium: number }[]) {
-  if (rows.length === 0) return { count: 0 };
-  const payload = rows.map(r => ({ submission_id: submissionId, section: r.section, premium: r.premium }));
-  const { error } = await sb.from('epi_gwp_split').upsert(payload, { onConflict: 'submission_id,section' });
-  if (error) throw error;
-  return { count: rows.length };
-}
-
-export async function replaceEpiGwpSplit(submissionId: string, rows: { section: string; premium: number }[]) {
+// Replace entire set with support for duplicate sections using primary key id
+export async function replaceEpiGwpSplit(
+  submissionId: string,
+  rows: { id?: string; section: string; premium: number; position?: number }[]
+) {
+  // Fetch existing IDs
   const existing = await getEpiGwpSplit(submissionId);
-  const existingSections = new Set(existing.map(r => r.section));
-  const incomingSections = new Set(rows.map(r => r.section));
-  await upsertEpiGwpSplit(submissionId, rows);
-  // Delete missing
-  for (const s of existingSections) {
-    if (!incomingSections.has(s)) {
-  await sb.from('epi_gwp_split').delete().eq('submission_id', submissionId).eq('section', s);
-    }
+  const existingIds = new Set(existing.filter(r => r.id).map(r => r.id as string));
+  // Normalize incoming (assign position deterministically; server default generates id if missing)
+  const normalized = rows.map((r, idx) => ({
+    id: r.id, // keep if provided
+    submission_id: submissionId,
+    section: r.section?.trim() || '',
+    premium: Number(r.premium) || 0,
+    position: typeof r.position === 'number' ? r.position : idx,
+  }));
+  const incomingIds = new Set(normalized.filter(r => r.id).map(r => r.id as string));
+
+  if (normalized.length > 0) {
+    const { error } = await sb.from('epi_gwp_split').upsert(normalized, { onConflict: 'id' });
+    if (error) throw error;
   }
+  const toDelete = [...existingIds].filter(id => !incomingIds.has(id));
+  if (toDelete.length > 0) {
+    const { error: delErr } = await sb.from('epi_gwp_split').delete().in('id', toDelete);
+    if (delErr) throw delErr;
+  }
+  return normalized;
 }
 
 export interface EpiSummaryMeta {
