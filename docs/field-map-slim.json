@@ -24,6 +24,75 @@
       }
     },
     {
+      "tabKey": "sum-insured",
+      "sheetName": "Sum Insured",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=sum_insured": [
+          "Zone",
+          "Zone Description",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "sum_insured"}}
+    },
+    {
+      "tabKey": "personal",
+      "sheetName": "Personal Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=personal": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "personal"}}
+    },
+    {
+      "tabKey": "commercial",
+      "sheetName": "Commercial Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=commercial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "commercial"}}
+    },
+    {
+      "tabKey": "industrial",
+      "sheetName": "Industrial Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=industrial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "industrial"}}
+    },
+    {
+      "tabKey": "engineering",
+      "sheetName": "Engineering Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=engineering": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "engineering"}}
+    },
+    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
       "excelColumns": {
@@ -142,6 +211,37 @@
           }
         }
       }
+    },
+    {
+      "tabKey": "top-risks",
+      "sheetName": "Top 20 Risks",
+      "excelColumns": {
+        "table:top_risks": [
+          "Rank",
+          "Insured Name",
+          "Country",
+          "Risk Type",
+          "Risk Sum Insured",
+          "Gross Premium",
+          "Currency"
+        ],
+        "sheet_blobs": {
+          "fields": { "additional_comments": "Additional Comments" }
+        }
+      }
+    },
+    {
+      "tabKey": "triangles-aggregate",
+      "sheetName": "Aggregate Triangle",
+      "excelColumns": {
+        "table:property_aggregate_triangle_values": [
+          "Measure",
+          "UW Year",
+          "Development (Months)",
+          "Value"
+        ]
+      },
+      "_meta": {"source": "property_aggregate_triangle_values"}
     }
   ]
 }

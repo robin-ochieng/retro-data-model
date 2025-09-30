@@ -61,3 +61,40 @@ Use semantic Tailwind colors to benefit from tokens:
 - Borders: `border-border`
 
 You can gradually adopt tokens; existing classes remain working.
+
+## Client-Side Excel Generation (Property LoB)
+
+The file `docs/field-map-slim.json` drives multi-sheet Excel generation for the Property line of business. Tabs now include Sum Insured, Personal, Commercial, Industrial, Engineering, Top 20 Risks, Aggregate Triangle in addition to existing Header / EPI / Treaty / Large Loss sheets.
+
+### Mapping Format
+Each object under `tabs` supplies:
+- `sheetName`: Excel tab name (truncated to 30 chars when writing)
+- `excelColumns`: one or more data sources
+	- `table:table_name[:col=value]` arrays: specify header ordering; rows filtered by submission and optional equality filters.
+	- `sheet_blobs` object: pulls scalar `fields` (payload key -> Header Label) and array sections `array:<payload_key>` describing column headers for array elements.
+
+### Generation Flow
+`generateExcel(submissionId)` (in `src/lib/generateExcel.ts`):
+1. Loads mapping JSON and the `sheet_blobs` payload (currently only `Header`).
+2. For each `table:` spec queries Supabase with `submission_id` + filters.
+3. Normalizes rows to declared header order; falls back to simple heuristic matching.
+4. Assembles all sheets with `xlsx` (dynamically imported) and returns `{ ok, url, blob }` where `url` is an object URL for direct download.
+
+### Using In UI
+After submission, call `generateExcel(id)` and, if `ok`, either auto-trigger a download or show a link:
+```tsx
+const res = await generateExcel(submissionId);
+if (res.ok && res.url) {
+	const a = document.createElement('a');
+	a.href = res.url;
+	a.download = `${submissionId}.xlsx`;
+	a.click();
+}
+```
+
+### Limitations / Next Steps
+- Only one `sheet_blobs` pull (Header). If other sheet-specific blobs are revived, extend fetch to parameterize `sheet_name`.
+- Column heuristic might mis-map ambiguous labels; upgrade by allowing objects like `{ field: 'gross', header: 'Gross (Net of Fac)' }`.
+- Large datasets may warrant pagination or server-side generation (edge function + Storage).
+- Add style formatting (column widths, number formats) by post-processing the worksheet objects.
+
