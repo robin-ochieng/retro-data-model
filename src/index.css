@@ -78,3 +78,39 @@
 
 /* Prevent horizontal overflow on ultrawide screens */
 html, body, #root { overflow-x: hidden; }
+
+/* === Loader Animations & Utility Classes === */
+@keyframes spinBorder {
+  0% { stroke-dasharray: 1 150; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 90 150; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 90 150; stroke-dashoffset: -124; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes dotPulse {
+  0%, 60%, 100% { opacity: .25; transform: scale(.75); }
+  30% { opacity: 1; transform: scale(1); }
+}
+@keyframes fadeInScale {
+  0% { opacity:0; transform: scale(.95); }
+  100% { opacity:1; transform: scale(1); }
+}
+
+.loader-shimmer { @apply relative overflow-hidden bg-gray-200 dark:bg-gray-700 rounded; }
+.loader-shimmer:before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.dot-pulse span { animation: dotPulse 1s infinite ease-in-out; }
+.dot-pulse span:nth-child(2) { animation-delay: .2s; }
+.dot-pulse span:nth-child(3) { animation-delay: .4s; }
+
+.spinner-svg { animation: fadeInScale .25s ease; }
+.spinner-circle { animation: spinBorder 1.5s ease-in-out infinite; stroke-linecap: round; }
+

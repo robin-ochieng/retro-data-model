@@ -93,6 +93,33 @@ if (res.ok && res.url) {
 ```
 
 ### Limitations / Next Steps
+-
+## Loader Components
+
+Modern, accessible loading primitives live in `src/components/loaders/`:
+
+| Component | Purpose | Notes |
+|-----------|---------|-------|
+| `Spinner` | Primary indeterminate action | SVG stroke animation (dash / offset) + fade-in |
+| `DotsLoader` | Subtle background activity (e.g., secondary area) | Pulsing three-dot sequence |
+| `Skeleton` | Placeholder for blocks of forthcoming content | Uses shimmer gradient with reduced motion respects OS setting (inherit) |
+| `LoadingOverlay` | Dim + blur underlying content while an action runs | Wrap existing content; shows `Spinner` centered |
+| `Loader` | Unified wrapper to pick `spinner` or `dots` by variant | Simplifies inline conditional usage |
+
+### Usage Examples
+
+```tsx
+import { Spinner, DotsLoader, Skeleton, LoadingOverlay, Loader } from '@/components/loaders';
+
+<Spinner label="Saving" />
+<DotsLoader label="Syncing" size={10} />
+<Skeleton lines={4} className="mt-4" />
+<LoadingOverlay show={isSubmitting} label="Submitting">{children}</LoadingOverlay>
+<Loader variant="dots" label="Working" />
+```
+
+All animations are implemented with Tailwind + custom keyframes (see `index.css`). Colors inherit current text color to support dark mode automatically. Keep loader usage minimal—prefer optimistic UI updates over long spinners.
+
 - Only one `sheet_blobs` pull (Header). If other sheet-specific blobs are revived, extend fetch to parameterize `sheet_name`.
 - Column heuristic might mis-map ambiguous labels; upgrade by allowing objects like `{ field: 'gross', header: 'Gross (Net of Fac)' }`.
 - Large datasets may warrant pagination or server-side generation (edge function + Storage).

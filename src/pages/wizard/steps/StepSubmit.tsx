@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { generateExcel } from '../../../lib/generateExcel';
-import LoadingIndicator from '../../../components/LoadingIndicator';
+import { Loader } from '../../../components/loaders';
 
 export default function StepSubmit() {
   const { submissionId } = useParams();
@@ -109,9 +109,9 @@ export default function StepSubmit() {
           onClick={onSubmit}
           disabled={loading}
         >
-          {loading ? <LoadingIndicator small label="Submitting" /> : 'Submit'}
+          {loading ? <Loader variant="spinner" label="Submitting" /> : 'Submit'}
         </button>
-        {downloading && <LoadingIndicator label="Generating" />}
+  {downloading && <Loader variant="dots" label="Generating" />}
       </div>
       {message && (
         <div className="mt-4 text-sm space-y-2">
