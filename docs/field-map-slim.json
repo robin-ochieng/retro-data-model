@@ -10,8 +10,6 @@
             "name_of_company": "Name of Company",
             "country": "Country",
             "currency_std_units": "Currency (std. units)",
-            "munich_re_client_manager": "Munich RE Client Manager",
-            "munich_re_underwriter": "Munich RE Underwriter",
             "inception_date": "Inception Date",
             "expiry_date": "Expiry Date",
             "claims_period": "Claims Period",
@@ -24,75 +22,6 @@
       }
     },
     {
-      "tabKey": "sum-insured",
-      "sheetName": "Sum Insured",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=sum_insured": [
-          "Zone",
-          "Zone Description",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "sum_insured"}}
-    },
-    {
-      "tabKey": "personal",
-      "sheetName": "Personal Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=personal": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "personal"}}
-    },
-    {
-      "tabKey": "commercial",
-      "sheetName": "Commercial Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=commercial": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "commercial"}}
-    },
-    {
-      "tabKey": "industrial",
-      "sheetName": "Industrial Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=industrial": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "industrial"}}
-    },
-    {
-      "tabKey": "engineering",
-      "sheetName": "Engineering Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=engineering": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "engineering"}}
-    },
-    {
       "tabKey": "epi-summary",
       "sheetName": "EPI Summary",
       "excelColumns": {
@@ -103,12 +32,13 @@
           "EPI Value",
           "Currency"
         ],
-        "sheet_blobs": {
-          "array:gwp_split": ["Section", "Premium"],
-          "fields": {
-            "additional_comments": "Additional Comments"
-          }
-        }
+        "table:epi_gwp_split": [
+          "Section",
+          "Premium"
+        ],
+        "table:epi_summary_meta": [
+          "Additional Comments"
+        ]
       }
     },
     {
@@ -188,6 +118,75 @@
           }
         }
       }
+    },
+    {
+      "tabKey": "sum-insured",
+      "sheetName": "Sum Insured",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=sum_insured": [
+          "Zone",
+          "Zone Description",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "sum_insured"}}
+    },
+    {
+      "tabKey": "personal",
+      "sheetName": "Personal Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=personal": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "personal"}}
+    },
+    {
+      "tabKey": "commercial",
+      "sheetName": "Commercial Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=commercial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "commercial"}}
+    },
+    {
+      "tabKey": "industrial",
+      "sheetName": "Industrial Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=industrial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "industrial"}}
+    },
+    {
+      "tabKey": "engineering",
+      "sheetName": "Engineering Lines",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=engineering": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ]
+      },
+      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "engineering"}}
     },
     {
       "tabKey": "large-loss-list",

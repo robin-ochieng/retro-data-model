@@ -4,6 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../lib/supabase';
+import { getEpiGwpSplit, getEpiSummaryMeta, upsertEpiSummaryMeta, replaceEpiGwpSplit } from '../../../lib/epi';
 import { useAutosave } from '../../../hooks/useAutosave';
 import PasteModal from '../../../components/PasteModal';
 import { useSubmissionMeta } from '../SubmissionMetaContext';
@@ -83,30 +84,17 @@ export default function StepEpiSummary() {
   const rowsToUse = (filtered.length > 0 ? filtered : defaultRowsForLob).map(r => ({ ...r, treaty_type: r.treaty_type || tt, programme: r.programme || tt }));
         reset({ rows: rowsToUse });
       }
-      // Load GWP Split from sheet_blobs
-      let latest: any = await supabase
-        .from('sheet_blobs')
-        .select('payload, updated_at')
-        .eq('submission_id', submissionId)
-        .eq('sheet_name', 'EPI Summary')
-        .order('updated_at', { ascending: false, nullsFirst: false })
-        .limit(1);
-      // If the backend/client schema cache doesn't know about updated_at, fall back to a simple select
-      if (latest.error && /updated_at/i.test(String(latest.error.message))) {
-        latest = await supabase
-          .from('sheet_blobs')
-          .select('payload')
-          .eq('submission_id', submissionId)
-          .eq('sheet_name', 'EPI Summary')
-          .limit(1);
-      }
-      if (!latest.error && Array.isArray(latest.data) && latest.data[0]?.payload) {
-        const payload = latest.data[0].payload as any;
+      // Load relational meta replacement
+      try {
+        const gwpRows = await getEpiGwpSplit(submissionId);
+        const meta = await getEpiSummaryMeta(submissionId);
         reset(curr => ({
           ...curr,
-          gwp_split: payload.gwp_split ?? [],
-          additional_comments: payload.additional_comments ?? '',
+          gwp_split: gwpRows.map(r => ({ section: r.section, premium: Number(r.premium) })) ?? [],
+          additional_comments: meta?.additional_comments ?? '',
         }));
+      } catch (e) {
+        // Silent: fallback remains whatever is already in form
       }
     }
     loadRows();
@@ -155,24 +143,13 @@ export default function StepEpiSummary() {
         }
       }
     }
-    // Save GWP Split to sheet_blobs
-    const gwp = values.gwp_split ?? [];
-    const additional_comments = values.additional_comments ?? '';
-    // Update-then-insert to avoid a gap where no row exists; bump updated_at so latest loads deterministically
-  const updBlob = await supabase
-      .from('sheet_blobs')
-      .update({
-    payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } as any,
-      })
-      .eq('submission_id', submissionId)
-      .eq('sheet_name', 'EPI Summary')
-      .select('submission_id');
-    const noneUpdated = !!updBlob && Array.isArray((updBlob as any).data) && ((updBlob as any).data?.length ?? 0) === 0;
-    if (updBlob.error || noneUpdated) {
-      const insBlob = await supabase
-        .from('sheet_blobs')
-        .insert([{ submission_id: submissionId, sheet_name: 'EPI Summary', payload: { gwp_split: gwp, additional_comments, treaty_type: treatyType || 'Quota Share Treaty' } as any }]);
-      if (insBlob.error) { setSaveError(insBlob.error.message); return; }
+    // Relational save for GWP + meta
+    try {
+      await replaceEpiGwpSplit(submissionId, (values.gwp_split ?? []).map(r => ({ section: r.section || '', premium: r.premium || 0 })));
+      await upsertEpiSummaryMeta(submissionId, { additional_comments: values.additional_comments ?? '', treaty_type: treatyType || 'Quota Share Treaty' });
+    } catch (e: any) {
+      setSaveError(String(e.message || e));
+      return;
     }
     setLastSaved(new Date());
   });
