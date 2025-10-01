@@ -73,15 +73,25 @@ export async function generateExcel(submissionId: string): Promise<{ ok: boolean
             });
           }
           
-          // Handle array sections (if any)
-          Object.keys(spec)
-            .filter((k) => k.startsWith('array:'))
-            .forEach((arrKey) => {
+          // Handle array sections using metadata sections if available
+          const tabMeta = tab._meta;
+          const sections = tabMeta?.sections || [];
+          const spacing = tabMeta?.spacing || { between_sections: 2, after_tables: 2 };
+          
+          if (sections.length > 0) {
+            // Use metadata-defined sections for proper titles and spacing
+            sections.forEach((section: any, sectionIndex: number) => {
+              const arrKey = `array:${section.array}`;
               const headerArr = spec[arrKey];
-              const payloadArr = sheetBlobPayload[arrKey.replace('array:', '')] || [];
-              if (Array.isArray(payloadArr) && payloadArr.length > 0) {
-                // Add spacing before array section
-                currentRow++;
+              const payloadArr = sheetBlobPayload[section.array] || [];
+              
+              if (headerArr && Array.isArray(payloadArr)) {
+                // Add section title
+                if (section.title) {
+                  const titleCellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: 0 });
+                  worksheet[titleCellRef] = { v: section.title, t: 's' };
+                  currentRow++;
+                }
                 
                 // Add array headers
                 headerArr.forEach((header: string, colIndex: number) => {
@@ -90,18 +100,62 @@ export async function generateExcel(submissionId: string): Promise<{ ok: boolean
                 });
                 currentRow++;
                 
-                // Add array data
-                payloadArr.forEach((item: any) => {
-                  headerArr.forEach((h: string, colIndex: number) => {
-                    const snake = h.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                    const value = item[snake] ?? item[h] ?? '';
-                    const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
-                    worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
+                // Add array data (or empty row if no data)
+                if (payloadArr.length > 0) {
+                  payloadArr.forEach((item: any) => {
+                    headerArr.forEach((h: string, colIndex: number) => {
+                      const snake = h.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                      const value = item[snake] ?? item[h] ?? '';
+                      const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                      worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
+                    });
+                    currentRow++;
                   });
+                } else {
+                  // Add empty row for visual consistency
                   currentRow++;
-                });
+                }
+                
+                // Add spacing between sections (except after last section)
+                if (sectionIndex < sections.length - 1) {
+                  currentRow += spacing.between_sections;
+                }
               }
             });
+            
+            // Add spacing after all tables before fields
+            currentRow += spacing.after_tables;
+          } else {
+            // Fallback to original array handling for backwards compatibility
+            Object.keys(spec)
+              .filter((k) => k.startsWith('array:'))
+              .forEach((arrKey) => {
+                const headerArr = spec[arrKey];
+                const payloadArr = sheetBlobPayload[arrKey.replace('array:', '')] || [];
+                if (Array.isArray(payloadArr) && payloadArr.length > 0) {
+                  // Add spacing before array section
+                  currentRow++;
+                  
+                  // Add array headers
+                  headerArr.forEach((header: string, colIndex: number) => {
+                    const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                    worksheet[cellRef] = { v: header, t: 's' };
+                  });
+                  currentRow++;
+                  
+                  // Add array data
+                  payloadArr.forEach((item: any) => {
+                    headerArr.forEach((h: string, colIndex: number) => {
+                      const snake = h.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                      const value = item[snake] ?? item[h] ?? '';
+                      const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                      worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
+                    });
+                    currentRow++;
+                  });
+                }
+              });
+          }
         }
       }
 

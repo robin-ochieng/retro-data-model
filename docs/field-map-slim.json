@@ -73,7 +73,7 @@
         "sheet_blobs": {
           "array:overall": [
             "Treaty Year",
-            "Limit",
+            "Limit", 
             "Excess",
             "GNRPI",
             "Premium Rate",
@@ -88,7 +88,7 @@
           "array:cat_layer1": [
             "Treaty Year",
             "Limit",
-            "Excess",
+            "Excess", 
             "GNRPI",
             "Premium Rate",
             "Minimum Premium",
@@ -103,7 +103,7 @@
             "Treaty Year",
             "Limit",
             "Excess",
-            "GNRPI",
+            "GNRPI", 
             "Premium Rate",
             "Minimum Premium",
             "Earned Premium",
@@ -116,6 +116,19 @@
           "fields": {
             "additional_comments": "Additional Comments"
           }
+        }
+      },
+      "_meta": {
+        "source": "sheet_blobs",
+        "sheet_name": "Treaty Statistics_Non-Prop",
+        "sections": [
+          {"title": "XL: All Layers (Overall)", "array": "overall"},
+          {"title": "Cat XL: Layer 1", "array": "cat_layer1"},
+          {"title": "Cat XL: Layer 2", "array": "cat_layer2"}
+        ],
+        "spacing": {
+          "between_sections": 2,
+          "after_tables": 2
         }
       }
     },
