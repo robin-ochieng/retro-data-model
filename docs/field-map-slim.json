@@ -183,6 +183,27 @@
           "Net of Proportional Reinsurance (Premium)"
         ]
       }
+    },
+    {
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
+      "excelColumns": {
+        "table:uw_limits": [
+          "Risk Code",
+          "Limits"
+        ],
+        "table:uw_limit_meta": [
+          "Additional Comments"
+        ]
+      },
+      "_meta": {
+        "source": "multiple_tables",
+        "tables": ["uw_limits", "uw_limit_meta"],
+        "spacing": {
+          "between_tables": 2,
+          "before_comments": 2
+        }
+      }
     },   
     {
       "tabKey": "sum-insured",
