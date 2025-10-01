@@ -22,33 +22,52 @@ export async function generateExcel(submissionId: string): Promise<{ ok: boolean
       // Create new workbook worksheet
       const worksheet: any = {};
       
-      // Process tables first
-      for (const key of Object.keys(colSpec)) {
-        if (key.startsWith('table:')) {
-          const tableRows = await fetchTable(submissionId, key);
-          const columns = colSpec[key];
+      // Get metadata for spacing configuration
+      const tabMeta = tab._meta;
+      const spacing = tabMeta?.spacing || { between_tables: 2, before_comments: 2 };
+      
+      // Get table keys and identify which is the comments table
+      const tableKeys = Object.keys(colSpec).filter(key => key.startsWith('table:'));
+      const commentsTableKey = tableKeys.find(key => 
+        key.includes('meta') || colSpec[key].includes('Additional Comments')
+      );
+      
+      // Process tables first with proper spacing
+      for (let tableIndex = 0; tableIndex < tableKeys.length; tableIndex++) {
+        const key = tableKeys[tableIndex];
+        if (!key) continue;
+        
+        const isCommentsTable = key === commentsTableKey;
+        const tableRows = await fetchTable(submissionId, key);
+        const columns = colSpec[key];
+        
+        if (Array.isArray(columns) && (tableRows.length > 0 || isCommentsTable)) {
+          // Add extra spacing before comments table if configured
+          if (isCommentsTable && spacing.before_comments && tableIndex > 0) {
+            currentRow += spacing.before_comments;
+          }
           
-          if (Array.isArray(columns) && tableRows.length > 0) {
-            // Add table headers
-            columns.forEach((header, colIndex) => {
+          // Add table headers
+          columns.forEach((header, colIndex) => {
+            const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+            worksheet[cellRef] = { v: header, t: 's' };
+          });
+          currentRow++;
+          
+          // Add table data rows
+          tableRows.forEach((rowData: any) => {
+            columns.forEach((column: string, colIndex: number) => {
+              const snake = column.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+              const value = rowData[column] ?? rowData[snake] ?? rowData[column.replace(/ /g, '_').toLowerCase()] ?? '';
               const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
-              worksheet[cellRef] = { v: header, t: 's' };
+              worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
             });
             currentRow++;
-            
-            // Add table data rows
-            tableRows.forEach((rowData: any) => {
-              columns.forEach((column: string, colIndex: number) => {
-                const snake = column.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                const value = rowData[column] ?? rowData[snake] ?? rowData[column.replace(/ /g, '_').toLowerCase()] ?? '';
-                const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
-                worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
-              });
-              currentRow++;
-            });
-            
-            // Add spacing after table
-            currentRow += 2;
+          });
+          
+          // Add spacing after table (except after last table)
+          if (!isCommentsTable && tableIndex < tableKeys.length - 1) {
+            currentRow += spacing.between_tables;
           }
         }
       }

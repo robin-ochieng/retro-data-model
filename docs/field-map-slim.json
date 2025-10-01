@@ -39,6 +39,14 @@
         "table:epi_summary_meta": [
           "Additional Comments"
         ]
+      },
+      "_meta": {
+        "source": "multiple_tables",
+        "tables": ["epi_summary", "epi_gwp_split", "epi_summary_meta"],
+        "spacing": {
+          "between_tables": 2,
+          "before_comments": 2
+        }
       }
     },
     {
@@ -133,6 +141,24 @@
       }
     },
     {
+      "tabKey": "top-risks",
+      "sheetName": "Top 20 Risks",
+      "excelColumns": {
+        "table:top_risks": [
+          "Rank",
+          "Insured Name",
+          "Country",
+          "Risk Type",
+          "Risk Sum Insured",
+          "Gross Premium",
+          "Currency"
+        ],
+        "sheet_blobs": {
+          "fields": { "additional_comments": "Additional Comments" }
+        }
+      }
+    },   
+    {
       "tabKey": "sum-insured",
       "sheetName": "Sum Insured",
       "excelColumns": {
@@ -221,24 +247,6 @@
           "fields": {
             "additional_comments": "Additional Comments"
           }
-        }
-      }
-    },
-    {
-      "tabKey": "top-risks",
-      "sheetName": "Top 20 Risks",
-      "excelColumns": {
-        "table:top_risks": [
-          "Rank",
-          "Insured Name",
-          "Country",
-          "Risk Type",
-          "Risk Sum Insured",
-          "Gross Premium",
-          "Currency"
-        ],
-        "sheet_blobs": {
-          "fields": { "additional_comments": "Additional Comments" }
         }
       }
     },
