@@ -146,16 +146,18 @@
       "excelColumns": {
         "table:top_risks": [
           "Rank",
-          "Insured Name",
-          "Country",
-          "Risk Type",
-          "Risk Sum Insured",
+          "Insured",
+          "Class of Business",
+          "Occupation",
+          "Gross Sum Insured",
+          "Fac Sum Insured",
+          "Surplus Sum Insured",
+          "Quota Share Sum Insured",
+          "Net Sum Insured",
           "Gross Premium",
-          "Currency"
-        ],
-        "sheet_blobs": {
-          "fields": { "additional_comments": "Additional Comments" }
-        }
+          "Fac Premium",
+          "Surplus Premium"
+        ]
       }
     },   
     {
