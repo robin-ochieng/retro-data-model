@@ -8,7 +8,24 @@ import StepEpiSummary from '@/pages/wizard/steps/StepEpiSummary';
 import { SubmissionMetaProvider } from '@/pages/wizard/SubmissionMetaContext';
 
 // Spies we assert on
-const api = { epiDelete: vi.fn(), epiInsert: vi.fn(), sheetUpdate: vi.fn(), sheetInsert: vi.fn() };
+const api = { 
+  epiDelete: vi.fn(), 
+  epiInsert: vi.fn(), 
+  sheetUpdate: vi.fn(), 
+  sheetInsert: vi.fn(),
+  epiGwpSplitUpsert: vi.fn(),
+  epiSummaryMetaUpsert: vi.fn(),
+  replaceEpiGwpSplit: vi.fn(),
+  upsertEpiSummaryMeta: vi.fn()
+};
+
+// Mock EPI service functions
+vi.mock('@/lib/epi', () => ({
+  getEpiGwpSplit: vi.fn(async () => [{ id: 'uuid-1', section: 'Fire', premium: 1000, position: 0 }]),
+  replaceEpiGwpSplit: vi.fn(async () => { api.replaceEpiGwpSplit(); }),
+  getEpiSummaryMeta: vi.fn(async () => ({ submission_id: 'TEST-ID', additional_comments: 'Loaded notes' })),
+  upsertEpiSummaryMeta: vi.fn(async () => { api.upsertEpiSummaryMeta(); })
+}));
 
 // Supabase mock
 vi.mock('@/lib/supabase', () => {
@@ -69,11 +86,44 @@ vi.mock('@/lib/supabase', () => {
   const headerMaybeSingle = async () => ({ data: { payload: { treaty_type: 'Quota Share Treaty', currency_std_units: 'USD' } }, error: null });
   const subMaybeSingle = async () => ({ data: { meta: {} }, error: null });
 
+  // epi_gwp_split table handler
+  const epiGwpSplitHandler: any = {
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => ({
+          order: vi.fn(async () => ({
+            data: [{ id: 'uuid-1', section: 'Fire', premium: 1000, position: 0 }],
+            error: null
+          }))
+        }))
+      }))
+    })),
+    upsert: vi.fn(async () => { api.epiGwpSplitUpsert(); return { data: [], error: null }; }),
+    delete: vi.fn(() => ({
+      in: vi.fn(async () => ({ data: null, error: null }))
+    }))
+  };
+
+  // epi_summary_meta table handler  
+  const epiSummaryMetaHandler: any = {
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        maybeSingle: vi.fn(async () => ({
+          data: { submission_id: 'TEST-ID', additional_comments: 'Loaded notes' },
+          error: null
+        }))
+      }))
+    })),
+    upsert: vi.fn(async () => { api.epiSummaryMetaUpsert(); return { data: [], error: null }; })
+  };
+
   return {
     supabase: {
       from: (table: string) => {
         if (table === 'epi_summary') return epiHandler;
         if (table === 'sheet_blobs') return sheetHandler;
+        if (table === 'epi_gwp_split') return epiGwpSplitHandler;
+        if (table === 'epi_summary_meta') return epiSummaryMetaHandler;
         if (table === 'submissions') {
           return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: subMaybeSingle })) })) } as any;
         }
@@ -127,12 +177,11 @@ describe('EPI Summary DB wiring', () => {
     await user.clear(comments);
     await user.type(comments, 'New EPI note');
 
-    await waitFor(() => {
-      // Sheet update called
-      expect(api.sheetUpdate).toHaveBeenCalled();
-      // EPI table delete then insert
-      expect(api.epiDelete).toHaveBeenCalled();
-      expect(api.epiInsert).toHaveBeenCalled();
-    });
-  }, 10000);
+    // Wait for autosave debounce (900ms) plus some buffer
+    await new Promise(resolve => setTimeout(resolve, 1200));
+
+    // Check that the new EPI functions were called
+    expect(api.upsertEpiSummaryMeta).toHaveBeenCalled();
+    expect(api.replaceEpiGwpSplit).toHaveBeenCalled();
+  });
 });

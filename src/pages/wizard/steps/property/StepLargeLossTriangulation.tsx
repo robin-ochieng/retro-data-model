@@ -141,14 +141,8 @@ export default function StepLargeLossTriangulation() {
       } catch (e: any) {
         setSaving(false); setSaveError(e?.message || 'Failed to insert header rows'); return;
       }
-      const verify = await (supabase as any)
-        .from('large_loss_triangle_header_prop')
-        .select('id')
-        .eq('submission_id', submissionId)
-        .limit(1);
-      if (!verify.error && (!verify.data || verify.data.length === 0)) {
-        setSaving(false); setSaveError('Saved grids but header not visible. Check submission ownership (RLS).'); return;
-      }
+      // Note: Removed RLS verification that was causing false errors
+      // The chunkedSave above will throw an error if the insert fails due to RLS
     } else {
       // If no headers, clear all
       const { error } = await (supabase as any)

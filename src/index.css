@@ -76,6 +76,25 @@
   }
 }
 
+/* === Table Cell Overrides for Light Mode Visibility === */
+/* Some inputs inside tables were inheriting dark background classes even in light mode,
+   producing low contrast (dark bg + dark text). Force sane light defaults while preserving dark mode. */
+.table-cell-input, table input[type="text"], table input[type="number"], table select {
+  @apply bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-700;
+}
+
+/* If any legacy class applies a dark background (e.g., bg-gray-800) in light mode via specificity,
+   neutralize it by targeting light mode root (html:not(.dark)). */
+html:not(.dark) table input[class*='bg-gray-8'],
+html:not(.dark) table input[class*='bg-slate-8'],
+html:not(.dark) table select[class*='bg-gray-8'] {
+  @apply bg-white !important;
+  color: #111827 !important; /* Tailwind gray-900 */
+}
+
+/* Ensure Period/EPI numeric cells maintain consistent font color */
+html:not(.dark) td input[type='number'] { @apply text-gray-900; }
+
 /* Prevent horizontal overflow on ultrawide screens */
 html, body, #root { overflow-x: hidden; }
 
