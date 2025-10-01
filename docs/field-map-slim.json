@@ -159,6 +159,30 @@
           "Surplus Premium"
         ]
       }
+    },
+    {
+      "tabKey": "climate-change-exposure",
+      "sheetName": "Climate Change Exposure",
+      "excelColumns": {
+        "table:climate_exposure": [
+          "Policy Inception Date",
+          "Policy Expiry Date",
+          "Insured",
+          "Policy Category",
+          "Policy Description",
+          "Nature of Risk",
+          "Gross Exposure (TSI)",
+          "Cedants Exposure (TSI)",
+          "EML/MPL Limit Applied",
+          "EML/MPL Limit",
+          "Ceded to Proportional Reinsurance (Exposure)",
+          "Net of Inuring Proportional Reinsurance (Exposure)",
+          "Gross Premium",
+          "Cedants Premium",
+          "Ceded to Proportional Reinsurance (Premium)",
+          "Net of Proportional Reinsurance (Premium)"
+        ]
+      }
     },   
     {
       "tabKey": "sum-insured",
