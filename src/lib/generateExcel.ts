@@ -17,62 +17,110 @@ export async function generateExcel(submissionId: string): Promise<{ ok: boolean
     for (const tab of map.tabs) {
       const sheetName = tab.sheetName;
       const colSpec = tab.excelColumns;
-      let rows: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
-
+      let currentRow = 1; // Track current row position for proper spacing
+      
+      // Create new workbook worksheet
+      const worksheet: any = {};
+      
+      // Process tables first
       for (const key of Object.keys(colSpec)) {
         if (key.startsWith('table:')) {
           const tableRows = await fetchTable(submissionId, key);
           const columns = colSpec[key];
-          // If columns is an array of strings treat as explicit column ordering; else dynamic
-          if (Array.isArray(columns)) {
-            tableRows.forEach((r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-              const row: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
-              columns.forEach((c: string) => {
-                // Attempt loose matching: map header to snake key variants
-                const snake = c.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                const direct = r[c] ?? r[snake] ?? r[c.replace(/ /g, '_').toLowerCase()] ?? '';
-                row[c] = direct;
-              });
-              rows.push(row);
+          
+          if (Array.isArray(columns) && tableRows.length > 0) {
+            // Add table headers
+            columns.forEach((header, colIndex) => {
+              const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+              worksheet[cellRef] = { v: header, t: 's' };
             });
-          } else {
-            // Unsupported structure fallback: push raw
-            rows = rows.concat(tableRows);
+            currentRow++;
+            
+            // Add table data rows
+            tableRows.forEach((rowData: any) => {
+              columns.forEach((column: string, colIndex: number) => {
+                const snake = column.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                const value = rowData[column] ?? rowData[snake] ?? rowData[column.replace(/ /g, '_').toLowerCase()] ?? '';
+                const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
+              });
+              currentRow++;
+            });
+            
+            // Add spacing after table
+            currentRow += 2;
           }
-        } else if (key === 'sheet_blobs') {
+        }
+      }
+      
+      // Process sheet_blobs fields after tables (with proper spacing)
+      for (const key of Object.keys(colSpec)) {
+        if (key === 'sheet_blobs') {
           const spec = colSpec[key];
           if (spec.fields) {
-            const row: Record<string, any> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
             Object.entries(spec.fields).forEach(([payloadKey, headerLabel]) => {
-              row[headerLabel as string] = sheetBlobPayload[payloadKey] ?? '';
+              const value = sheetBlobPayload[payloadKey] ?? '';
+              
+              // Add field label in column A
+              const labelCellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: 0 });
+              worksheet[labelCellRef] = { v: headerLabel, t: 's' };
+              
+              // Add field value in column B  
+              const valueCellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: 1 });
+              worksheet[valueCellRef] = { v: value, t: 's' };
+              
+              currentRow++;
             });
-            rows.push(row);
           }
-          // Array sections e.g. array:gwp_split
+          
+          // Handle array sections (if any)
           Object.keys(spec)
             .filter((k) => k.startsWith('array:'))
             .forEach((arrKey) => {
               const headerArr = spec[arrKey];
               const payloadArr = sheetBlobPayload[arrKey.replace('array:', '')] || [];
-              if (Array.isArray(payloadArr)) {
-                payloadArr.forEach((item: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                  const row: Record<string, any> = {};
-                  headerArr.forEach((h: string) => {
+              if (Array.isArray(payloadArr) && payloadArr.length > 0) {
+                // Add spacing before array section
+                currentRow++;
+                
+                // Add array headers
+                headerArr.forEach((header: string, colIndex: number) => {
+                  const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                  worksheet[cellRef] = { v: header, t: 's' };
+                });
+                currentRow++;
+                
+                // Add array data
+                payloadArr.forEach((item: any) => {
+                  headerArr.forEach((h: string, colIndex: number) => {
                     const snake = h.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                    row[h] = item[snake] ?? item[h] ?? '';
+                    const value = item[snake] ?? item[h] ?? '';
+                    const cellRef = XLSX.utils.encode_cell({ r: currentRow - 1, c: colIndex });
+                    worksheet[cellRef] = { v: value, t: typeof value === 'number' ? 'n' : 's' };
                   });
-                  rows.push(row);
+                  currentRow++;
                 });
               }
             });
         }
       }
 
-      if (rows.length === 0) {
-        rows.push({ Info: 'No Data' });
+      // Set worksheet range and handle empty case
+      if (currentRow > 1) {
+        const maxCol = Math.max(...Object.keys(worksheet).map(ref => {
+          const decoded = XLSX.utils.decode_cell(ref);
+          return decoded.c;
+        }));
+        worksheet['!ref'] = XLSX.utils.encode_range({
+          s: { r: 0, c: 0 },
+          e: { r: currentRow - 2, c: maxCol }
+        });
+      } else {
+        // Handle empty worksheet case
+        worksheet['A1'] = { v: 'No Data', t: 's' };
+        worksheet['!ref'] = 'A1:A1';
       }
 
-      const worksheet = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
       XLSX.utils.book_append_sheet(wb, worksheet, sheetName.substring(0, 30));
     }
 
