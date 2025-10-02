@@ -98,6 +98,27 @@ const CURRENCIES: { code: string; name: string }[] = [
   { code: 'MYR', name: 'Malaysian Ringgit' },
   { code: 'PHP', name: 'Philippine Peso' },
   { code: 'EGP', name: 'Egyptian Pound' },
+  // Additional Strong African Currencies
+  { code: 'MAD', name: 'Moroccan Dirham' },
+  { code: 'TND', name: 'Tunisian Dinar' },
+  { code: 'BWP', name: 'Botswana Pula' },
+  { code: 'NAD', name: 'Namibian Dollar' },
+  { code: 'MUR', name: 'Mauritian Rupee' },
+  { code: 'GHS', name: 'Ghanaian Cedi' },
+  { code: 'KES', name: 'Kenyan Shilling' },
+  { code: 'UGX', name: 'Ugandan Shilling' },
+  { code: 'TZS', name: 'Tanzanian Shilling' },
+  { code: 'RWF', name: 'Rwandan Franc' },
+  { code: 'ETB', name: 'Ethiopian Birr' },
+  { code: 'NGN', name: 'Nigerian Naira' },
+  { code: 'XOF', name: 'West African CFA Franc' },
+  { code: 'XAF', name: 'Central African CFA Franc' },
+  { code: 'AOA', name: 'Angolan Kwanza' },
+  { code: 'MZN', name: 'Mozambican Metical' },
+  { code: 'ZMW', name: 'Zambian Kwacha' },
+  { code: 'SZL', name: 'Swazi Lilangeni' },
+  { code: 'LSL', name: 'Lesotho Loti' },
+  { code: 'CVE', name: 'Cape Verdean Escudo' },
 ];
 
 // Treaty Types
