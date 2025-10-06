@@ -7,6 +7,7 @@ import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 import type { Tables } from '../types/supabase';
+import { CLIENT_OPTIONS, type ClientOption } from '../data/clients';
 
 export default function Home() {
   return (
@@ -20,7 +21,7 @@ type Submission = Tables<'submissions'>;
 
 function HomeContent() {
   const { user, signOut } = useAuth();
-  const [client, setClient] = useState('');
+  const [client, setClient] = useState<ClientOption | ''>('');
   const [year, setYear] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -207,17 +208,32 @@ function HomeContent() {
           {/* Right: brief form for meta */}
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <h2 className="text-lg font-semibold mb-4">Submission Details</h2>
-            <label className="block mb-2 font-medium" htmlFor="client">Client</label>
-            <input
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300" htmlFor="client">
+              Client
+            </label>
+            <select
               id="client"
-              type="text"
-              className="w-full px-3 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
+              name="client"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               value={client}
-              onChange={e => setClient(e.target.value)}
+              onChange={e => setClient(e.target.value as ClientOption | '')}
               disabled={loading}
-              placeholder="Munich Re"
-            />
-            <label className="block mb-2 font-medium" htmlFor="year">Year</label>
+              required
+              aria-describedby="client-help"
+            >
+              <option value="" disabled>
+                ZEP-RE (PTA Reinsurance Company)
+              </option>
+              {CLIENT_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+            <p id="client-help" className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              Pick the ceding company or reinsurer for this submission.
+            </p>
+            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300" htmlFor="year">Year</label>
             <input
               id="year"
               type="text"
