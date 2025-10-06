@@ -1,5 +1,7 @@
-# Features
-
+# Feature- Client Details (data capture)
+	- Name of Company dropdown with 40 preset options (5 reinsurers + 35 insurance companies from Kenya); uses `CLIENT_OPTIONS` from `src/data/clients.ts`; placeholder "ZEP-RE (PTA Reinsurance Company)".
+	- Country dropdown with African countries; default to Kenya; "Other" free‑text fallback.
+	- Currency (std. units) dropdown with 50+ currencies including 20 strong African currencies (BWP, CFA, DZD, EGP, ETB, GHS, KES, MAD, MGA, MUR, MWK, MZN, NAD, NGN, RWF, SCR, TZS, UGX, ZMW, etc.); uses ISO 4217 codes; default to USD; "Other" free‑text fallback.
 - Branding and navigation
 	- Renamed the “Header” tab to “Client Details” for both Property and Casualty.
 	- Updated the site title to “Retrocession Hub”.
@@ -107,11 +109,30 @@
 		- Paste/import per section calls `replace_property_cresta_zone_section(...)` for atomic bulk upsert.
 	- One-off backfill RPC `migrate_property_cresta_from_blob(p_submission_id)` available to import legacy `sheet_blobs` payloads.
 
+- Excel Generation (Property)
+	- Metadata-driven Excel export via `generateExcel.ts` with configurable spacing and section titles.
+	- Reads field mappings from `docs/field-map-slim.json` with `_meta.spacing` and `_meta.sections` configuration.
+	- Supports multiple tables per tab with proper spacing between sections (configurable rows, default 2).
+	- Additional Comments positioning respects spacing configuration for clean visual separation.
+	- Cell-by-cell positioning logic ensures accurate data placement regardless of table sizes.
+	- Updated tabs with enhanced Excel output:
+		- **Treaty Statistics Non-Prop**: 3 titled sections (Premium, Claims by LoB, Aggregate Deductible) with 2-row spacing.
+		- **EPI Summary**: 2 sections (Premium Summary EPI, GWP Split by Class & LoB) with proper Additional Comments placement.
+		- **Top 20 Risks**: 12-column structure (Risk Code, Insured, Location, Occupancy, Construction, Year Built, Gross Sum Insured, Deductible, Sublimit, AAL, PML 100, PML 250).
+		- **Climate Change Exposure**: 16-column structure mapped to relational table with comprehensive exposure tracking.
+		- **UW Limit**: 2-table structure (Risk Code/Limits from `uw_limits`, Additional Comments from `uw_limit_meta`).
+
+- Homepage improvements
+	- Client field converted from text input to dropdown using centralized `CLIENT_OPTIONS` (40 preset companies).
+	- Maintains type safety with `ClientOption | ""` state and autosave compatibility.
+	- Dark mode compatible styling with consistent placeholder "ZEP-RE (PTA Reinsurance Company)".
+
 - Developer experience
 	- Vite + HMR development workflow; npm tasks for dev/build.
 	- Config‑driven, per‑LoB tab registry for extensibility.
 	- Automated documentation generation on pre‑commit.
 	- Git hygiene: ignore Excel lock/temp files to avoid accidental commits.
+	- Centralized data management: `src/data/clients.ts` for reusable dropdown options.
 
 - Database resiliency & indexes
 	- Migration enforces (or promotes) a composite primary key on sheet_blobs (submission_id, sheet_name) to enable ON CONFLICT upserts reliably.

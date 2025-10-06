@@ -152,3 +152,48 @@
 
 - Property LL Triangulation no longer stores header extras in `sheet_blobs`; date_of_loss and claim/policy are now relational.
 
+## 2025-10-06
+
+### Added
+
+- Excel Generation: Enhanced `generateExcel.ts` with metadata-driven spacing and section titles for improved Excel layout.
+	- Added support for `_meta.spacing` configuration in field maps to control spacing between tables and before Additional Comments.
+	- Added support for `_meta.sections` to render titled sections (e.g., "Premium Summary (EPI)", "GWP Split by Class & LoB") in Excel tabs.
+	- Implemented cell-by-cell positioning logic to properly place Additional Comments below tables with configurable spacing.
+	- Updated `docs/field-map-slim.json` with spacing metadata for Treaty Statistics Non-Prop (3 tables with proper spacing) and EPI Summary.
+- Field Mappings: Updated column structures for multiple Excel tabs.
+	- **Top 20 Risks**: Updated from 8 columns to 12 columns (Risk Code, Insured, Location, Occupancy, Construction, Year Built, Gross Sum Insured, Deductible, Sublimit, AAL, PML 100, PML 250).
+	- **Climate Change Exposure**: Added new tab with 16 columns after Top 20 Risks (Policy Inception Date, Policy Expiry Date, Name of Insured, Category, Type of Risk, Peril, Gross Exposure SI, Gross Premium, Ceded Exposure, Ceded Premium, Net Exposure, Net Premium, EML/MPL Limit, EML/MPL Limit Applied, Retention, Notes).
+	- **UW Limit**: Added new tab with proper database table mapping to `uw_limits` (Risk Code, Limits) and `uw_limit_meta` (Additional Comments).
+- Currencies: Added 20 strong African currencies to CURRENCIES array in `StepHeader.tsx` (both Property and Casualty).
+	- New currencies: BWP, CFA (BCEAO), CFA (BEAC), DZD, EGP, ETB, GHS, KES, MAD, MGA, MUR, MWK, MZN, NAD, NGN, RWF, SCR, TZS, UGX, ZMW.
+	- Total currencies now 50+ including USD, EUR, GBP, and African currencies.
+- Client Data Management: Created centralized client options data file.
+	- New file: `src/data/clients.ts` with `CLIENT_OPTIONS` array containing 40 preset options (5 reinsurers + 35 insurance companies).
+	- Type-safe `ClientOption` type exported for use across the application.
+- UI Improvements: Converted free-text client inputs to dropdowns for data consistency.
+	- **Homepage**: Converted "Client" field from text input to dropdown using `CLIENT_OPTIONS` with placeholder "ZEP-RE (PTA Reinsurance Company)".
+	- **Client Details (Header) Tab**: Converted "Name of Company" field from text input to dropdown using the same `CLIENT_OPTIONS` array.
+	- Both dropdowns use native `<select>` elements with dark mode compatible styling and maintain autosave functionality.
+
+### Changed
+
+- Excel Generation: Refactored to use metadata-driven approach for more flexible and maintainable Excel layouts.
+	- `generateExcel.ts` now reads `_meta.spacing` and `_meta.sections` from field maps instead of hardcoded offsets.
+	- Additional Comments positioning now respects configured spacing (default 2 blank rows) for better visual separation.
+- Field Mappings: Comprehensive updates to align with current database schema and Excel requirements.
+	- Treaty Statistics Non-Prop: Added 3-section structure with proper spacing (Premium, Claims by LoB, Aggregate Deductible).
+	- EPI Summary: Added spacing metadata for proper Additional Comments placement.
+- Tests: Updated `Header.db.test.tsx` to accommodate dropdown conversion.
+	- Changed from `user.clear()` and `user.type()` to `user.selectOptions()` for "Name of Company" field.
+	- Updated test assertions to use "APA Insurance Kenya Limited" from CLIENT_OPTIONS instead of free-text "New Company PLC".
+
+### Fixed
+
+- Excel Spacing: Resolved issue where Additional Comments were appearing inline with tables instead of below them.
+	- Implemented proper spacing calculations in `generateExcel.ts` based on metadata configuration.
+	- Fixed Treaty Statistics Non-Prop Excel output to show 3 distinct sections with proper spacing.
+- Test Compatibility: Fixed test failure after converting Name of Company to dropdown.
+	- Updated test to use `selectOptions()` instead of text input methods.
+	- All 45 tests now passing consistently.
+
