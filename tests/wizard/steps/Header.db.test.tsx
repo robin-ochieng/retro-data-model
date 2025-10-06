@@ -199,9 +199,8 @@ describe('Header tab DB wiring', () => {
   it('autosaves changes via upsert after debounce and shows saved indicator', async () => {
     const user = userEvent.setup();
     renderWithProviders(<StepHeader />);
-    const nameInput = await screen.findByLabelText('Name of Company');
-    await user.clear(nameInput);
-    await user.type(nameInput, 'New Company PLC');
+    const nameSelect = await screen.findByLabelText('Name of Company');
+    await user.selectOptions(nameSelect, 'APA Insurance Kenya Limited');
 
   await waitFor(() => {
       const saved = screen.getByText(/Saved at/i);
@@ -219,7 +218,7 @@ describe('Header tab DB wiring', () => {
     const match = allCalls.find((args) => {
       const recs = (args?.[0] ?? []) as Array<any>;
       const rec = recs[0] ?? {};
-      return rec?.payload?.name_of_company === 'New Company PLC';
+      return rec?.payload?.name_of_company === 'APA Insurance Kenya Limited';
     });
     expect(match, 'expected an upsert call with updated company name').toBeTruthy();
     const records = (match?.[0] ?? []) as Array<any>;
@@ -231,7 +230,7 @@ describe('Header tab DB wiring', () => {
     expect(rec.submission_id).toBe('TEST-ID');
     expect(rec.sheet_name).toBe('Header');
     expect(rec.payload).toMatchObject({
-      name_of_company: 'New Company PLC',
+      name_of_company: 'APA Insurance Kenya Limited',
       treaty_type: 'Quota Share Treaty',
       currency_std_units: 'USD',
     });

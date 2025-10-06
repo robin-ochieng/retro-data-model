@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { useSubmissionMeta } from '../../SubmissionMetaContext';
+import { CLIENT_OPTIONS, type ClientOption } from '../../../../data/clients';
 const OTHER = '__OTHER__';
 
 // Allowed countries for dropdown (African countries)
@@ -463,7 +464,17 @@ export default function StepHeader() {
     <div className="rounded-xl border shadow-sm p-4 sm:p-6">
       <form className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Field label="Name of Company" error={errors.name_of_company?.message}>
-          <input className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} placeholder="e.g., Munich RE" {...register('name_of_company')} />
+          <select 
+            className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} 
+            {...register('name_of_company')}
+          >
+            <option value="">ZEP-RE (PTA Reinsurance Company)</option>
+            {CLIENT_OPTIONS.map((client) => (
+              <option key={client} value={client}>
+                {client}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="Country" error={errors.country?.message}>
       <select
