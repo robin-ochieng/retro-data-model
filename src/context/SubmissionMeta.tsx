@@ -8,9 +8,13 @@ export type SubmissionMetaCtx = {
   meta: SubmissionMeta | null;
   treatyType?: string;
   currencyStdUnits?: string;
+  classOfBusiness?: string;
+  lineOfBusiness?: string;
   lastSavedAt?: Date;
   updateMeta: (patch: Partial<Record<string, unknown>>) => Promise<void>;
   refresh: () => Promise<void>;
+  setClassOfBusiness: (value: string) => void;
+  setLineOfBusiness: (value: string) => void;
 };
 
 const Ctx = React.createContext<SubmissionMetaCtx | undefined>(undefined);
@@ -47,6 +51,8 @@ export const SubmissionMetaProvider: React.FC<{ submissionId: string; children: 
   const [meta, setMeta] = React.useState<SubmissionMeta | null>(null);
   const [treatyType, setTreatyType] = React.useState<string | undefined>(undefined);
   const [currencyStdUnits, setCurrencyStdUnits] = React.useState<string | undefined>(undefined);
+  const [classOfBusiness, setClassOfBusiness] = React.useState<string>('');
+  const [lineOfBusiness, setLineOfBusiness] = React.useState<string>('');
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | undefined>(undefined);
 
   const doRefresh = React.useCallback(async () => {
@@ -141,8 +147,19 @@ export const SubmissionMetaProvider: React.FC<{ submissionId: string; children: 
   );
 
   const value = React.useMemo<SubmissionMetaCtx>(
-    () => ({ meta, treatyType, currencyStdUnits, lastSavedAt, updateMeta, refresh: doRefresh }),
-    [meta, treatyType, currencyStdUnits, lastSavedAt, updateMeta, doRefresh]
+    () => ({ 
+      meta, 
+      treatyType, 
+      currencyStdUnits, 
+      classOfBusiness, 
+      lineOfBusiness, 
+      lastSavedAt, 
+      updateMeta, 
+      refresh: doRefresh, 
+      setClassOfBusiness, 
+      setLineOfBusiness 
+    }),
+    [meta, treatyType, currencyStdUnits, classOfBusiness, lineOfBusiness, lastSavedAt, updateMeta, doRefresh]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

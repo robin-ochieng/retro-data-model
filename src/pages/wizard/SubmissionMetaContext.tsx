@@ -13,5 +13,17 @@ export function useSubmissionMeta() {
       void ctx.updateMeta(patch);
     }
   }, [ctx]);
-  return { ...ctx, updateFromHeader } as unknown as { treatyType?: string; currencyStdUnits?: string; lastSavedAt?: Date; meta: any; updateMeta: typeof ctx.updateMeta; refresh: typeof ctx.refresh; updateFromHeader: (payload: any) => void };
+  return { ...ctx, updateFromHeader } as unknown as { 
+    treatyType?: string; 
+    currencyStdUnits?: string; 
+    classOfBusiness?: string; 
+    lineOfBusiness?: string; 
+    lastSavedAt?: Date; 
+    meta: any; 
+    updateMeta: typeof ctx.updateMeta; 
+    refresh: typeof ctx.refresh; 
+    updateFromHeader: (payload: any) => void; 
+    setClassOfBusiness: typeof ctx.setClassOfBusiness; 
+    setLineOfBusiness: typeof ctx.setLineOfBusiness; 
+  };
 }

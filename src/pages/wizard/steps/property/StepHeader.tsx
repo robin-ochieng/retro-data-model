@@ -398,6 +398,13 @@ export default function StepHeader() {
   useEffect(() => {
     setTreatyIsOther(!!values.treaty_type && !TREATY_TYPES.includes(values.treaty_type));
   }, [values.treaty_type]);
+  // Sync class_of_business and lines_of_business to navbar context
+  useEffect(() => {
+    meta.setClassOfBusiness(values.class_of_business || '');
+  }, [values.class_of_business, meta]);
+  useEffect(() => {
+    meta.setLineOfBusiness(values.lines_of_business || '');
+  }, [values.lines_of_business, meta]);
   // Derived select values to support 'Other' option
   const countrySelectValue = countryIsOther ? OTHER : (COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : ''));
   const currencySelectValue = currencyIsOther ? OTHER : (CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : ''));

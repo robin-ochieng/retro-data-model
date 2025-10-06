@@ -36,7 +36,7 @@ import CasualtyLargeLossTriangulation from './steps/casualty/StepLargeLossTriang
 import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriangulation';
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
-import { SubmissionMetaProvider } from '../../context/SubmissionMeta';
+import { SubmissionMetaProvider, useSubmissionMeta } from './SubmissionMetaContext';
 import { TAB_ICONS } from '../../components/icons/TabIcons';
 
 export default function Wizard() {
@@ -100,6 +100,53 @@ function WizardShell() {
 
   return (
     <SubmissionMetaProvider submissionId={submissionId}>
+      <WizardContent 
+        normalizedLob={normalizedLob}
+        submissionId={submissionId}
+        tabs={tabs}
+        basePath={basePath}
+        currentIndex={currentIndex}
+        progressPct={progressPct}
+        onNext={onNext}
+        onPrev={onPrev}
+        onSubmitFinal={onSubmitFinal}
+        user={user}
+        signOut={signOut}
+      />
+    </SubmissionMetaProvider>
+  );
+}
+
+function WizardContent({ 
+  normalizedLob, 
+  submissionId, 
+  tabs, 
+  basePath, 
+  currentIndex, 
+  progressPct,
+  onNext,
+  onPrev,
+  onSubmitFinal,
+  user,
+  signOut
+}: {
+  normalizedLob: LobKey;
+  submissionId: string;
+  tabs: SheetTab[];
+  basePath: string;
+  currentIndex: number;
+  progressPct: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onSubmitFinal: () => Promise<void>;
+  user: any;
+  signOut: () => void;
+}) {
+  const { classOfBusiness, lineOfBusiness } = useSubmissionMeta();
+  const cob = classOfBusiness || '—';
+  const lob = lineOfBusiness || '';
+
+  return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14 md:h-16">
@@ -108,7 +155,13 @@ function WizardShell() {
             <a href="/help" className="text-sm text-blue-700 dark:text-blue-400 hover:underline">Help</a>
             <ThemeToggle />
             <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-              <span className="font-medium capitalize">{normalizedLob}</span>
+              <span className="font-medium">{cob}</span>
+              {lob && (
+                <>
+                  <span className="mx-2">•</span>
+                  <span className="font-medium">{lob}</span>
+                </>
+              )}
               <span className="mx-2">•</span>
               <span className="font-mono">{submissionId}</span>
               <span className="mx-2">•</span>
@@ -275,7 +328,6 @@ function WizardShell() {
           </div>
         </section>
       </div>
-  </div>
-  </SubmissionMetaProvider>
+    </div>
   );
 }
