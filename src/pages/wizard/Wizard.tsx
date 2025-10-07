@@ -3,8 +3,7 @@ import { useParams, NavLink, Outlet, Routes, Route, Navigate, useNavigate, useLo
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import StepIntro from './steps/StepIntro';
 import StepEpiSummary from './steps/StepEpiSummary';
-import Logo from '../../components/Logo';
-import ThemeToggle from '../../components/ThemeToggle';
+import { WizardHeader } from '../../components/layout/WizardHeader';
 import { useAuth } from '../../auth/AuthContext';
 import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, propertyTabs, SheetTab } from '../../config/lobConfig';
 import StepTreatyStatsProp from './steps/StepTreatyStatsProp';
@@ -143,43 +142,37 @@ function WizardContent({
   signOut: () => void;
 }) {
   const { classOfBusiness, lineOfBusiness, isReadOnly } = useSubmissionMeta();
-  const cob = classOfBusiness || '—';
-  const lob = lineOfBusiness || '';
+  
+  // Fetch submission status from context or default to 'in_progress'
+  const [submissionStatus, setSubmissionStatus] = React.useState<string>('in_progress');
+  
+  React.useEffect(() => {
+    async function fetchStatus() {
+      if (!submissionId) return;
+      const { data } = await supabase
+        .from('submissions')
+        .select('status')
+        .eq('id', submissionId)
+        .maybeSingle();
+      if (data?.status) {
+        setSubmissionStatus(data.status);
+      }
+    }
+    fetchStatus();
+  }, [submissionId]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="sticky top-0 z-10 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14 md:h-16">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <a href="/help" className="text-sm text-blue-700 dark:text-blue-400 hover:underline">Help</a>
-            <ThemeToggle />
-            <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-              <span className="font-medium">{cob}</span>
-              {lob && (
-                <>
-                  <span className="mx-2">•</span>
-                  <span className="font-medium">{lob}</span>
-                </>
-              )}
-              <span className="mx-2">•</span>
-              <span className="font-mono">{submissionId}</span>
-              <span className="mx-2">•</span>
-              <span className="rounded px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs">In Progress</span>
-            </div>
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300" title={user?.email ?? ''}>
-              <span className="sm:hidden">{(user?.user_metadata as any)?.full_name?.split?.(/\s+/)?.[0] ?? (user?.email?.split?.('@')?.[0] ?? '')}</span>
-              <span className="hidden sm:inline">{`Welcome, ${(user?.user_metadata as any)?.full_name ?? user?.email ?? ''}`}</span>
-            </span>
-            <button
-              className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-              onClick={signOut}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+      <WizardHeader
+        submissionId={submissionId}
+        status={submissionStatus}
+        classOfBusiness={classOfBusiness}
+        lineOfBusiness={lineOfBusiness}
+        lobDisplayName={normalizedLob === 'property' ? 'Property' : 'Casualty'}
+        userEmail={user?.email}
+        userFullName={(user?.user_metadata as any)?.full_name}
+        onSignOut={signOut}
+      />
 
       {/* Read-only banner */}
       {isReadOnly && (
