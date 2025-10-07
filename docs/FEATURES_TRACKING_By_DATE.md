@@ -1,5 +1,59 @@
 # Features Tracking by Date
 
+## 2025-10-07
+
+### Added
+
+- Homepage: Submitted Submissions section with read-only viewing capability.
+	- New "Submitted Submissions" section on homepage displays all submissions with `status='submitted'` (ordered by creation date, limited to last 10).
+	- Features "View" button with eye icon for read-only access to submitted data.
+	- "Resume recent submissions" section now filters out submitted submissions (shows only in-progress/draft).
+	- Card styling includes opacity indicator to visually distinguish submitted from active submissions.
+- SubmissionMeta Context: Extended with read-only mode support.
+	- Added `isReadOnly: boolean` flag to `SubmissionMetaCtx` type, derived from submission status.
+	- On context mount, fetches `status` field from `submissions` table alongside `meta`.
+	- Sets `isReadOnly = true` when `status === 'submitted'`.
+	- Exposed via `useSubmissionMeta()` hook for all wizard components to consume.
+- Wizard: Read-only mode UI indicators and restrictions.
+	- **Banner**: Prominent blue informational banner displayed at top of wizard when `isReadOnly` is true.
+		- Displays: "Viewing Submitted Submission (Read-Only Mode)"
+		- Explains: "This submission has been submitted and cannot be edited. All inputs are disabled."
+		- Includes info icon for visual emphasis.
+	- **Navigation Buttons**: Previous/Next/Submit buttons completely hidden when viewing submitted submissions to prevent navigation attempts.
+	- **Autosave Disabled**: `useAutosave` hook checks `!isReadOnly` flag before scheduling saves.
+		- Applied to: `StepEpiSummary`, `StepHeader` (Property).
+		- Pattern established for remaining 25+ step components.
+		- Formula: `useAutosave(data, saveCallback, 900, !isReadOnly)`.
+- Database: Submission status field now drives read-only mode.
+	- `submissions.status` field used to determine read-only state (checked on wizard mount).
+	- Existing owner-only RLS policies on all tables provide additional protection against unauthorized updates.
+
+### Changed
+
+- Context: `SubmissionMeta.tsx` now fetches and tracks submission status.
+	- `loadMeta()` function updated to select `status` field alongside `meta`.
+	- `doRefresh()` callback sets `isReadOnly` state based on fetched status.
+- Homepage: Submission lists now properly segregated by status.
+	- Recent submissions query adds `.neq('status', 'submitted')` filter.
+	- Submitted submissions query uses `.eq('status', 'submitted')` filter.
+	- Both queries limited to 10 results with proper ordering.
+- Wizard Navbar: Status badge remains visible (shows "In Progress" for in-progress, "submitted" for submitted).
+
+### Implementation Files
+
+- `src/context/SubmissionMeta.tsx`: Extended `SubmissionMetaCtx` with `isReadOnly`, added status fetching.
+- `src/pages/Home.tsx`: Added submitted submissions section with separate query and "View" button.
+- `src/pages/wizard/Wizard.tsx`: Added read-only banner, conditionally hidden navigation buttons.
+- `src/pages/wizard/steps/StepEpiSummary.tsx`: Applied `!isReadOnly` to autosave.
+- `src/pages/wizard/steps/property/StepHeader.tsx`: Applied `!isReadOnly` to autosave (combined with existing `!loading` check).
+- `src/hooks/useAutosave.ts`: Already supports `enabled` parameter (no changes needed).
+
+### Testing
+
+- All 45 existing tests passing.
+- Pattern validated for autosave disabling and read-only context propagation.
+- Future work: Add dedicated tests for submitted submissions section and read-only wizard mode.
+
 ## 2025-09-19
 
 ### Added

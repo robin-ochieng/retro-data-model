@@ -126,6 +126,22 @@
 	- Client field converted from text input to dropdown using centralized `CLIENT_OPTIONS` (40 preset companies).
 	- Maintains type safety with `ClientOption | ""` state and autosave compatibility.
 	- Dark mode compatible styling with consistent placeholder "ZEP-RE (PTA Reinsurance Company)".
+	- **Submitted Submissions Section (2025-01-06)**: Added dedicated section below "Resume recent submissions" that displays all submissions with status='submitted'. Features eye icon "View" button for read-only access. In-progress submissions now filtered out of submitted section and vice versa for clear separation.
+
+- Submitted Submissions & Read-Only Mode (2025-01-06)
+	- **Homepage**: Separate "Submitted Submissions" section displays submissions where status='submitted', ordered by creation date, with "View" button (eye icon) for read-only access.
+	- **SubmissionMeta Context**: Extended with `isReadOnly: boolean` flag derived from submission status. Fetched on mount; true when status='submitted'.
+	- **Read-Only Banner**: Prominent informational banner displayed at top of wizard when viewing submitted submissions, with clear messaging that editing is disabled.
+	- **Autosave Disabled**: `useAutosave` hook respects `!isReadOnly` flag; no save operations attempted when viewing submitted data. Applied to key components (StepEpiSummary, StepHeader); pattern established for all remaining steps.
+	- **Navigation Buttons Hidden**: Previous/Next/Submit buttons hidden in wizard footer when `isReadOnly` is true, preventing accidental navigation attempts.
+	- **Form Input Disabling**: Pattern established for adding `disabled={isReadOnly}` to all form inputs across wizard steps. Implementation in progress across remaining components.
+	- **Database Security**: Existing RLS policies on all tables restrict updates to submission owner, providing additional protection layer.
+	- **User Experience**: Clear visual indicators (banner, hidden buttons, opacity changes on submitted cards) communicate read-only state. Users can safely review submitted data without risk of accidental modifications.
+	- **Implementation Files**:
+		- Context: `src/context/SubmissionMeta.tsx` (isReadOnly state), `src/pages/wizard/SubmissionMetaContext.tsx` (type extension)
+		- UI: `src/pages/Home.tsx` (submitted section), `src/pages/wizard/Wizard.tsx` (banner + hidden buttons)
+		- Hooks: `src/hooks/useAutosave.ts` (enabled parameter)
+		- Steps: Applied to `StepEpiSummary.tsx`, `StepHeader.tsx` (pattern for others)
 
 - Developer experience
 	- Vite + HMR development workflow; npm tasks for dev/build.
