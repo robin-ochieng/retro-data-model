@@ -5,9 +5,9 @@ import { useAuth } from '../auth/AuthContext';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
+import { HomeStartCard } from '../components/HomeStartCard';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 import type { Tables } from '../types/supabase';
-import { CLIENT_OPTIONS, type ClientOption } from '../data/clients';
 
 export default function Home() {
   return (
@@ -21,10 +21,6 @@ type Submission = Tables<'submissions'>;
 
 function HomeContent() {
   const { user, signOut } = useAuth();
-  const [client, setClient] = useState<ClientOption | ''>('');
-  const [year, setYear] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<Submission[]>([]);
   const [submitted, setSubmitted] = useState<Submission[]>([]);
   const [displayName, setDisplayName] = useState<string | null>(
@@ -100,46 +96,7 @@ function HomeContent() {
     return () => { mounted = false; };
   }, [user?.id]);
 
-  const handleStart = async (lineOfBusiness: 'Property' | 'Casualty') => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase
-        .from('submissions')
-        .insert({
-          user_id: user?.id ?? null,
-          line_of_business: lineOfBusiness,
-          status: 'in_progress',
-          meta: { client, year },
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-      const lobKey = lineOfBusiness.toLowerCase() as LobKey;
-      const firstTab = getFirstTabKey(lobKey);
-      navigate(`/wizard/${lobKey}/${data.id}/${firstTab}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create submission');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Explicit Tailwind color classes to avoid purge of dynamic strings
-  const lobStyles: Record<'Property' | 'Casualty', { tile: string; button: string; buttonHover: string; accentDot: string }>= {
-    Property: {
-      tile: 'bg-white dark:bg-gray-800',
-      button: 'bg-blue-600',
-      buttonHover: 'hover:bg-blue-700',
-      accentDot: 'bg-blue-600'
-    },
-    Casualty: {
-      tile: 'bg-white dark:bg-gray-800',
-      button: 'bg-emerald-600',
-      buttonHover: 'hover:bg-emerald-700',
-      accentDot: 'bg-emerald-600'
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 flex flex-col">
@@ -172,99 +129,39 @@ function HomeContent() {
         {/* Hero / Intro */}
         <section className="mb-10 overflow-hidden rounded-2xl border shadow-sm bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
           <div className="p-6 sm:p-8">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            Retrocession Data Hub
-          </h1>
-          <p className="mt-3 max-w-3xl text-gray-700 dark:text-gray-300">
-            A focused workspace for capturing and validating treaty data for retro programmes. Build submissions,
-            autosave progress, and hand off structured datasets for downstream analysis and template generation.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              className="inline-flex items-center px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-              disabled={!client || !year || loading}
-              onClick={() => handleStart('Property')}
-            >
-              Start Property
-            </button>
-            <button
-              className="inline-flex items-center px-4 py-2 rounded-md text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
-              disabled={!client || !year || loading}
-              onClick={() => handleStart('Casualty')}
-            >
-              Start Casualty
-            </button>
-          </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              Retrocession Data Hub
+            </h1>
+            <p className="mt-3 max-w-3xl text-gray-700 dark:text-gray-300">
+              A focused workspace for capturing and validating treaty data for retro programmes. Build submissions,
+              autosave progress, and hand off structured datasets for downstream analysis and template generation.
+            </p>
           </div>
         </section>
 
-        <h2 className="text-xl font-bold mb-4">Start a New Submission</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Start a New Submission</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6">
-          {/* Left: LoB cards */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-6">
+          {/* Left: Start submission card */}
+          <HomeStartCard />
+
+          {/* Right: Quick info or helper text */}
           <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(['Property','Casualty'] as const).map((lob) => (
-                <div
-                  key={lob}
-                  className="group border rounded-xl p-5 transition cursor-pointer hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600"
-                  onClick={() => { if (client && year) handleStart(lob); }}
-                >
-                  <div className={`h-10 w-10 rounded-full ${lobStyles[lob].accentDot} mb-3`} />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{lob}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Start a {lob} data submission.</p>
-                  <button
-                    className={`mt-4 inline-flex items-center px-3 py-1.5 rounded text-white ${lobStyles[lob].button} ${lobStyles[lob].buttonHover} disabled:opacity-50`}
-                    onClick={(e) => { e.stopPropagation(); handleStart(lob); }}
-                    disabled={loading || !client || !year}
-                  >
-                    Start {lob}
-                  </button>
-                </div>
-              ))}
+            <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Getting Started</h2>
+            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+              <p>
+                <strong className="text-gray-900 dark:text-white">1. Choose a client and year</strong> to begin your submission.
+              </p>
+              <p>
+                <strong className="text-gray-900 dark:text-white">2. (Optional) Select a preset class</strong> to prefill the Class of Business field in the wizard—you can always change it later.
+              </p>
+              <p>
+                <strong className="text-gray-900 dark:text-white">3. Click Start</strong> to create your submission and open the wizard.
+              </p>
+              <p className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                All changes are automatically saved as you work. You can resume any in-progress submission from the list below.
+              </p>
             </div>
-          </section>
-
-          {/* Right: brief form for meta */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Submission Details</h2>
-            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300" htmlFor="client">
-              Client
-            </label>
-            <select
-              id="client"
-              name="client"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              value={client}
-              onChange={e => setClient(e.target.value as ClientOption | '')}
-              disabled={loading}
-              required
-              aria-describedby="client-help"
-            >
-              <option value="" disabled>
-                ZEP-RE (PTA Reinsurance Company)
-              </option>
-              {CLIENT_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-            <p id="client-help" className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Pick the ceding company or reinsurer for this submission.
-            </p>
-            <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300" htmlFor="year">Year</label>
-            <input
-              id="year"
-              type="text"
-              className="w-full px-3 py-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-              value={year}
-              onChange={e => setYear(e.target.value)}
-              disabled={loading}
-              placeholder={String(new Date().getFullYear())}
-            />
-            {error && <div className="text-red-600 mb-2">{error}</div>}
-            <div className="text-xs text-gray-500">Pick a line of business to begin.</div>
           </section>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -265,11 +265,13 @@ const SHEET = 'Header';
 
 export default function StepHeader() {
   const { submissionId } = useParams();
+  const [searchParams] = useSearchParams();
   const meta = useSubmissionMeta();
   const { isReadOnly } = meta;
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [presetApplied, setPresetApplied] = useState(false);
   // Track when user explicitly chose "Other" for each select
   const [countryIsOther, setCountryIsOther] = useState(false);
   const [currencyIsOther, setCurrencyIsOther] = useState(false);
@@ -369,6 +371,19 @@ export default function StepHeader() {
     })();
     return () => { mounted = false; };
   }, [submissionId, reset]);
+
+  // Prefill class_of_business from URL query param if empty
+  useEffect(() => {
+    if (loading || presetApplied) return;
+    const presetCob = searchParams.get('presetCob');
+    const currentClass = watch('class_of_business');
+    
+    // Only apply preset if field is empty and we haven't applied it yet
+    if (presetCob && !currentClass) {
+      setValue('class_of_business', presetCob, { shouldDirty: true, shouldValidate: true });
+      setPresetApplied(true);
+    }
+  }, [loading, presetApplied, searchParams, watch, setValue]);
 
   const values = watch();
   const selectedClass = values.class_of_business as (typeof CLASSES_OF_BUSINESS)[number] | '';
