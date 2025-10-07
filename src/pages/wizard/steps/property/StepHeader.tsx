@@ -266,6 +266,7 @@ const SHEET = 'Header';
 export default function StepHeader() {
   const { submissionId } = useParams();
   const meta = useSubmissionMeta();
+  const { isReadOnly } = meta;
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -463,7 +464,7 @@ export default function StepHeader() {
       claims_period_end: val.claims_period_end,
       claims_period: val.claims_period_start && val.claims_period_end ? `${val.claims_period_start}–${val.claims_period_end}` : '',
     });
-  }, 900, !loading);
+  }, 900, !loading && !isReadOnly);
 
   if (loading) return <div className="text-sm text-gray-600">Loading…</div>;
 

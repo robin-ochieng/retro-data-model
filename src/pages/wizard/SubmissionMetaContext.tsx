@@ -19,6 +19,7 @@ export function useSubmissionMeta() {
     classOfBusiness?: string; 
     lineOfBusiness?: string; 
     lastSavedAt?: Date; 
+    isReadOnly: boolean;
     meta: any; 
     updateMeta: typeof ctx.updateMeta; 
     refresh: typeof ctx.refresh; 

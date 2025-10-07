@@ -11,6 +11,7 @@ export type SubmissionMetaCtx = {
   classOfBusiness?: string;
   lineOfBusiness?: string;
   lastSavedAt?: Date;
+  isReadOnly: boolean;
   updateMeta: (patch: Partial<Record<string, unknown>>) => Promise<void>;
   refresh: () => Promise<void>;
   setClassOfBusiness: (value: string) => void;
@@ -40,11 +41,15 @@ async function loadHeader(submissionId: string) {
 async function loadMeta(submissionId: string) {
   const { data, error } = await supabase
     .from('submissions')
-    .select('meta')
+    .select('meta, status')
     .eq('id', submissionId)
     .maybeSingle();
-  if (error) return { meta: null as SubmissionMeta | null, error };
-  return { meta: (data?.meta ?? null) as SubmissionMeta | null, error: null };
+  if (error) return { meta: null as SubmissionMeta | null, status: 'in-progress', error };
+  return { 
+    meta: (data?.meta ?? null) as SubmissionMeta | null, 
+    status: data?.status ?? 'in-progress',
+    error: null 
+  };
 }
 
 export const SubmissionMetaProvider: React.FC<{ submissionId: string; children: React.ReactNode }> = ({ submissionId, children }) => {
@@ -54,11 +59,15 @@ export const SubmissionMetaProvider: React.FC<{ submissionId: string; children: 
   const [classOfBusiness, setClassOfBusiness] = React.useState<string>('');
   const [lineOfBusiness, setLineOfBusiness] = React.useState<string>('');
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | undefined>(undefined);
+  const [isReadOnly, setIsReadOnly] = React.useState<boolean>(false);
 
   const doRefresh = React.useCallback(async () => {
     if (!submissionId) return;
     const [m, h] = await Promise.all([loadMeta(submissionId), loadHeader(submissionId)]);
-    if (!m.error) setMeta(m.meta);
+    if (!m.error) {
+      setMeta(m.meta);
+      setIsReadOnly(m.status === 'submitted');
+    }
     const { treatyType: tt, currencyStdUnits: cu } = deriveValues(m.meta, h.payload);
     setTreatyType(tt);
     setCurrencyStdUnits(cu);
@@ -154,12 +163,13 @@ export const SubmissionMetaProvider: React.FC<{ submissionId: string; children: 
       classOfBusiness, 
       lineOfBusiness, 
       lastSavedAt, 
+      isReadOnly,
       updateMeta, 
       refresh: doRefresh, 
       setClassOfBusiness, 
       setLineOfBusiness 
     }),
-    [meta, treatyType, currencyStdUnits, classOfBusiness, lineOfBusiness, lastSavedAt, updateMeta, doRefresh]
+    [meta, treatyType, currencyStdUnits, classOfBusiness, lineOfBusiness, lastSavedAt, isReadOnly, updateMeta, doRefresh]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

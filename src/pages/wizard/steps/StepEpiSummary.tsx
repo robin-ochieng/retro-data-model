@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
-  const { treatyType } = useSubmissionMeta();
+  const { treatyType, isReadOnly } = useSubmissionMeta();
   const lobLower = (lob ?? '').toLowerCase();
   // Default rows: no hardcoded treaty; set from meta on load
   const defaultRowsForLob = React.useMemo(
@@ -160,7 +160,7 @@ export default function StepEpiSummary() {
       return;
     }
     setLastSaved(new Date());
-  });
+  }, 900, !isReadOnly);
 
   // Helpers
   const toNumber = (s: string | undefined) => {
