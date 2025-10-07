@@ -6,6 +6,7 @@ import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { normalizeDateString } from '../../../../types/climateExposure';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { humanizeHeader } from '../../../../lib/headerFormat';
 
 const RowSchema = z.object({
   loss_id: z.number().int().optional(),
@@ -122,22 +123,22 @@ export default function StepCatLossList() {
   });
 
   const columns = useMemo(() => [
-    { key: 'loss_id', label: 'loss id', type: 'number' },
-    { key: 'uw_year', label: 'UNDERWRITING YEAR', type: 'number', step: '1', min: 1900 },
-    { key: 'name', label: 'NAME' },
+    { key: 'loss_id', label: humanizeHeader('loss_id'), type: 'number' },
+    { key: 'uw_year', label: humanizeHeader('uw_year'), type: 'number', step: '1', min: 1900 },
+    { key: 'name', label: humanizeHeader('name') },
     // DOL as text to allow Excel-style pasted dates (e.g., dd/mm/yyyy)
-    { key: 'dol', label: 'DOL' },
-    { key: 'type_of_loss', label: 'TYPE OF LOSS' },
-    { key: 'gross_sum_insured', label: 'GROSS SUM INSURED', type: 'number', step: '0.01', min: 0 },
-    { key: 'gross_incurred', label: 'GROSS INCURRED', type: 'number', step: '0.01', min: 0 },
-    { key: 'paid_to_date', label: 'PAID TO DATE', type: 'number', step: '0.01', min: 0 },
-    { key: 'gross_outstanding', label: 'GROSS OUTSTANDING', type: 'number', step: '0.01', min: 0 },
-    { key: 'fac_amount', label: 'FAC AMOUNT', type: 'number', step: '0.01', min: 0 },
-    { key: 'net_of_fac', label: 'NET OF FAC', type: 'number', step: '0.01', min: 0 },
-    { key: 'surplus_cession', label: 'SURPLUS CESSION', type: 'number', step: '0.01', min: 0 },
-    { key: 'qs_cession', label: 'QS CESSION', type: 'number', step: '0.01', min: 0 },
-    { key: 'net_of_proportional', label: 'NET OF PROPORTIONAL', type: 'number', step: '0.01', min: 0 },
-    { key: 'xol_payment', label: 'XOL PAYMENT', type: 'number', step: '0.01', min: 0 },
+    { key: 'dol', label: humanizeHeader('dol') },
+    { key: 'type_of_loss', label: humanizeHeader('type_of_loss') },
+    { key: 'gross_sum_insured', label: humanizeHeader('gross_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'gross_incurred', label: humanizeHeader('gross_incurred'), type: 'number', step: '0.01', min: 0 },
+    { key: 'paid_to_date', label: humanizeHeader('paid_to_date'), type: 'number', step: '0.01', min: 0 },
+    { key: 'gross_outstanding', label: humanizeHeader('gross_outstanding'), type: 'number', step: '0.01', min: 0 },
+    { key: 'fac_amount', label: humanizeHeader('fac_amount'), type: 'number', step: '0.01', min: 0 },
+    { key: 'net_of_fac', label: humanizeHeader('net_of_fac'), type: 'number', step: '0.01', min: 0 },
+    { key: 'surplus_cession', label: humanizeHeader('surplus_cession'), type: 'number', step: '0.01', min: 0 },
+    { key: 'qs_cession', label: humanizeHeader('qs_cession'), type: 'number', step: '0.01', min: 0 },
+    { key: 'net_of_proportional', label: humanizeHeader('net_of_proportional'), type: 'number', step: '0.01', min: 0 },
+    { key: 'xol_payment', label: humanizeHeader('xol_payment'), type: 'number', step: '0.01', min: 0 },
   ], []);
 
   const validateRow = (r: Row): Partial<Record<keyof Row, string>> => {

@@ -4,6 +4,7 @@ import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
+import { humanizeHeader } from '../../../../lib/headerFormat';
 // CSV import/export removed per requirements
 
 type Row = {
@@ -113,20 +114,20 @@ export default function StepLargeLossList() {
   });
 
   const columns = useMemo(() => [
-    { key: 'date_of_loss', label: 'D.O.L.', type: 'text' as const },
-    { key: 'uw_year', label: 'U/W YEAR', type: 'number' as const },
-    { key: 'insured', label: 'Insured', type: 'text' as const },
-    { key: 'cause_of_loss', label: 'Cause of Loss', type: 'text' as const },
+    { key: 'date_of_loss', label: humanizeHeader('dol'), type: 'text' as const },
+    { key: 'uw_year', label: humanizeHeader('uw_year'), type: 'number' as const },
+    { key: 'insured', label: humanizeHeader('insured'), type: 'text' as const },
+    { key: 'cause_of_loss', label: humanizeHeader('cause_of_loss'), type: 'text' as const },
     { key: 'incurred_fgu', label: 'Incurred Claims F.G.U.*', type: 'number' as const },
-    { key: 'paid_fgu', label: 'Paid Claims Claims F.G.U.*', type: 'number' as const },
+    { key: 'paid_fgu', label: 'Paid Claims F.G.U.*', type: 'number' as const },
     { key: 'os_fgu', label: 'O/S Claims F.G.U.*', type: 'number' as const },
-    { key: 'fac_paid', label: 'Fac Paid', type: 'number' as const },
-    { key: 'fac_os', label: 'Fac O/S', type: 'number' as const },
-    { key: 'surplus_paid', label: 'Surplus Paid', type: 'number' as const },
+    { key: 'fac_paid', label: humanizeHeader('fac_paid'), type: 'number' as const },
+    { key: 'fac_os', label: 'FAC O/S', type: 'number' as const },
+    { key: 'surplus_paid', label: humanizeHeader('surplus_paid'), type: 'number' as const },
     { key: 'surplus_os', label: 'Surplus O/S', type: 'number' as const },
-    { key: 'quota_share_paid', label: 'Quota Share Paid', type: 'number' as const },
-    { key: 'quota_share_os', label: 'Quota Share O/S', type: 'number' as const },
-    { key: 'net_paid', label: 'Net Paid', type: 'number' as const },
+    { key: 'quota_share_paid', label: humanizeHeader('quota_share_paid'), type: 'number' as const },
+    { key: 'quota_share_os', label: humanizeHeader('quota_share_os'), type: 'number' as const },
+    { key: 'net_paid', label: humanizeHeader('net_paid'), type: 'number' as const },
     { key: 'net_os', label: 'Net O/S', type: 'number' as const },
   ], []);
   // CSV export headers removed

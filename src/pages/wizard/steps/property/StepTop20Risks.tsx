@@ -7,6 +7,7 @@ import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { chunkedSave } from '../../../../utils/chunkedSave';
 import { toCsv } from '../../../../utils/csv';
+import { humanizeHeader } from '../../../../lib/headerFormat';
 
 const RowSchema = z.object({
   rank: z.number().int().min(1),
@@ -87,18 +88,18 @@ export default function StepTop20Risks() {
   });
 
   const columns = useMemo(() => [
-    { key: 'rank', label: 'rank', type: 'number', step: '1', min: 1, className: '', },
-    { key: 'insured', label: 'insured' },
-    { key: 'class_of_business', label: 'class_of_business' },
-    { key: 'occupation', label: 'occupation' },
-    { key: 'gross_sum_insured', label: 'gross_sum_insured', type: 'number', step: '0.01', min: 0 },
-    { key: 'fac_sum_insured', label: 'fac_sum_insured', type: 'number', step: '0.01', min: 0 },
-    { key: 'surplus_sum_insured', label: 'surplus_sum_insured', type: 'number', step: '0.01', min: 0 },
-    { key: 'quota_share_sum_insured', label: 'quota_share_sum_insured', type: 'number', step: '0.01', min: 0 },
-    { key: 'net_sum_insured', label: 'net_sum_insured', type: 'number', step: '0.01', min: 0 },
-    { key: 'gross_premium', label: 'gross_premium', type: 'number', step: '0.01', min: 0 },
-    { key: 'fac_premium', label: 'fac_premium', type: 'number', step: '0.01', min: 0 },
-    { key: 'surplus_premium', label: 'surplus_premium', type: 'number', step: '0.01', min: 0 },
+    { key: 'rank', label: humanizeHeader('rank'), type: 'number', step: '1', min: 1, className: '', },
+    { key: 'insured', label: humanizeHeader('insured') },
+    { key: 'class_of_business', label: humanizeHeader('class_of_business') },
+    { key: 'occupation', label: humanizeHeader('occupation') },
+    { key: 'gross_sum_insured', label: humanizeHeader('gross_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'fac_sum_insured', label: humanizeHeader('fac_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'surplus_sum_insured', label: humanizeHeader('surplus_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'quota_share_sum_insured', label: humanizeHeader('quota_share_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'net_sum_insured', label: humanizeHeader('net_sum_insured'), type: 'number', step: '0.01', min: 0 },
+    { key: 'gross_premium', label: humanizeHeader('gross_premium'), type: 'number', step: '0.01', min: 0 },
+    { key: 'fac_premium', label: humanizeHeader('fac_premium'), type: 'number', step: '0.01', min: 0 },
+    { key: 'surplus_premium', label: humanizeHeader('surplus_premium'), type: 'number', step: '0.01', min: 0 },
   ], []);
 
   const onChange = (idx: number, key: keyof Row, value: any) => {
@@ -133,7 +134,17 @@ export default function StepTop20Risks() {
         onChange={onChange as any}
         onPaste={() => setPasteOpen(true)}
         onExportCsv={lob === 'casualty' ? undefined : () => {
-          const csv = toCsv(rows as any, columns.map(c => c.key));
+          // Use human-friendly headers for CSV export
+          const keys = columns.map(c => c.key);
+          const headers = columns.map(c => c.label);
+          const csvRows = [
+            headers.join(','),
+            ...rows.map(row => keys.map(key => {
+              const val = (row as any)[key];
+              return typeof val === 'string' && val.includes(',') ? `"${val}"` : String(val ?? '');
+            }).join(','))
+          ];
+          const csv = csvRows.join('\n');
           const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'top_20_risks.csv'; a.click(); URL.revokeObjectURL(url);
         }}
