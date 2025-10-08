@@ -4,7 +4,8 @@ import * as supabaseModule from '../../src/lib/supabase';
 
 // Mock supabase
 const mockUpdate = vi.fn();
-const mockEq = vi.fn();
+const mockEq1 = vi.fn(); // First .eq() call
+const mockEq2 = vi.fn(); // Second .eq() call
 const mockFrom = vi.fn();
 
 vi.mock('../../src/lib/supabase', () => ({
@@ -17,14 +18,11 @@ describe('mirrorCobLobToSubmission', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup default mock chain
-    mockEq.mockReturnValue({ error: null });
-    mockUpdate.mockReturnValue({
-      eq: mockEq,
-    });
-    mockFrom.mockReturnValue({
-      update: mockUpdate,
-    });
+    // Setup default mock chain for .update().eq().eq()
+    mockEq2.mockReturnValue({ error: null });
+    mockEq1.mockReturnValue({ eq: mockEq2 });
+    mockUpdate.mockReturnValue({ eq: mockEq1 });
+    mockFrom.mockReturnValue({ update: mockUpdate });
   });
 
   it('returns false for empty submission ID', async () => {
@@ -46,8 +44,8 @@ describe('mirrorCobLobToSubmission', () => {
       lob_class: 'Property',
       lob_line: 'Fire & Allied Perils',
     });
-    expect(mockEq).toHaveBeenCalledWith('id', 'test-submission-id');
-    expect(mockEq).toHaveBeenCalledWith('status', 'in_progress');
+    expect(mockEq1).toHaveBeenCalledWith('id', 'test-submission-id');
+    expect(mockEq2).toHaveBeenCalledWith('status', 'in_progress');
   });
 
   it('handles null class and line values', async () => {
@@ -67,11 +65,11 @@ describe('mirrorCobLobToSubmission', () => {
     );
 
     // Verify the second eq call filters by status
-    expect(mockEq).toHaveBeenCalledWith('status', 'in_progress');
+    expect(mockEq2).toHaveBeenCalledWith('status', 'in_progress');
   });
 
   it('returns true on successful update', async () => {
-    mockEq.mockReturnValue({ error: null });
+    mockEq2.mockReturnValue({ error: null });
 
     const result = await mirrorCobLobToSubmission(
       'test-submission-id',
@@ -85,7 +83,7 @@ describe('mirrorCobLobToSubmission', () => {
   it('returns false and logs warning on error', async () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const testError = new Error('Database error');
-    mockEq.mockReturnValue({ error: testError });
+    mockEq2.mockReturnValue({ error: testError });
 
     const result = await mirrorCobLobToSubmission(
       'test-submission-id',

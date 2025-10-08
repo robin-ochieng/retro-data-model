@@ -51,7 +51,7 @@ describe('HomeStartCard', () => {
     expect(screen.getByLabelText(/client/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/year/i)).toBeInTheDocument();
     expect(screen.getByText(/preset class/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^start$/i })).toBeInTheDocument();
   });
 
   it('displays all preset chips', () => {
@@ -83,7 +83,7 @@ describe('HomeStartCard', () => {
   it('disables Start button when client or year is missing', () => {
     renderComponent();
     
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
     expect(startButton).toBeDisabled();
   });
 
@@ -93,7 +93,7 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
 
     await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
     await user.clear(yearInput);
@@ -125,7 +125,7 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
 
     await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
     await user.clear(yearInput);
@@ -153,7 +153,7 @@ describe('HomeStartCard', () => {
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
     const propertyChip = screen.getByText('Marine & Aviation');
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
 
     await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
     await user.clear(yearInput);
@@ -183,7 +183,7 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
 
     await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
     await user.clear(yearInput);
@@ -207,7 +207,7 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /start/i });
+    const startButton = screen.getByRole('button', { name: /^start$/i });
 
     await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
     await user.clear(yearInput);

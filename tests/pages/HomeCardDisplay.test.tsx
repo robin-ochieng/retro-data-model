@@ -30,39 +30,49 @@ vi.mock('../../src/auth/ProtectedRoute', () => ({
 }));
 
 // Mock supabase with test data
-const mockSelect = vi.fn();
-const mockEq = vi.fn();
-const mockNeq = vi.fn();
-const mockOrder = vi.fn();
-const mockLimit = vi.fn();
-const mockMaybeSingle = vi.fn();
-const mockFrom = vi.fn();
+let recentSubmissionsData: any[] = [];
+let submittedSubmissionsData: any[] = [];
 
 vi.mock('../../src/lib/supabase', () => ({
   supabase: {
-    from: (...args: any[]) => mockFrom(...args),
+    from: (table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () => Promise.resolve({ data: { full_name: 'Test User' }, error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === 'submissions') {
+        return {
+          select: () => ({
+            eq: () => ({
+              neq: () => ({
+                order: () => ({
+                  limit: () => Promise.resolve({ data: recentSubmissionsData, error: null }),
+                }),
+              }),
+              eq: () => ({
+                order: () => ({
+                  limit: () => Promise.resolve({ data: submittedSubmissionsData, error: null }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      return { select: () => ({}) };
+    },
   },
 }));
 
 describe('Home Card Display', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock profile query for loadProfile useEffect
-    mockMaybeSingle.mockResolvedValue({ data: { full_name: 'Test User' }, error: null });
-    
-    // Setup default mock chains
-    mockLimit.mockResolvedValue({ data: [], error: null });
-    mockOrder.mockReturnValue({ limit: mockLimit });
-    mockNeq.mockReturnValue({ order: mockOrder });
-    mockEq.mockReturnValue({ 
-      order: mockOrder,
-      eq: mockEq,
-      neq: mockNeq,
-      maybeSingle: mockMaybeSingle,
-    });
-    mockSelect.mockReturnValue({ eq: mockEq });
-    mockFrom.mockReturnValue({ select: mockSelect });
+    recentSubmissionsData = [];
+    submittedSubmissionsData = [];
   });
 
   const renderComponent = () => {
@@ -75,7 +85,7 @@ describe('Home Card Display', () => {
 
   describe('Recent Submissions Cards', () => {
     it('displays Class of Business as main title', async () => {
-      const mockSubmissions = [
+      recentSubmissionsData = [
         {
           id: 'sub-1',
           user_id: 'test-user-id',
@@ -87,8 +97,6 @@ describe('Home Card Display', () => {
           created_at: '2025-01-01',
         },
       ];
-
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
       
       renderComponent();
 
@@ -98,7 +106,7 @@ describe('Home Card Display', () => {
     });
 
     it('displays Line of Business below Class of Business', async () => {
-      const mockSubmissions = [
+      recentSubmissionsData = [
         {
           id: 'sub-1',
           user_id: 'test-user-id',
@@ -110,8 +118,6 @@ describe('Home Card Display', () => {
           created_at: '2025-01-01',
         },
       ];
-
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
       
       renderComponent();
 
@@ -134,7 +140,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -162,7 +168,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -184,7 +190,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -206,7 +212,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -228,7 +234,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -250,7 +256,7 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit.mockResolvedValue({ data: mockSubmissions, error: null });
+      recentSubmissionsData = mockSubmissions;
       
       renderComponent();
 
@@ -276,13 +282,8 @@ describe('Home Card Display', () => {
         },
       ];
 
-      // First call (profiles) returns null
-      // Second call (in-progress) returns empty
-      // Third call (submitted) returns our data
-      mockLimit
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: inProgressData, error: null })
-        .mockResolvedValueOnce({ data: submittedData, error: null });
+      recentSubmissionsData = inProgressData;
+      submittedSubmissionsData = submittedData;
       
       renderComponent();
 
@@ -305,10 +306,8 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: inProgressData, error: null })
-        .mockResolvedValueOnce({ data: submittedData, error: null });
+      recentSubmissionsData = inProgressData;
+      submittedSubmissionsData = submittedData;
       
       renderComponent();
 
@@ -331,10 +330,8 @@ describe('Home Card Display', () => {
         },
       ];
 
-      mockLimit
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: inProgressData, error: null })
-        .mockResolvedValueOnce({ data: submittedData, error: null });
+      recentSubmissionsData = inProgressData;
+      submittedSubmissionsData = submittedData;
       
       renderComponent();
 
@@ -345,7 +342,7 @@ describe('Home Card Display', () => {
 
   describe('Empty States', () => {
     it('shows message when no recent submissions', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null });
+      // Data already empty in beforeEach
       
       renderComponent();
 
@@ -353,10 +350,7 @@ describe('Home Card Display', () => {
     });
 
     it('shows message when no submitted submissions', async () => {
-      mockLimit
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: [], error: null });
+      // Data already empty in beforeEach
       
       renderComponent();
 

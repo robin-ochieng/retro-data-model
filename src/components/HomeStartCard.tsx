@@ -67,10 +67,11 @@ export function HomeStartCard() {
       </h3>
 
       {/* Client */}
-      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor="client-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
         Client
       </label>
       <select
+        id="client-select"
         value={client}
         onChange={(e) => setClient(e.target.value as ClientOption | '')}
         className="mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -88,10 +89,11 @@ export function HomeStartCard() {
       </select>
 
       {/* Year */}
-      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor="year-input" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
         Year
       </label>
       <input
+        id="year-input"
         type="number"
         inputMode="numeric"
         value={year}
