@@ -26,20 +26,37 @@ export interface CreateSubmissionArgs {
 export async function createSubmission(args: CreateSubmissionArgs): Promise<string> {
   const { client, year, lob_class, userId } = args;
   
-  // Use a default LOB if none provided (we'll make it editable in wizard)
-  const lineOfBusiness = lob_class || 'Property';
+  // Determine line_of_business - default to 'property' (lowercase to match DB constraint)
+  // DB constraint: check (line_of_business in ('property','casualty'))
+  let lineOfBusiness = 'property';
+  if (lob_class) {
+    // Normalize to lowercase to match database constraint
+    const normalized = lob_class.toLowerCase();
+    if (normalized.includes('casualty') || normalized.includes('liability')) {
+      lineOfBusiness = 'casualty';
+    }
+    // Otherwise keep 'property' as default
+  }
+  
+  console.log('[CREATE] Creating submission:', { client, year, lob_class, lineOfBusiness, userId });
   
   const { data, error } = await supabase
     .from('submissions')
     .insert({
-      user_id: userId ?? null,
-      line_of_business: lineOfBusiness,
+      user_id: userId ?? null,  // Temporary: still using user_id until migration runs
+      line_of_business: lineOfBusiness,  // Must be lowercase: 'property' or 'casualty'
       status: 'in_progress',
       meta: { client, year },
+      lob_class: lob_class ?? null,  // Can be any value (e.g., 'Property', 'Marine & Aviation')
     })
-    .select('id')
+    .select('id, user_id, status, created_at, lob_class')
     .single();
   
-  if (error) throw error;
+  console.log('[CREATE] Submission created:', { data, error });
+  
+  if (error) {
+    console.error('[CREATE] Error creating submission:', error);
+    throw error;
+  }
   return data.id as string;
 }

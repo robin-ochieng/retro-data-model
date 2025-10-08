@@ -6,6 +6,7 @@ import { ProtectedRoute } from '../auth/ProtectedRoute';
 import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
 import { HomeStartCard } from '../components/HomeStartCard';
+import { GettingStarted } from '../components/home/GettingStarted';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 import type { Tables } from '../types/supabase';
 
@@ -65,6 +66,7 @@ function HomeContent() {
     let mounted = true;
     (async () => {
       if (!user) return;
+      console.log('[HOME] Loading recent submissions for user:', user.id);
       const { data, error } = await supabase
         .from('submissions')
         .select('id,user_id,line_of_business,status,created_at,meta,lob_class,lob_line')
@@ -72,6 +74,8 @@ function HomeContent() {
         .neq('status', 'submitted')
         .order('created_at', { ascending: false })
         .limit(10);
+      console.log('[HOME] Recent submissions error:', error);
+      console.log('[HOME] Recent submissions rows:', data?.length, data);
       if (!mounted) return;
       if (!error && Array.isArray(data)) setRecent(data as Submission[]);
     })();
@@ -83,6 +87,7 @@ function HomeContent() {
     let mounted = true;
     (async () => {
       if (!user) return;
+      console.log('[HOME] Loading submitted submissions for user:', user.id);
       const { data, error } = await supabase
         .from('submissions')
         .select('id,user_id,line_of_business,status,created_at,meta,lob_class,lob_line')
@@ -90,6 +95,8 @@ function HomeContent() {
         .eq('status', 'submitted')
         .order('created_at', { ascending: false })
         .limit(10);
+      console.log('[HOME] Submitted submissions error:', error);
+      console.log('[HOME] Submitted submissions rows:', data?.length, data);
       if (!mounted) return;
       if (!error && Array.isArray(data)) setSubmitted(data as Submission[]);
     })();
@@ -145,24 +152,8 @@ function HomeContent() {
           {/* Left: Start submission card */}
           <HomeStartCard />
 
-          {/* Right: Quick info or helper text */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Getting Started</h2>
-            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-              <p>
-                <strong className="text-gray-900 dark:text-white">1. Choose a client and year</strong> to begin your submission.
-              </p>
-              <p>
-                <strong className="text-gray-900 dark:text-white">2. (Optional) Select a preset class</strong> to prefill the Class of Business field in the wizard—you can always change it later.
-              </p>
-              <p>
-                <strong className="text-gray-900 dark:text-white">3. Click Start</strong> to create your submission and open the wizard.
-              </p>
-              <p className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                All changes are automatically saved as you work. You can resume any in-progress submission from the list below.
-              </p>
-            </div>
-          </section>
+          {/* Right: Premium Getting Started panel */}
+          <GettingStarted />
         </div>
 
         {/* Resume section */}

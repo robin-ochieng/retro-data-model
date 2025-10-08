@@ -72,7 +72,6 @@ export default function Help() {
     { id: 'troubleshooting', text: 'Troubleshooting', level: 2 },
     { id: 'faq', text: 'FAQ', level: 2 },
     { id: 'glossary', text: 'Glossary', level: 2 },
-    { id: 'data-model', text: 'Data Model Links', level: 2 },
     { id: 'support', text: 'Support & Feedback', level: 2 },
   ];
   const activeId = useActiveHeading(toc.map((t) => t.id));
@@ -255,17 +254,6 @@ export default function Help() {
                   <dd>The reporting currency applied consistently across tabs (e.g., USD).</dd>
                 </div>
               </dl>
-            </section>
-
-            <section id="data-model">
-              <AnchorHeading id="data-model">Data Model Links</AnchorHeading>
-              <ul className="list-disc pl-6 space-y-1">
-                <li><a className="hover:underline" href="/docs/database/overview.md">Database Overview</a></li>
-                <li><a className="hover:underline" href="/docs/database/glossary.md">Glossary</a></li>
-                <li><a className="hover:underline" href="/docs/database/tables/epi_summary.md">EPI Summary</a></li>
-                <li><a className="hover:underline" href="/docs/database/tables/sheet_blobs.md">Sheet Blobs</a></li>
-                <li><a className="hover:underline" href="/docs/FEATURES.md">Features</a></li>
-              </ul>
             </section>
 
             <section id="support">
