@@ -62,7 +62,7 @@ export function HomeStartCard() {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+      <h3 className="mb-4 text-[1.0625rem] font-semibold text-gray-900 dark:text-white">
         Start New Submission
       </h3>
 

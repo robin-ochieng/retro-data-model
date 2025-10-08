@@ -134,8 +134,14 @@ function HomeContent() {
       </header>
       <main className="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
         {/* Hero / Intro */}
-        <section className="mb-10 overflow-hidden rounded-2xl border shadow-sm bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
-          <div className="p-6 sm:p-8">
+        <section className="relative mb-10 overflow-hidden rounded-2xl border border-indigo-200 dark:border-indigo-900/50 shadow-lg bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
+          {/* Enhanced gradient border effect */}
+          <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-gradient-to-br from-indigo-500/20 via-purple-500/10 to-blue-500/20 dark:from-indigo-400/10 dark:via-purple-400/5 dark:to-blue-400/10" />
+          
+          {/* Top edge glow */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent dark:via-indigo-400/20" />
+          
+          <div className="relative p-6 sm:p-8">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
               Retrocession Data Hub
             </h1>
@@ -146,9 +152,7 @@ function HomeContent() {
           </div>
         </section>
 
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Start a New Submission</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-6">
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-6">
           {/* Left: Start submission card */}
           <HomeStartCard />
 
@@ -157,19 +161,25 @@ function HomeContent() {
         </div>
 
         {/* Resume section */}
-        <section className="mt-10 bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Resume recent submissions</h2>
+        <section className="relative mt-10 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-6">
+          {/* Enhanced gradient border effect */}
+          <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-gradient-to-br from-indigo-500/30 via-purple-500/20 to-blue-500/30 dark:from-indigo-400/20 dark:via-purple-400/10 dark:to-blue-400/20" />
+          
+          {/* Top edge glow */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent dark:via-indigo-400/30" />
+          
+          <div className="relative flex items-center justify-between mb-3">
+            <h2 className="text-[1.125rem] font-semibold text-gray-900 dark:text-white">Resume recent submissions</h2>
             <span className="text-xs text-gray-500">showing last 10</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recent.map((s) => {
               const cob = s.lob_class || s.line_of_business || '—';
               const lob = s.lob_line || '';
               const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
               
               return (
-                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition">
+                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition bg-white dark:bg-gray-800">
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100" title={cob}>
@@ -208,19 +218,25 @@ function HomeContent() {
         </section>
 
         {/* Submitted submissions section */}
-        <section className="mt-10 bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Submitted Submissions</h2>
+        <section className="relative mt-10 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-6">
+          {/* Enhanced gradient border effect */}
+          <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-gradient-to-br from-indigo-500/30 via-purple-500/20 to-blue-500/30 dark:from-indigo-400/20 dark:via-purple-400/10 dark:to-blue-400/20" />
+          
+          {/* Top edge glow */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent dark:via-indigo-400/30" />
+          
+          <div className="relative flex items-center justify-between mb-3">
+            <h2 className="text-[1.125rem] font-semibold text-gray-900 dark:text-white">Submitted Submissions</h2>
             <span className="text-xs text-gray-500">showing last 10</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {submitted.map((s) => {
               const cob = s.lob_class || s.line_of_business || '—';
               const lob = s.lob_line || '';
               const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
               
               return (
-                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition opacity-90">
+                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition opacity-90 bg-white dark:bg-gray-800">
                   <div className="flex items-start justify-between mb-2">
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100" title={cob}>

@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 const statusConfig = {
   in_progress: { 
     label: 'In Progress', 
-    className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700/50' 
+    className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/50' 
   },
   submitted: { 
     label: 'Submitted', 
