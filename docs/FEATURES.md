@@ -48,6 +48,12 @@
 
 - UI/UX
 	- Responsive, accessible UI with Tailwind CSS and consistent form patterns.
+	- Premium gradient borders: All major Home page sections (hero, Resume, Submitted) feature consistent gradient border rings (indigo/purple/blue) with top edge glow effects for visual cohesion and modern polish.
+	- Home Page Components:
+		- Getting Started: Redesigned with minimal numbered badges (1, 2, 3) instead of icons for cleaner sequential guidance. Features increased padding (`p-7`), generous spacing (`space-y-6`), and streamlined content (removed autosave footer and "Secure & Automatic Saving" card).
+		- Status Badges: "In Progress" badge uses subtle blue (`bg-blue-50 dark:bg-blue-950/30`) instead of bright yellow for better visual harmony with site color scheme.
+		- Typography Hierarchy: Card titles (H3) at 17px (`text-[1.0625rem]`), section titles (H2) at 18px (`text-[1.125rem]`) for clear information hierarchy and improved scannability.
+		- Client Dropdown: Enhanced placeholder colors (`text-gray-400 dark:text-gray-500`) to visually distinguish empty vs. selected state.
 	- Paste Modal and "Paste from Excel" actions across key tables for high‑volume data entry.
 		- EPI Summary: Premium Summary (EPI) and GWP Split tables support direct paste from Excel. Currency removed entirely for this tab (no currency stored).
 		- Property: Treaty Statistics (Prop), Treaty Statistics (Non‑Prop), Large Loss List, Cat Loss List, UW Limit, Risk Profile, and Cresta Zone Control support paste from Excel.

@@ -1,5 +1,75 @@
 # Features Tracking by Date
 
+## 2025-10-08
+
+### Added
+
+- Home Page: Premium gradient borders applied to all major sections for visual consistency.
+	- Hero section ("Retrocession Data Hub"): Added gradient border ring (indigo/purple/blue), top edge glow effect, and increased shadow.
+	- "Resume recent submissions" section: Added gradient border ring overlay and top edge glow.
+	- "Submitted Submissions" section: Added gradient border ring overlay and top edge glow.
+	- All sections now feature consistent `border-gray-200 dark:border-gray-700`, `ring-1 ring-inset` with gradient colors, and `shadow-lg`.
+- Getting Started Component: Redesigned with numbered badges and increased breathing room.
+	- Replaced icon badges (CheckCircle2, Settings2, PlayCircle) with minimal numbered circles (1, 2, 3).
+	- Number badges: 20px circles with `bg-white/10`, `text-[11px]`, `font-semibold`, matching theme colors.
+	- Removed "Secure & Automatic Saving" feature card for cleaner layout.
+	- Kept "Need Help?" section with link to Help Center.
+- Typography: Bumped font sizes for improved visual hierarchy.
+	- Card titles (H3): Increased from `text-lg` (16px) to `text-[1.0625rem]` (17px).
+		- Applied to: "Start New Submission" (HomeStartCard), "Getting started" (GettingStarted).
+	- Section titles (H2): Increased from `text-lg` (16px) to `text-[1.125rem]` (18px).
+		- Applied to: "Resume recent submissions", "Submitted Submissions".
+	- Maintains clear hierarchy: Section titles (18px) > Card titles (17px).
+- Spacing Enhancements: Added generous breathing room throughout Getting Started component.
+	- Section padding: `p-6` → `p-7` (+4px all around).
+	- Header bottom margin: `mb-7` → `mb-8` (+4px).
+	- Subtitle top margin: `mt-2` → `mt-2.5` (+2px).
+	- Steps spacing: `space-y-5` → `space-y-6` (+4px between steps).
+	- Step icon-to-text gap: `gap-3` → `gap-4` (+4px).
+	- Step description top margin: `mt-0.5` → `mt-1` (+2px).
+	- Help section top margin: `mt-7` → `mt-8` (+4px).
+	- Help section padding: `p-4` → `p-5` (+4px).
+	- All text uses `leading-relaxed` for comfortable reading.
+
+### Changed
+
+- Status Badge: Changed "In Progress" badge color from bright yellow to subtle blue.
+	- Before: `bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300`.
+	- After: `bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300`.
+	- Improved visual harmony with overall blue/indigo color scheme.
+- Home Page Layout: Removed redundant section header for cleaner design.
+	- Removed visible "Start a New Submission" heading between hero and cards.
+	- Cards now serve as their own visual sections with built-in titles.
+	- Added `mt-10` to card grid to maintain proper spacing from hero section.
+- Client Dropdown: Enhanced placeholder text color for better UX.
+	- Placeholder state: `text-gray-400 dark:text-gray-500` (faded gray).
+	- Selected state: `text-gray-900 dark:text-gray-100` (bold dark text).
+	- Users can now visually distinguish empty vs. selected state.
+
+### Removed
+
+- Getting Started Component: Removed redundant footer text.
+	- Removed: "Autosave is on • Read-only once submitted • Data protected by RLS".
+	- Simplified component footer; information available in Help Center if needed.
+- Home Page: Removed "Secure & Automatic Saving" feature card from Getting Started.
+	- Removed entire Shield icon card explaining autosave security.
+	- Streamlined to 3 steps + "Need Help?" section only.
+
+### Implementation Files
+
+- `src/components/home/GettingStarted.tsx`: Redesigned with numbered badges, removed icons, increased spacing, removed footer.
+- `src/components/HomeStartCard.tsx`: Enhanced title font size, improved client dropdown placeholder colors.
+- `src/components/layout/StatusBadge.tsx`: Changed "In Progress" badge from yellow to blue.
+- `src/pages/Home.tsx`: Added gradient borders to hero/sections, removed section header, enhanced typography.
+
+### Design Rationale
+
+- **Visual Consistency**: Gradient borders create a cohesive premium aesthetic across all major sections.
+- **Information Hierarchy**: Numbered badges (1, 2, 3) provide clear sequential guidance; larger fonts improve scannability.
+- **Breathing Room**: Increased padding and spacing reduce visual clutter, making content easier to digest.
+- **Color Harmony**: Blue badge color complements existing indigo/blue accents better than yellow.
+- **Simplification**: Removed redundant elements (section header, footer text, extra cards) for cleaner, more focused interface.
+
 ## 2025-10-07
 
 ### Added
