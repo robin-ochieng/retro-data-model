@@ -67,7 +67,7 @@ function HomeContent() {
       if (!user) return;
       const { data, error } = await supabase
         .from('submissions')
-        .select('id,user_id,line_of_business,status,created_at,meta')
+        .select('id,user_id,line_of_business,status,created_at,meta,lob_class,lob_line')
         .eq('user_id', user.id)
         .neq('status', 'submitted')
         .order('created_at', { ascending: false })
@@ -85,7 +85,7 @@ function HomeContent() {
       if (!user) return;
       const { data, error } = await supabase
         .from('submissions')
-        .select('id,user_id,line_of_business,status,created_at,meta')
+        .select('id,user_id,line_of_business,status,created_at,meta,lob_class,lob_line')
         .eq('user_id', user.id)
         .eq('status', 'submitted')
         .order('created_at', { ascending: false })
@@ -172,35 +172,46 @@ function HomeContent() {
             <span className="text-xs text-gray-500">showing last 10</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recent.map((s) => (
-              <div key={s.id} className="border rounded-lg p-4 hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.line_of_business}</div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${s.status === 'submitted' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {s.status}
-                  </span>
+            {recent.map((s) => {
+              const cob = s.lob_class || s.line_of_business || '—';
+              const lob = s.lob_line || '';
+              const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
+              
+              return (
+                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100" title={cob}>
+                        {cob}
+                      </div>
+                      {lob && (
+                        <div className="truncate text-xs text-gray-500 dark:text-gray-400 mt-0.5" title={lob}>
+                          {lob}
+                        </div>
+                      )}
+                    </div>
+                    <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${s.status === 'submitted' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
+                      {s.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 truncate" title={`${meta?.client ?? '—'} · ${meta?.year ?? '—'}`}>
+                    {meta?.client ?? '—'} · {meta?.year ?? '—'}
+                  </div>
+                  <button
+                    className="px-3 py-1.5 rounded bg-gray-900 dark:bg-gray-700 text-white hover:bg-black dark:hover:bg-gray-600 text-sm"
+                    onClick={() => {
+                      const lobKey = s.line_of_business.toLowerCase() as LobKey;
+                      const firstTab = getFirstTabKey(lobKey);
+                      navigate(`/wizard/${lobKey}/${s.id}/${firstTab}`);
+                    }}
+                  >
+                    Resume
+                  </button>
                 </div>
-                <div className="font-mono text-xs break-all mb-2 text-gray-600 dark:text-gray-300">{s.id}</div>
-                {(() => {
-                  const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
-                  return (
-                    <div className="text-xs text-gray-500 mb-3">{meta?.client ?? '-'} • {meta?.year ?? '-'}</div>
-                  );
-                })()}
-                <button
-                  className="px-3 py-1.5 rounded bg-gray-900 text-white hover:bg-black"
-                  onClick={() => {
-                    const lobKey = s.line_of_business.toLowerCase() as LobKey;
-                    const firstTab = getFirstTabKey(lobKey);
-                    navigate(`/wizard/${lobKey}/${s.id}/${firstTab}`);
-                  }}
-                >
-                  Resume
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {recent.length === 0 && (
-              <div className="text-gray-500">No recent submissions yet.</div>
+              <div className="text-gray-500 dark:text-gray-400">No recent submissions yet.</div>
             )}
           </div>
         </section>
@@ -212,39 +223,50 @@ function HomeContent() {
             <span className="text-xs text-gray-500">showing last 10</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {submitted.map((s) => (
-              <div key={s.id} className="border rounded-lg p-4 hover:shadow-md transition opacity-90">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.line_of_business}</div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200">
-                    submitted
-                  </span>
+            {submitted.map((s) => {
+              const cob = s.lob_class || s.line_of_business || '—';
+              const lob = s.lob_line || '';
+              const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
+              
+              return (
+                <div key={s.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition opacity-90">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100" title={cob}>
+                        {cob}
+                      </div>
+                      {lob && (
+                        <div className="truncate text-xs text-gray-500 dark:text-gray-400 mt-0.5" title={lob}>
+                          {lob}
+                        </div>
+                      )}
+                    </div>
+                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200 whitespace-nowrap">
+                      submitted
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 truncate" title={`${meta?.client ?? '—'} · ${meta?.year ?? '—'}`}>
+                    {meta?.client ?? '—'} · {meta?.year ?? '—'}
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 text-sm"
+                    onClick={() => {
+                      const lobKey = s.line_of_business.toLowerCase() as LobKey;
+                      const firstTab = getFirstTabKey(lobKey);
+                      navigate(`/wizard/${lobKey}/${s.id}/${firstTab}`);
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View
+                  </button>
                 </div>
-                <div className="font-mono text-xs break-all mb-2 text-gray-600 dark:text-gray-300">{s.id}</div>
-                {(() => {
-                  const meta = (s.meta && typeof s.meta === 'object' && !Array.isArray(s.meta)) ? (s.meta as Record<string, any>) : null;
-                  return (
-                    <div className="text-xs text-gray-500 mb-3">{meta?.client ?? '-'} • {meta?.year ?? '-'}</div>
-                  );
-                })()}
-                <button
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                  onClick={() => {
-                    const lobKey = s.line_of_business.toLowerCase() as LobKey;
-                    const firstTab = getFirstTabKey(lobKey);
-                    navigate(`/wizard/${lobKey}/${s.id}/${firstTab}`);
-                  }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  View
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {submitted.length === 0 && (
-              <div className="text-gray-500">No submitted submissions yet.</div>
+              <div className="text-gray-500 dark:text-gray-400">No submitted submissions yet.</div>
             )}
           </div>
         </section>

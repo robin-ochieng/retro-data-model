@@ -421,6 +421,19 @@ export default function StepHeader() {
   useEffect(() => {
     meta.setLineOfBusiness(values.lines_of_business || '');
   }, [values.lines_of_business, meta]);
+  
+  // Mirror COB and LOB to submissions table for home card display
+  useEffect(() => {
+    if (!submissionId || loading) return;
+    // Import dynamically to avoid circular dependencies
+    import('../../../../lib/mirrorCobLob').then(({ mirrorCobLobToSubmission }) => {
+      mirrorCobLobToSubmission(
+        submissionId,
+        values.class_of_business || null,
+        values.lines_of_business || null
+      );
+    });
+  }, [submissionId, values.class_of_business, values.lines_of_business, loading]);
   // Derived select values to support 'Other' option
   const countrySelectValue = countryIsOther ? OTHER : (COUNTRIES.includes(values.country) ? values.country : (values.country ? OTHER : ''));
   const currencySelectValue = currencyIsOther ? OTHER : (CURRENCIES.some(c => c.code === values.currency_std_units) ? values.currency_std_units : (values.currency_std_units ? OTHER : ''));
