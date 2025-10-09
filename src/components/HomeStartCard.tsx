@@ -61,10 +61,21 @@ export function HomeStartCard() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow">
-      <h3 className="mb-4 text-[1.0625rem] font-semibold text-gray-900 dark:text-white">
-        Start New Submission
-      </h3>
+    <div
+      className="
+        relative rounded-2xl border border-gray-200 dark:border-gray-700 bg-white/[0.03]
+        shadow-[0_1px_0_rgba(255,255,255,0.04),0_8px_24px_-12px_rgba(0,0,0,0.55)]
+        transition-colors
+        hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/[0.05]
+        focus-within:border-indigo-300/40 focus-within:ring-2 focus-within:ring-indigo-400/25
+      "
+    >
+      {/* subtle inner ring for crisp edge */}
+      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5" />
+      <div className="relative p-4 md:p-5">
+        <h3 className="mb-4 text-[1.0625rem] font-semibold text-gray-900 dark:text-white">
+          Start New Submission
+        </h3>
 
       {/* Client */}
       <label htmlFor="client-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -156,6 +167,7 @@ export function HomeStartCard() {
           'Start New Submission'
         )}
       </button>
+      </div>
     </div>
   );
 }

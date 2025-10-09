@@ -8,6 +8,9 @@ import { getEpiGwpSplit, getEpiSummaryMeta, upsertEpiSummaryMeta, replaceEpiGwpS
 import { useAutosave } from '../../../hooks/useAutosave';
 import PasteModal from '../../../components/PasteModal';
 import { useSubmissionMeta } from '../SubmissionMetaContext';
+import { NumberCell } from '../../../components/table/NumberCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../components/table/useAutoColumnSize';
+import { parseNumericInput } from '../../../lib/numberFormat';
 
 const RowSchema = z.object({
   // Keep both for backward compat: UI shows treaty_type; programme remains mapped for DB rows loaded previously
@@ -36,6 +39,8 @@ export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
   const { treatyType, isReadOnly } = useSubmissionMeta();
   const lobLower = (lob ?? '').toLowerCase();
+  const epiTableRef = useAutoColumnSize();
+  const gwpTableRef = useAutoColumnSize();
   // Default rows: no hardcoded treaty; set from meta on load
   const defaultRowsForLob = React.useMemo(
     () => [
@@ -62,6 +67,7 @@ export default function StepEpiSummary() {
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
   const { fields: gwpFields, append: gwpAppend, remove: gwpRemove } = useFieldArray({ control, name: 'gwp_split' });
   const watchedRows = watch('rows');
+  const watchedGwp = watch('gwp_split');
 
   // Load existing rows on mount
   useEffect(() => {
@@ -162,12 +168,10 @@ export default function StepEpiSummary() {
     setLastSaved(new Date());
   }, 900, !isReadOnly);
 
-  // Helpers
+  // Helpers - use parseNumericInput for robust Excel paste support
   const toNumber = (s: string | undefined) => {
-    if (!s) return 0;
-    const cleaned = s.replace(/[,\s]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    const parsed = parseNumericInput(s);
+    return parsed ?? 0;
   };
 
   const maybeHasHeader = (cells: string[], expected: string[]) => {
@@ -220,7 +224,7 @@ export default function StepEpiSummary() {
 
   return (
     <form className="space-y-6">
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
+      <div className={`${autoColumnClasses.container} bg-white dark:bg-gray-800 rounded shadow p-4`}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">Premium Summary (EPI)</h3>
           <button
@@ -231,25 +235,25 @@ export default function StepEpiSummary() {
             Paste from Excel
           </button>
         </div>
-        <table className="min-w-full table-auto border rounded">
+        <table ref={epiTableRef} className={`${autoColumnClasses.table} border rounded`}>
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
-              <th className="px-2 py-1">
+              <th className={autoColumnClasses.th}>
                 <div className="flex items-center gap-1">
                   <span>Treaty Type</span>
                   <span className="text-xs text-gray-500" title="Comes from Client Details">(from Client Details)</span>
                 </div>
               </th>
-              <th className="px-2 py-1">Estimate Type</th>
-              <th className="px-2 py-1">Period Label</th>
-              <th className="px-2 py-1">EPI Value</th>
-              <th className="px-2 py-1">Actions</th>
+              <th className={autoColumnClasses.th}>Estimate Type</th>
+              <th className={autoColumnClasses.th}>Period Label</th>
+              <th className={`${autoColumnClasses.th} text-right`}>EPI Value</th>
+              <th className={autoColumnClasses.th}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {fields.map((field, idx) => (
               <tr key={field.id}>
-                <td>
+                <td className={autoColumnClasses.tdText}>
                   <input
                     {...register(`rows.${idx}.treaty_type`)}
                     className="px-2 py-1 border rounded w-full bg-gray-100 dark:bg-gray-700"
@@ -258,30 +262,31 @@ export default function StepEpiSummary() {
                     aria-label="Treaty Type (from Client Details)"
                   />
                 </td>
-                <td>
+                <td className={autoColumnClasses.tdText}>
                   <input
                     {...register(`rows.${idx}.estimate_type`)}
                     className="px-2 py-1 border rounded w-full"
                   />
                   {errors.rows?.[idx]?.estimate_type && (
-                    <span className="text-red-600 text-xs">{errors.rows[idx].estimate_type.message}</span>
+                    <span className="text-red-600 text-xs block mt-1">{errors.rows[idx].estimate_type.message}</span>
                   )}
                 </td>
-                <td>
+                <td className={autoColumnClasses.tdText}>
                   <input
                     {...register(`rows.${idx}.period_label`)}
                     className="px-2 py-1 border rounded w-full"
                   />
                 </td>
-                <td>
-                  <input
-                    type="number"
-                    {...register(`rows.${idx}.epi_value`, { valueAsNumber: true })}
-                    className="px-2 py-1 border rounded w-full"
-                    min={0}
+                <td className={autoColumnClasses.tdNumeric}>
+                  <NumberCell
+                    value={watchedRows[idx]?.epi_value ?? null}
+                    onChange={(val) => setValue(`rows.${idx}.epi_value`, val ?? 0, { shouldDirty: true })}
+                    decimals={2}
+                    disabled={isReadOnly}
+                    ariaLabel={`EPI Value for row ${idx + 1}`}
                   />
                   {errors.rows?.[idx]?.epi_value && (
-                    <span className="text-red-600 text-xs">{errors.rows[idx].epi_value.message}</span>
+                    <span className="text-red-600 text-xs block mt-1">{errors.rows[idx].epi_value.message}</span>
                   )}
                 </td>
                 <td>
@@ -319,7 +324,7 @@ export default function StepEpiSummary() {
       </div>
 
       {/* GWP Split */}
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
+      <div className={`${autoColumnClasses.container} bg-white dark:bg-gray-800 rounded shadow p-4`}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">GWP Split Per Section</h3>
           <button
@@ -330,30 +335,36 @@ export default function StepEpiSummary() {
             Paste from Excel
           </button>
         </div>
-        <table className="min-w-full table-auto border rounded">
+        <table ref={gwpTableRef} className={`${autoColumnClasses.table} border rounded`}>
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
-              <th className="px-2 py-1">Section</th>
-              <th className="px-2 py-1">Premium</th>
-              <th className="px-2 py-1">Actions</th>
+              <th className={autoColumnClasses.th}>Section</th>
+              <th className={`${autoColumnClasses.th} text-right`}>Premium</th>
+              <th className={autoColumnClasses.th}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {gwpFields.map((field, idx) => (
               <tr key={field.id}>
-                <td>
+                <td className={autoColumnClasses.tdText}>
                   <input {...register(`gwp_split.${idx}.section`)} className="px-2 py-1 border rounded w-full" />
                   {errors.gwp_split?.[idx]?.section && (
-                    <span className="text-red-600 text-xs">{errors.gwp_split[idx].section?.message}</span>
+                    <span className="text-red-600 text-xs block mt-1">{errors.gwp_split[idx].section?.message}</span>
                   )}
                 </td>
-                <td>
-                  <input type="number" step="0.01" min={0} {...register(`gwp_split.${idx}.premium`, { valueAsNumber: true })} className="px-2 py-1 border rounded w-full" />
+                <td className={autoColumnClasses.tdNumeric}>
+                  <NumberCell
+                    value={watchedGwp?.[idx]?.premium ?? null}
+                    onChange={(val) => setValue(`gwp_split.${idx}.premium`, val ?? 0, { shouldDirty: true })}
+                    decimals={2}
+                    disabled={isReadOnly}
+                    ariaLabel={`Premium for ${watchedGwp?.[idx]?.section || `row ${idx + 1}`}`}
+                  />
                   {errors.gwp_split?.[idx]?.premium && (
-                    <span className="text-red-600 text-xs">{errors.gwp_split[idx].premium?.message}</span>
+                    <span className="text-red-600 text-xs block mt-1">{errors.gwp_split[idx].premium?.message}</span>
                   )}
                 </td>
-                <td>
+                <td className={autoColumnClasses.tdText}>
                   <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => gwpRemove(idx)} disabled={gwpFields.length <= 1}>
                     Remove
                   </button>
