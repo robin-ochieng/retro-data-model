@@ -8,20 +8,23 @@ import { useAutosave } from '../../../../hooks/useAutosave';
 import { chunkedSave } from '../../../../utils/chunkedSave';
 import { toCsv } from '../../../../utils/csv';
 import { humanizeHeader } from '../../../../lib/headerFormat';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
+import { parseNumericInput } from '../../../../lib/numberFormat';
 
 const RowSchema = z.object({
   rank: z.number().int().min(1),
   insured: z.string().optional().default(''),
   class_of_business: z.string().optional().default(''),
   occupation: z.string().optional().default(''),
-  gross_sum_insured: z.number().nonnegative().default(0),
-  fac_sum_insured: z.number().nonnegative().default(0),
-  surplus_sum_insured: z.number().nonnegative().default(0),
-  quota_share_sum_insured: z.number().nonnegative().default(0),
-  net_sum_insured: z.number().nonnegative().default(0),
-  gross_premium: z.number().nonnegative().default(0),
-  fac_premium: z.number().nonnegative().default(0),
-  surplus_premium: z.number().nonnegative().default(0),
+  gross_sum_insured: z.number().default(0), // Allow negatives
+  fac_sum_insured: z.number().default(0), // Allow negatives
+  surplus_sum_insured: z.number().default(0), // Allow negatives
+  quota_share_sum_insured: z.number().default(0), // Allow negatives (QS Sum Insured)
+  net_sum_insured: z.number().default(0), // Allow negatives
+  gross_premium: z.number().default(0), // Allow negatives
+  fac_premium: z.number().default(0), // Allow negatives
+  surplus_premium: z.number().default(0), // Allow negatives
 });
 type Row = z.infer<typeof RowSchema>;
 
@@ -32,6 +35,7 @@ export default function StepTop20Risks() {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const tableRef = useAutoColumnSize();
 
   useEffect(() => {
     (async () => {
@@ -121,48 +125,130 @@ export default function StepTop20Risks() {
     surplus_premium: acc.surplus_premium + (r.surplus_premium || 0),
   }), { gross_sum_insured: 0, fac_sum_insured: 0, surplus_sum_insured: 0, quota_share_sum_insured: 0, net_sum_insured: 0, gross_premium: 0, fac_premium: 0, surplus_premium: 0 }), [rows]);
 
+  // Define which columns are numeric (for NumberCell rendering)
+  const numericColumns = new Set([
+    'gross_sum_insured',
+    'fac_sum_insured',
+    'surplus_sum_insured',
+    'quota_share_sum_insured',
+    'net_sum_insured',
+    'gross_premium',
+    'fac_premium',
+    'surplus_premium',
+  ]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold">Top 20 Risks</h3>
-        <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
+        <div className="flex gap-2 items-center">
+          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
+            Paste from Excel
+          </button>
+          {lob !== 'casualty' && (
+            <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => {
+              // Use human-friendly headers for CSV export
+              const keys = columns.map(c => c.key);
+              const headers = columns.map(c => c.label);
+              const csvRows = [
+                headers.join(','),
+                ...rows.map(row => keys.map(key => {
+                  const val = (row as any)[key];
+                  return typeof val === 'string' && val.includes(',') ? `"${val}"` : String(val ?? '');
+                }).join(','))
+              ];
+              const csv = csvRows.join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'top_20_risks.csv'; a.click(); URL.revokeObjectURL(url);
+            }}>
+              Export CSV
+            </button>
+          )}
+          <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
+        </div>
       </div>
-  {/* Debug instrumentation removed */}
-      <FormTable<Row>
-        columns={columns as any}
-        rows={rows}
-        onChange={onChange as any}
-        onPaste={() => setPasteOpen(true)}
-        onExportCsv={lob === 'casualty' ? undefined : () => {
-          // Use human-friendly headers for CSV export
-          const keys = columns.map(c => c.key);
-          const headers = columns.map(c => c.label);
-          const csvRows = [
-            headers.join(','),
-            ...rows.map(row => keys.map(key => {
-              const val = (row as any)[key];
-              return typeof val === 'string' && val.includes(',') ? `"${val}"` : String(val ?? '');
-            }).join(','))
-          ];
-          const csv = csvRows.join('\n');
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'top_20_risks.csv'; a.click(); URL.revokeObjectURL(url);
-        }}
-        footerRender={
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 text-sm">
-            <div>Gross SI: {totals.gross_sum_insured.toLocaleString()}</div>
-            <div>FAC SI: {totals.fac_sum_insured.toLocaleString()}</div>
-            <div>Surplus SI: {totals.surplus_sum_insured.toLocaleString()}</div>
-            <div>QS SI: {totals.quota_share_sum_insured.toLocaleString()}</div>
-            <div>Net SI: {totals.net_sum_insured.toLocaleString()}</div>
-            <div>Gross Prem: {totals.gross_premium.toLocaleString()}</div>
-            <div>FAC Prem: {totals.fac_premium.toLocaleString()}</div>
-            <div>Surplus Prem: {totals.surplus_premium.toLocaleString()}</div>
-          </div>
-        }
-      />
+
+      <div className={autoColumnClasses.container}>
+        <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr>
+              {columns.map(col => (
+                <th key={col.key} className="px-2 py-1 text-left whitespace-nowrap">{col.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx} className="align-top">
+                {columns.map(col => {
+                  const colKey = col.key as keyof Row;
+                  const value = row[colKey];
+
+                  // Render NumberCell for numeric columns
+                  if (numericColumns.has(col.key)) {
+                    return (
+                      <td key={col.key} className="px-2 py-1">
+                        <NumberCell
+                          value={value as number}
+                          onChange={(newValue) => onChange(idx, colKey, newValue ?? 0)}
+                          decimals={2}
+                          className="w-full"
+                        />
+                      </td>
+                    );
+                  }
+
+                  // Render plain input for text/rank columns
+                  return (
+                    <td key={col.key} className="px-2 py-1">
+                      <input
+                        type={col.type ?? 'text'}
+                        step={col.step}
+                        min={col.min}
+                        aria-label={col.label}
+                        value={value ?? ''}
+                        onChange={e => {
+                          const newValue = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;
+                          onChange(idx, colKey, newValue);
+                        }}
+                        className="px-2 py-1 border rounded w-full"
+                      />
+                      {errors?.[idx]?.[colKey] && (
+                        <div className="text-xs text-red-600 mt-1">{String(errors[idx]![colKey])}</div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={columns.length} className="px-2 py-2 bg-gray-50 dark:bg-gray-900">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 text-sm">
+                  <div>Gross SI: {totals.gross_sum_insured.toLocaleString()}</div>
+                  <div>FAC SI: {totals.fac_sum_insured.toLocaleString()}</div>
+                  <div>Surplus SI: {totals.surplus_sum_insured.toLocaleString()}</div>
+                  <div>QS SI: {totals.quota_share_sum_insured.toLocaleString()}</div>
+                  <div>Net SI: {totals.net_sum_insured.toLocaleString()}</div>
+                  <div>Gross Prem: {totals.gross_premium.toLocaleString()}</div>
+                  <div>FAC Prem: {totals.fac_premium.toLocaleString()}</div>
+                  <div>Surplus Prem: {totals.surplus_premium.toLocaleString()}</div>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
       <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={(data) => {
         setRows(prev => {
+          // Helper to parse numbers with Excel paste compatibility
+          const toNumber = (s: string | undefined) => {
+            const parsed = parseNumericInput(s);
+            return parsed ?? 0;
+          };
+
           // Start from current rows; overwrite up to 20 entries.
           const next = prev.slice(0, 20);
           let seqIndex = 0;
@@ -184,14 +270,14 @@ export default function StepTop20Risks() {
               insured: insured ?? '',
               class_of_business: cob ?? '',
               occupation: occ ?? '',
-              gross_sum_insured: Number(gsi) || 0,
-              fac_sum_insured: Number(fsi) || 0,
-              surplus_sum_insured: Number(ssi) || 0,
-              quota_share_sum_insured: Number(qsi) || 0,
-              net_sum_insured: Number(nsi) || 0,
-              gross_premium: Number(gp) || 0,
-              fac_premium: Number(fp) || 0,
-              surplus_premium: Number(sp) || 0,
+              gross_sum_insured: toNumber(gsi),
+              fac_sum_insured: toNumber(fsi),
+              surplus_sum_insured: toNumber(ssi),
+              quota_share_sum_insured: toNumber(qsi),
+              net_sum_insured: toNumber(nsi),
+              gross_premium: toNumber(gp),
+              fac_premium: toNumber(fp),
+              surplus_premium: toNumber(sp),
             };
             const r = Number(rank);
             if (Number.isFinite(r) && r >= 1 && r <= 20) placeNext(obj, r - 1);

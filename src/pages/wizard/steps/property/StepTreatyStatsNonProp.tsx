@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useFieldArray, useForm, type Path } from 'react-hook-form';
 import { z } from 'zod';
@@ -6,20 +6,23 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import PasteModal from '../../../../components/PasteModal';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
+import { parseNumericInput } from '../../../../lib/numberFormat';
 
 const RowSchema = z.object({
-  treaty_year: z.number().int().nonnegative().optional(),
-  limit: z.number().nonnegative().optional().default(0),
-  excess: z.number().nonnegative().optional().default(0),
-  gnrpi: z.number().nonnegative().optional().default(0),
-  premium_rate: z.number().nonnegative().optional().default(0),
-  minimum_premium: z.number().nonnegative().optional().default(0),
-  earned_premium: z.number().nonnegative().optional().default(0),
-  reinstatement_premium: z.number().nonnegative().optional().default(0),
-  paid_losses: z.number().nonnegative().optional().default(0),
-  os_losses: z.number().nonnegative().optional().default(0),
-  incurred_losses: z.number().nonnegative().optional().default(0),
-  balance: z.number().optional(),
+  treaty_year: z.number().int().min(1900).max(2100).optional(), // 4-digit year validation
+  limit: z.number().optional().default(0), // Allow negatives
+  excess: z.number().optional().default(0), // Allow negatives
+  gnrpi: z.number().optional().default(0), // Allow negatives
+  premium_rate: z.number().optional().default(0), // Allow negatives
+  minimum_premium: z.number().optional().default(0), // Allow negatives
+  earned_premium: z.number().optional().default(0), // Allow negatives
+  reinstatement_premium: z.number().optional().default(0), // Allow negatives
+  paid_losses: z.number().optional().default(0), // Allow negatives
+  os_losses: z.number().optional().default(0), // Allow negatives
+  incurred_losses: z.number().optional().default(0), // Allow negatives
+  balance: z.number().optional(), // Allow negatives
 });
 
 const FormSchema = z.object({
@@ -60,6 +63,11 @@ export default function StepTreatyStatsNonProp() {
   const overall = useFieldArray({ control, name: 'overall' });
   const cat1 = useFieldArray({ control, name: 'cat_layer1' });
   const cat2 = useFieldArray({ control, name: 'cat_layer2' });
+  
+  // Auto-sizing table refs
+  const tableRef1 = useAutoColumnSize();
+  const tableRef2 = useAutoColumnSize();
+  const tableRef3 = useAutoColumnSize();
 
   useEffect(() => {
     let mounted = true;
@@ -98,10 +106,8 @@ export default function StepTreatyStatsNonProp() {
 
   // Paste helpers
   const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[\s,]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    const parsed = parseNumericInput(s);
+    return parsed ?? 0;
   };
   const maybeHasHeader = (cells: string[], expected: string[]) => {
     const lc = (cells || []).map((c) => String(c).trim().toLowerCase());
@@ -132,56 +138,100 @@ export default function StepTreatyStatsNonProp() {
     setValue(section, (cleaned.length ? cleaned : [blankRow]) as any, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
-  const renderTable = (title: string, name: SectionName, fa: ReturnType<typeof useFieldArray<FormValues>>) => (
-    <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold">{title}</h3>
-        <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteSection(name)}>
-          Paste from Excel
-        </button>
+  const renderTable = (title: string, name: SectionName, fa: ReturnType<typeof useFieldArray<FormValues>>, tableRef: React.RefObject<HTMLTableElement | null>) => {
+    const columns: Array<{ key: keyof z.infer<typeof RowSchema>; label: string; isYear?: boolean }> = [
+      { key: 'treaty_year', label: 'Treaty Year', isYear: true },
+      { key: 'limit', label: 'Limit' },
+      { key: 'excess', label: 'Excess' },
+      { key: 'gnrpi', label: 'GNRPI' },
+      { key: 'premium_rate', label: 'Premium Rate' },
+      { key: 'minimum_premium', label: 'Minimum Premium' },
+      { key: 'earned_premium', label: 'Earned Premium' },
+      { key: 'reinstatement_premium', label: 'Reinstatement Premium' },
+      { key: 'paid_losses', label: 'Paid Losses' },
+      { key: 'os_losses', label: 'OS Losses' },
+      { key: 'incurred_losses', label: 'Incurred Losses' },
+      { key: 'balance', label: 'Balance' },
+    ];
+
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold">{title}</h3>
+          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteSection(name)}>
+            Paste from Excel
+          </button>
+        </div>
+        <div className={autoColumnClasses.container}>
+          <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
+            <thead className="bg-gray-100 dark:bg-gray-700">
+              <tr>
+                {columns.map(c => (
+                  <th key={c.key} className="px-2 py-1 whitespace-nowrap text-left">{c.label}</th>
+                ))}
+                <th className="px-2 py-1 whitespace-nowrap text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fa.fields.map((field, idx) => (
+                <tr key={field.id}>
+                  {columns.map(col => {
+                    const fieldName = `${name}.${idx}.${col.key}` as Path<FormValues>;
+                    const value = watch(fieldName);
+                    
+                    // Treaty Year: plain input with 4-digit validation
+                    if (col.isYear) {
+                      return (
+                        <td key={col.key} className="px-2 py-1">
+                          <input
+                            type="number"
+                            {...register(fieldName, { valueAsNumber: true })}
+                            className="px-2 py-1 border rounded w-full"
+                            min={1900}
+                            max={2100}
+                            step="1"
+                            pattern="^\d{4}$"
+                            title="Enter a 4-digit year (1900-2100)"
+                          />
+                        </td>
+                      );
+                    }
+                    
+                    // All numeric columns with NumberCell
+                    return (
+                      <td key={col.key} className="px-2 py-1">
+                        <NumberCell
+                          value={value as number}
+                          onChange={(newValue) => {
+                            setValue(fieldName, newValue ?? 0, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                          }}
+                          decimals={2}
+                          className="w-full"
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className="px-2 py-1">
+                    <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-between items-center mt-3">
+          <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => fa.append(blankRow)}>Add Row</button>
+          <div className="text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
+        </div>
       </div>
-      <table className="min-w-full table-auto border rounded">
-        <thead className="bg-gray-100 dark:bg-gray-700">
-          <tr>
-            {['Treaty Year','Limit','Excess','GNRPI','Premium Rate','Minimum Premium','Earned Premium','Reinstatement Premium','Paid Losses','OS Losses','Incurred Losses','Balance','Actions'].map(h => (
-              <th key={h} className="px-2 py-1 whitespace-nowrap text-left">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {fa.fields.map((field, idx) => (
-            <tr key={field.id}>
-              <td><input type="number" step="1" {...register(`${name}.${idx}.treaty_year` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.limit` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.excess` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.gnrpi` as Path<FormValues>, { valueAsNumber: true })} className="input w-36" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.premium_rate` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.minimum_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.earned_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.reinstatement_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.paid_losses` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.os_losses` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.incurred_losses` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td><input type="number" step="0.01" {...register(`${name}.${idx}.balance` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-              <td>
-                <button type="button" className="px-2 py-1 bg-red-500 text-white rounded" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex justify-between items-center mt-3">
-        <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white" onClick={() => fa.append(blankRow)}>Add Row</button>
-        <div className="text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
-  {renderTable('XL: All Layers (Overall)', 'overall', overall)}
-  {renderTable('Cat XL: Layer 1', 'cat_layer1', cat1)}
-  {renderTable('Cat XL: Layer 2', 'cat_layer2', cat2)}
+      {renderTable('XL: All Layers (Overall)', 'overall', overall, tableRef1)}
+      {renderTable('Cat XL: Layer 1', 'cat_layer1', cat1, tableRef2)}
+      {renderTable('Cat XL: Layer 2', 'cat_layer2', cat2, tableRef3)}
       <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>

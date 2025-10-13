@@ -6,21 +6,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import PasteModal from '../../../../components/PasteModal';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
+import { parseNumericInput } from '../../../../lib/numberFormat';
 
 const RowSchema = z.object({
-  year: z.number().int().nonnegative().optional(),
+  year: z.number().int().min(1900).max(2100).optional(), // 4-digit year validation
   layer: z.string().optional().default(''),
-  limit: z.number().nonnegative().optional().default(0),
-  priority: z.number().nonnegative().optional().default(0),
-  ognpi: z.number().nonnegative().optional().default(0),
-  rate: z.number().nonnegative().optional().default(0),
-  mdp: z.number().nonnegative().optional().default(0),
-  adjusted_premium: z.number().nonnegative().optional().default(0),
-  premium: z.number().nonnegative().optional().default(0),
-  reinstatement_premium: z.number().nonnegative().optional().default(0),
-  claims_paid: z.number().nonnegative().optional().default(0),
-  claims_outstanding: z.number().nonnegative().optional().default(0),
-  claims_incurred: z.number().nonnegative().optional().default(0),
+  limit: z.number().optional().default(0), // Allow negatives
+  priority: z.number().optional().default(0), // Allow negatives
+  ognpi: z.number().optional().default(0), // Allow negatives
+  rate: z.number().optional().default(0), // Allow negatives
+  mdp: z.number().optional().default(0), // Allow negatives
+  adjusted_premium: z.number().optional().default(0), // Allow negatives
+  premium: z.number().optional().default(0), // Allow negatives
+  reinstatement_premium: z.number().optional().default(0), // Allow negatives
+  claims_paid: z.number().optional().default(0), // Allow negatives
+  claims_outstanding: z.number().optional().default(0), // Allow negatives
+  claims_incurred: z.number().optional().default(0), // Allow negatives
 });
 
 const FormSchema = z.object({ rows: z.array(RowSchema).default([]), additional_comments: z.string().optional().default('') });
@@ -52,6 +55,7 @@ export default function StepTreatyStatsNonPropCasualty() {
     defaultValues: { rows: [blankRow], additional_comments: '' },
   });
   const fa = useFieldArray({ control, name: 'rows' });
+  const tableRef = useAutoColumnSize();
 
   useEffect(() => {
     let mounted = true;
@@ -98,10 +102,8 @@ export default function StepTreatyStatsNonPropCasualty() {
 
   // Paste helpers and mapping
   const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[,\s]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    const parsed = parseNumericInput(s);
+    return parsed ?? 0;
   };
   const maybeHasHeader = (cells: string[], expected: string[]) => {
     const lc = cells.map((c) => c.trim().toLowerCase());
@@ -133,46 +135,102 @@ export default function StepTreatyStatsNonPropCasualty() {
     setValue('rows', cleaned.length ? cleaned : [blankRow], { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
+  const columns: Array<{ key: keyof z.infer<typeof RowSchema>; label: string; isYear?: boolean; isText?: boolean }> = [
+    { key: 'year', label: 'Year', isYear: true },
+    { key: 'layer', label: 'Layer', isText: true },
+    { key: 'limit', label: 'Limit' },
+    { key: 'priority', label: 'Priority' },
+    { key: 'ognpi', label: 'OGNPI' },
+    { key: 'rate', label: 'Rate' },
+    { key: 'mdp', label: 'MDP' },
+    { key: 'adjusted_premium', label: 'Adjust. Premium' },
+    { key: 'premium', label: 'Premium' },
+    { key: 'reinstatement_premium', label: 'Reinstatement Premium' },
+    { key: 'claims_paid', label: 'Claims Paid' },
+    { key: 'claims_outstanding', label: 'Claims Outstanding' },
+    { key: 'claims_incurred', label: 'Claims Incurred' },
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Treaty Statistics (Non-Prop)</h2>
         <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>Paste from Excel</button>
       </div>
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-4">
-        <table className="min-w-full table-auto border rounded">
-          <thead className="bg-gray-100 dark:bg-gray-700">
-            <tr>
-              {['Year','Layer','Limit','Priority','OGNPI','Rate','MDP','Adjust. Premium','Premium','Reinstatement Premium','Claims Paid','Claims Outstanding','Claims Incurred','Actions'].map(h => (
-                <th key={h} className="px-2 py-1 whitespace-nowrap text-left">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {fa.fields.map((field, idx) => (
-              <tr key={field.id}>
-                <td><input type="number" step="1" {...register(`rows.${idx}.year` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="text" {...register(`rows.${idx}.layer` as Path<FormValues>)} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.limit` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.priority` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.ognpi` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.rate` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.mdp` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.adjusted_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.reinstatement_premium` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.claims_paid` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.claims_outstanding` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td><input type="number" step="0.01" {...register(`rows.${idx}.claims_incurred` as Path<FormValues>, { valueAsNumber: true })} className="input" /></td>
-                <td>
-                  <button type="button" className="px-2 py-1 bg-red-500 text-white rounded" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
-                </td>
+      <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
+        <div className={autoColumnClasses.container}>
+          <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
+            <thead className="bg-gray-100 dark:bg-gray-700">
+              <tr>
+                {columns.map(c => (
+                  <th key={c.key} className="px-2 py-1 whitespace-nowrap text-left">{c.label}</th>
+                ))}
+                <th className="px-2 py-1 whitespace-nowrap text-left">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {fa.fields.map((field, idx) => (
+                <tr key={field.id}>
+                  {columns.map(col => {
+                    const fieldName = `rows.${idx}.${col.key}` as Path<FormValues>;
+                    const value = watch(fieldName);
+                    
+                    // Year: plain input with 4-digit validation
+                    if (col.isYear) {
+                      return (
+                        <td key={col.key} className="px-2 py-1">
+                          <input
+                            type="number"
+                            {...register(fieldName, { valueAsNumber: true })}
+                            className="px-2 py-1 border rounded w-full"
+                            min={1900}
+                            max={2100}
+                            step="1"
+                            pattern="^\d{4}$"
+                            title="Enter a 4-digit year (1900-2100)"
+                          />
+                        </td>
+                      );
+                    }
+                    
+                    // Layer: plain text input
+                    if (col.isText) {
+                      return (
+                        <td key={col.key} className="px-2 py-1">
+                          <input
+                            type="text"
+                            {...register(fieldName)}
+                            className="px-2 py-1 border rounded w-full"
+                            placeholder="Layer"
+                          />
+                        </td>
+                      );
+                    }
+                    
+                    // All numeric columns with NumberCell
+                    return (
+                      <td key={col.key} className="px-2 py-1">
+                        <NumberCell
+                          value={value as number}
+                          onChange={(newValue) => {
+                            setValue(fieldName, newValue ?? 0, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                          }}
+                          decimals={2}
+                          className="w-full"
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className="px-2 py-1">
+                    <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="flex justify-between items-center mt-3">
-          <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white" onClick={() => fa.append(blankRow)}>Add Row</button>
+          <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => fa.append(blankRow)}>Add Row</button>
           <div className="text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
         </div>
       </div>

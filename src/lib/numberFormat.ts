@@ -140,3 +140,116 @@ export function formatNumberForEdit(n: number | null | undefined): string {
 export function isValidNumericInput(raw: string): boolean {
   return parseNumericInput(raw) !== null;
 }
+
+/**
+ * Format a percent value for display
+ * @param p - Percent value in percent units (e.g., 12.5 for 12.5%)
+ * @param digits - Number of decimal places (default: 2)
+ * @returns Formatted string with % symbol (e.g., "12.50%")
+ */
+export function formatPercentDisplay(
+  p: number | string | null | undefined,
+  digits = 2
+): string {
+  // Handle null/undefined/empty
+  if (p === null || p === undefined || p === '') {
+    return '';
+  }
+
+  // Convert to number if string
+  const num = typeof p === 'string' ? parseFloat(p) : p;
+
+  // Return empty for NaN
+  if (isNaN(num)) {
+    return '';
+  }
+
+  // Format with specified decimal places and add %
+  return `${num.toFixed(digits)}%`;
+}
+
+/**
+ * Parse percent input from various formats
+ * Handles: "12", "12.5", "12%", "12.5%", "0.12" (as 12%), "0.125" (as 12.5%)
+ * Supports negatives: "-5", "-5%", "-0.05" → -5
+ * @param raw - Raw string or number input
+ * @returns Parsed percent value in percent units (e.g., 12.5 for 12.5%), or null if invalid
+ */
+export function parsePercentInput(
+  raw: string | number | null | undefined
+): number | null {
+  // Handle null/undefined
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+
+  // Already a number
+  if (typeof raw === 'number') {
+    if (isNaN(raw)) return null;
+    // If between -1 and 1 (exclusive of -1, 1), treat as fractional (0.12 → 12%)
+    if (raw > -1 && raw < 1 && raw !== 0) {
+      return raw * 100;
+    }
+    return raw;
+  }
+
+  // Convert to string and trim
+  let str = String(raw).trim();
+
+  // Empty string
+  if (str === '') {
+    return null;
+  }
+
+  // Check for % sign
+  const hasPercent = str.includes('%');
+  
+  // Remove % sign if present
+  if (hasPercent) {
+    str = str.replace(/%/g, '');
+  }
+
+  // Remove common grouping characters (commas, spaces)
+  str = str.replace(/[,\s]/g, '');
+
+  // Parse the cleaned string
+  const parsed = Number(str);
+
+  // Return null if NaN
+  if (isNaN(parsed)) {
+    return null;
+  }
+
+  // If no % sign and value is between -1 and 1 (fractional form like 0.12 or -0.05)
+  if (!hasPercent && parsed > -1 && parsed < 1 && parsed !== 0) {
+    return parsed * 100;
+  }
+
+  return parsed;
+}
+
+/**
+ * Format a percent value for editing (remove % symbol)
+ * @param p - Percent value to format for editing
+ * @returns Plain string without % symbol
+ */
+export function formatPercentForEdit(p: number | null | undefined): string {
+  if (p === null || p === undefined) {
+    return '';
+  }
+  
+  if (isNaN(p)) {
+    return '';
+  }
+
+  return String(p);
+}
+
+/**
+ * Validate if a string can be parsed as a valid percent
+ * @param raw - Raw input string
+ * @returns true if parseable, false otherwise
+ */
+export function isValidPercentInput(raw: string): boolean {
+  return parsePercentInput(raw) !== null;
+}

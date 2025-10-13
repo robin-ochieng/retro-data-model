@@ -13,3 +13,13 @@ if (!(HTMLFormElement.prototype as any).requestSubmit) {
     // no-op: our components use buttons with type="button", this prevents jsdom from throwing
   };
 }
+
+// Mock ResizeObserver for tests
+if (!('ResizeObserver' in global)) {
+  // @ts-ignore
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

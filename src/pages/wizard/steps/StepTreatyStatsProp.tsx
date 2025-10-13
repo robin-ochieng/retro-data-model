@@ -7,20 +7,24 @@ import { z } from 'zod';
 import { Path, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import PasteModal from '../../../components/PasteModal';
+import { NumberCell } from '../../../components/table/NumberCell';
+import { PercentCell } from '../../../components/table/PercentCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../components/table/useAutoColumnSize';
+import { parseNumericInput, parsePercentInput } from '../../../lib/numberFormat';
 
 const RowSchema = z.object({
-  uw_year: z.number().int().nonnegative(),
-  written_premium: z.number().nonnegative().optional().default(0),
-  earned_premium: z.number().nonnegative().optional().default(0),
-  commission_amount: z.number().nonnegative().optional().default(0),
-  commission_pct: z.number().nonnegative().optional().default(0),
-  profit_commission: z.number().nonnegative().optional().default(0),
-  total_commission: z.number().nonnegative().optional().default(0),
-  paid_losses: z.number().nonnegative().optional().default(0),
-  os_losses: z.number().nonnegative().optional().default(0),
-  incurred_losses: z.number().nonnegative().optional().default(0),
-  loss_ratio: z.number().nonnegative().optional().default(0),
-  uw_profit: z.number().nonnegative().optional().default(0),
+  uw_year: z.number().int().min(1900).max(2100),
+  written_premium: z.number().optional().default(0), // Allow negatives
+  earned_premium: z.number().optional().default(0), // Allow negatives
+  commission_amount: z.number().optional().default(0), // Allow negatives
+  commission_pct: z.number().optional().default(0), // Percent value
+  profit_commission: z.number().optional().default(0), // Allow negatives
+  total_commission: z.number().optional().default(0), // Allow negatives
+  paid_losses: z.number().optional().default(0), // Allow negatives
+  os_losses: z.number().optional().default(0), // Allow negatives
+  incurred_losses: z.number().optional().default(0), // Allow negatives
+  loss_ratio: z.number().optional().default(0), // Percent value
+  uw_profit: z.number().optional().default(0), // Allow negatives
 });
 
 type Row = z.infer<typeof RowSchema>;
@@ -36,6 +40,7 @@ export default function StepTreatyStatsProp() {
     defaultValues: { rows: [{ uw_year: new Date().getFullYear(), written_premium: 0 } as Row], additional_comments: '' },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
+  const tableRef = useAutoColumnSize();
 
   // Load existing
   useEffect(() => {
@@ -116,10 +121,8 @@ export default function StepTreatyStatsProp() {
 
   // Paste helpers
   const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[,\s]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    const parsed = parseNumericInput(s);
+    return parsed ?? 0;
   };
 
   const maybeHasHeader = (cells: string[], expected: string[]) => {
@@ -141,13 +144,13 @@ export default function StepTreatyStatsProp() {
       written_premium: toNumber(r[1]),
       earned_premium: toNumber(r[2]),
       commission_amount: toNumber(r[3]),
-      commission_pct: toNumber(r[4]),
+      commission_pct: parsePercentInput(r[4]) ?? 0, // Parse percent format
       profit_commission: toNumber(r[5]),
       total_commission: toNumber(r[6]),
       paid_losses: toNumber(r[7]),
       os_losses: toNumber(r[8]),
       incurred_losses: toNumber(r[9]),
-      loss_ratio: toNumber(r[10]),
+      loss_ratio: parsePercentInput(r[10]) ?? 0, // Parse percent format
       uw_profit: toNumber(r[11]),
     }));
     // Keep rows that have at least year or any non-zero metric
@@ -183,8 +186,8 @@ export default function StepTreatyStatsProp() {
           Paste from Excel
         </button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-auto border rounded">
+      <div className={autoColumnClasses.container}>
+        <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
               {columns.map((c) => (
@@ -197,16 +200,49 @@ export default function StepTreatyStatsProp() {
             {fields.map((field, idx) => (
               <tr key={field.id} className="align-top">
                 {columns.map((col) => (
-                  <td key={col.key} className="px-2 py-1 min-w-[8rem]">
+                  <td key={col.key} className="px-2 py-1">
                     {(() => {
                       const name = (`rows.${idx}.${col.key}`) as Path<FormValues>;
+                      const value = watch(name);
+                      const handleChange = (newValue: number | null) => {
+                        setValue(name, newValue ?? 0, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                      };
+
+                      // UW Year: Plain input with 4-digit validation
+                      if (col.key === 'uw_year') {
+                        return (
+                          <input
+                            type="number"
+                            {...register(name, { valueAsNumber: true })}
+                            className="px-2 py-1 border rounded w-full"
+                            min={1900}
+                            max={2100}
+                            step="1"
+                            pattern="^\d{4}$"
+                            title="Enter a 4-digit year (1900-2100)"
+                          />
+                        );
+                      }
+
+                      // Percent columns: Loss Ratio, Commission %
+                      if (col.key === 'loss_ratio' || col.key === 'commission_pct') {
+                        return (
+                          <PercentCell
+                            value={value as number}
+                            onChange={handleChange}
+                            digits={2}
+                            className="w-full"
+                          />
+                        );
+                      }
+
+                      // All other numeric columns
                       return (
-                        <input
-                          type={col.type ?? 'text'}
-                          step={col.step}
-                          min={col.min}
-                          {...(col.type === 'number' ? { ...register(name, { valueAsNumber: true }) } : { ...register(name) })}
-                          className="px-2 py-1 border rounded w-full"
+                        <NumberCell
+                          value={value as number}
+                          onChange={handleChange}
+                          decimals={2}
+                          className="w-full"
                         />
                       );
                     })()}
