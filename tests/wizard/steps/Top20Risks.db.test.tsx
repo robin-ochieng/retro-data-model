@@ -67,11 +67,16 @@ describe('Top 20 Risks autosave & persistence', () => {
   const insuredInput = allInputs[0] as HTMLElement;
   await user.type(insuredInput!, 'Acme Corp');
 
-  const numberInputs = screen.getAllByDisplayValue('0') as HTMLInputElement[];
-    // gross_sum_insured is first numeric after occupation, easier to query by index
-  // First numeric input belongs to gross_sum_insured of rank 1 row
-  await user.clear(numberInputs[0]!);
-  await user.type(numberInputs[0]!, '1000');
+  // NumberCell renders as a clickable div in display mode, need to click to enter edit mode
+  // Find the first NumberCell (gross_sum_insured) by its button role with text "0" or "Edit number: 0"
+  const numberCells = await screen.findAllByRole('button', { name: /Edit number/ });
+  // Click the first numeric cell to enter edit mode
+  await user.click(numberCells[0]!);
+  
+  // Now find the input that appeared in edit mode, type the value, and commit with Enter
+  const editInput = await screen.findByLabelText('Edit number');
+  await user.clear(editInput);
+  await user.type(editInput, '1000{Enter}');
 
     await waitFor(() => {
       expect(spies.delete).toHaveBeenCalled();

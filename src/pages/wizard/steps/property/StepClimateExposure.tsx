@@ -5,6 +5,9 @@ import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { toCsv } from '../../../../utils/csv';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
+import { parseNumericInput } from '../../../../lib/numberFormat';
 import {
   ClimateChangeExposureRow,
   CLIMATE_EXPOSURE_FIELDS,
@@ -29,6 +32,7 @@ export default function StepClimateExposure() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [migrated, setMigrated] = useState(false);
+  const tableRef = useAutoColumnSize();
 
   // Load existing rows from dedicated table; lazy migrate from blob if needed
   useEffect(() => {
@@ -188,34 +192,125 @@ export default function StepClimateExposure() {
 
   const csvHeaders = useMemo(() => CLIMATE_EXPOSURE_FIELDS.map(f => f.key), []);
 
+  // Define which columns are numeric (for NumberCell rendering)
+  const numericColumns = useMemo(() => new Set([
+    'gross_exposure_tsi',
+    'cedants_exposure_tsi',
+    'eml_mpl_limit_applied',
+    'eml_mpl_limit',
+    'ceded_prop_reinsurance_exposure',
+    'net_inuring_prop_reinsurance_exposure',
+    'gross_premium',
+    'cedants_premium',
+    'ceded_prop_reinsurance_premium',
+    'net_prop_reinsurance_premium',
+  ]), []);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold">Climate change exposure</h3>
-        <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosave ready'}</div>
-      </div>
-      <FormTable<Row>
-        columns={columns as any}
-        rows={rows}
-        onChange={onChange as any}
-        onAddRow={() => setRows(prev => [...prev, emptyClimateExposureRow()])}
-        onRemoveRow={(i) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, idx) => idx !== i)))}
-        onPaste={() => setPasteOpen(true)}
-        onExportCsv={() => {
-          const exportRows = rows.map(r => {
-            const out: Record<string, any> = {};
-            for (const k of csvHeaders) (out as any)[k] = (r as any)[k] ?? '';
-            return out;
-          });
+        <div className="flex gap-2 items-center">
+          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
+            Paste from Excel
+          </button>
+          <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => {
+            const exportRows = rows.map(r => {
+              const out: Record<string, any> = {};
+              for (const k of csvHeaders) (out as any)[k] = (r as any)[k] ?? '';
+              return out;
+            });
             const csv = toCsv(exportRows as any, csvHeaders);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'climate_change_exposure.csv'; a.click(); URL.revokeObjectURL(url);
-        }}
-        isSaving={saving}
-        lastSavedAt={lastSaved}
-        footerRender={<div className="text-sm">Totals — {totalsDisplay}</div>}
-        errors={errors as any}
-      />
+          }}>
+            Export CSV
+          </button>
+          <div className="text-xs text-gray-500">{saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosave ready'}</div>
+        </div>
+      </div>
+
+      <div className={autoColumnClasses.container}>
+        <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr>
+              {columns.map(col => (
+                <th key={col.key} className="px-2 py-1 text-left whitespace-nowrap">{col.label}</th>
+              ))}
+              <th className="px-2 py-1 text-left whitespace-nowrap">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx} className="align-top">
+                {columns.map(col => {
+                  const colKey = col.key as keyof Row;
+                  const value = row[colKey];
+                  const error = errors[idx]?.[colKey];
+
+                  return (
+                    <td key={col.key} className="px-2 py-1">
+                      {numericColumns.has(col.key) ? (
+                        <div>
+                          <NumberCell
+                            value={value as number}
+                            onChange={(newValue) => onChange(idx, colKey, newValue)}
+                            decimals={2}
+                            className="w-full"
+                          />
+                          {error && (
+                            <div className="text-xs text-red-600 mt-1">{error}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="text"
+                            value={value ?? ''}
+                            onChange={(e) => onChange(idx, colKey, e.target.value)}
+                            placeholder={col.placeholder}
+                            className="px-2 py-1 border rounded w-full"
+                          />
+                          {error && (
+                            <div className="text-xs text-red-600 mt-1">{error}</div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-2 py-1">
+                  <button
+                    type="button"
+                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    onClick={() => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)))}
+                    disabled={rows.length <= 1}
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={columns.length + 1} className="px-2 py-2 bg-gray-50 dark:bg-gray-900">
+                <div className="text-sm">Totals — {totalsDisplay}</div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div className="flex justify-between items-center mt-3">
+        <button
+          type="button"
+          className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+          onClick={() => setRows(prev => [...prev, emptyClimateExposureRow()])}
+        >
+          Add Row
+        </button>
+      </div>
       <PasteModal open={pasteOpen} expectedColumns={csvHeaders.length} onClose={() => setPasteOpen(false)} onApply={(data) => {
         // Replacement-aware paste: fill existing leading empty placeholder rows before appending.
         setRows(prev => {
@@ -279,7 +374,9 @@ function buildRowFromPaste(cols: string[]): Row {
     const trimmed = String(raw).trim();
     if (trimmed === '') return;
     if (meta.type === 'number') {
-      (row as any)[meta.key] = parseNumeric(trimmed);
+      // Use parseNumericInput for Excel paste compatibility (handles commas, negatives, etc.)
+      const parsed = parseNumericInput(trimmed);
+      (row as any)[meta.key] = parsed;
     } else if (meta.key === 'policy_inception_date' || meta.key === 'policy_expiry_date') {
       const norm = normalizeDateString(trimmed);
       (row as any)[meta.key] = norm || trimmed;

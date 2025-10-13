@@ -253,3 +253,172 @@ export function formatPercentForEdit(p: number | null | undefined): string {
 export function isValidPercentInput(raw: string): boolean {
   return parsePercentInput(raw) !== null;
 }
+
+/**
+ * Parse year input - must be a 4-digit year between 1900 and 2100
+ * @param raw - Raw string input
+ * @returns Parsed year as number or null if invalid
+ */
+export function parseYearInput(raw: string | number | null | undefined): number | null {
+  // Handle null/undefined
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+
+  // Already a number
+  if (typeof raw === 'number') {
+    if (isNaN(raw)) return null;
+    // Must be 4-digit year
+    if (raw >= 1900 && raw <= 2100 && Number.isInteger(raw)) {
+      return raw;
+    }
+    return null;
+  }
+
+  // Convert to string and trim
+  const str = String(raw).trim();
+
+  // Empty string
+  if (str === '') {
+    return null;
+  }
+
+  // Must match 4 digits exactly (no commas allowed)
+  if (!/^\d{4}$/.test(str)) {
+    return null;
+  }
+
+  const year = parseInt(str, 10);
+
+  // Must be in valid range
+  if (year >= 1900 && year <= 2100) {
+    return year;
+  }
+
+  return null;
+}
+
+/**
+ * Parse date input from various formats and normalize to ISO YYYY-MM-DD
+ * Handles: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY, Excel serials, Date objects
+ * @param raw - Raw string or Date input
+ * @returns ISO date string (YYYY-MM-DD) or null if invalid
+ */
+export function parseDateInput(raw: string | Date | null | undefined): string | null {
+  // Handle null/undefined
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+
+  // Already a Date object
+  if (raw instanceof Date) {
+    if (isNaN(raw.getTime())) return null;
+    // Format as ISO date (YYYY-MM-DD) without timezone shift
+    const year = raw.getFullYear();
+    const month = String(raw.getMonth() + 1).padStart(2, '0');
+    const day = String(raw.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Convert to string and trim
+  let str = String(raw).trim();
+
+  // Empty string
+  if (str === '') {
+    return null;
+  }
+
+  // Already ISO format: YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const parts = str.split('-').map(Number);
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    if (year !== undefined && month !== undefined && day !== undefined &&
+        year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return str;
+    }
+    return null;
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const ddmmyyyyMatch = str.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const day = parseInt(ddmmyyyyMatch[1] || '0', 10);
+    const month = parseInt(ddmmyyyyMatch[2] || '0', 10);
+    const year = parseInt(ddmmyyyyMatch[3] || '0', 10);
+    
+    if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const mm = String(month).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+      return `${year}-${mm}-${dd}`;
+    }
+    return null;
+  }
+
+  // YYYY/MM/DD or YYYY.MM.DD
+  const yyyymmddMatch = str.match(/^(\d{4})[\/.](\d{1,2})[\/.](\d{1,2})$/);
+  if (yyyymmddMatch) {
+    const year = parseInt(yyyymmddMatch[1] || '0', 10);
+    const month = parseInt(yyyymmddMatch[2] || '0', 10);
+    const day = parseInt(yyyymmddMatch[3] || '0', 10);
+    
+    if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const mm = String(month).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+      return `${year}-${mm}-${dd}`;
+    }
+    return null;
+  }
+
+  // Excel serial number (days since 1899-12-30)
+  const excelSerial = parseFloat(str);
+  if (!isNaN(excelSerial) && excelSerial > 0 && excelSerial < 100000) {
+    // Excel epoch: December 30, 1899
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + excelSerial * 24 * 60 * 60 * 1000);
+    
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Format a date for display
+ * @param dateStr - ISO date string (YYYY-MM-DD)
+ * @param locale - Locale for formatting (default: 'en-KE')
+ * @returns Formatted date string or empty string if invalid
+ */
+export function formatDateDisplay(
+  dateStr: string | null | undefined,
+  locale = 'en-KE'
+): string {
+  if (!dateStr) return '';
+  
+  const parsed = parseDateInput(dateStr);
+  if (!parsed) return '';
+  
+  try {
+    const parts = parsed.split('-').map(Number);
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      const date = new Date(year, month - 1, day);
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }).format(date);
+    }
+    return parsed;
+  } catch (error) {
+    return parsed; // Fallback to ISO format
+  }
+}

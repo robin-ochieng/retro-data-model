@@ -5,17 +5,22 @@ import FormTable from '../../../../components/FormTable';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import PasteModal from '../../../../components/PasteModal';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { PercentCell } from '../../../../components/table/PercentCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
+import { parseNumericInput, parsePercentInput } from '../../../../lib/numberFormat';
 
 // Column schema matching the Excel screenshots
+// Allow negatives for all numeric fields
 const BandSchema = z.object({
-  lower_limit: z.number().nonnegative().optional().default(0),
-  upper_limit: z.number().nonnegative().optional().default(0),
-  number_of_risk_items: z.number().nonnegative().optional().default(0),
-  total_sum_insured_ex_vat: z.number().nonnegative().optional().default(0),
-  total_annual_premiums_ex_vat: z.number().nonnegative().optional().default(0),
-  average_sum_insured_ex_vat: z.number().nonnegative().optional().default(0),
-  average_premium_ex_vat: z.number().nonnegative().optional().default(0),
-  average_rate: z.number().nonnegative().optional().default(0),
+  lower_limit: z.number().optional().default(0),
+  upper_limit: z.number().optional().default(0),
+  number_of_risk_items: z.number().optional().default(0),
+  total_sum_insured_ex_vat: z.number().optional().default(0),
+  total_annual_premiums_ex_vat: z.number().optional().default(0),
+  average_sum_insured_ex_vat: z.number().optional().default(0),
+  average_premium_ex_vat: z.number().optional().default(0),
+  average_rate: z.number().optional().default(0), // Stored as percent (12.5 for 12.5%)
 });
 
 type Band = z.infer<typeof BandSchema>;
@@ -43,6 +48,13 @@ const defaultRow: Band = {
 export default function StepRiskProfile() {
   const { submissionId } = useParams();
   type Section = 'gross_pml' | 'gross_turnover' | 'net_pml' | 'net_turnover';
+  
+  // Table refs for auto-sizing
+  const grossPmlTableRef = useAutoColumnSize();
+  const grossTurnoverTableRef = useAutoColumnSize();
+  const netPmlTableRef = useAutoColumnSize();
+  const netTurnoverTableRef = useAutoColumnSize();
+  
   const [state, setState] = useState<State>({
     gross_pml: [defaultRow],
     gross_turnover: [defaultRow],
@@ -261,12 +273,6 @@ export default function StepRiskProfile() {
   const netTurnTotals = useMemo(() => totals(state.net_turnover), [state.net_turnover]);
 
   // Paste helpers for banded tables
-  const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[\s,]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
-  };
   const maybeHasHeader = (cells: string[], expected: string[]) => {
     const lc = (cells || []).map(c => String(c).trim().toLowerCase());
     let hits = 0;
@@ -279,33 +285,149 @@ export default function StepRiskProfile() {
     const first = grid[0] ?? [];
     if (maybeHasHeader(first, ['lower','upper','number','total','sum','premium','average','rate'])) start = 1;
     const mapped: Band[] = grid.slice(start).map(r => ({
-      lower_limit: toNumber(r[0]),
-      upper_limit: toNumber(r[1]),
-      number_of_risk_items: toNumber(r[2]),
-      total_sum_insured_ex_vat: toNumber(r[3]),
-      total_annual_premiums_ex_vat: toNumber(r[4]),
-      average_sum_insured_ex_vat: toNumber(r[5]),
-      average_premium_ex_vat: toNumber(r[6]),
-      average_rate: toNumber(r[7]),
+      lower_limit: parseNumericInput(r[0]) ?? 0,
+      upper_limit: parseNumericInput(r[1]) ?? 0,
+      number_of_risk_items: parseNumericInput(r[2]) ?? 0,
+      total_sum_insured_ex_vat: parseNumericInput(r[3]) ?? 0,
+      total_annual_premiums_ex_vat: parseNumericInput(r[4]) ?? 0,
+      average_sum_insured_ex_vat: parseNumericInput(r[5]) ?? 0,
+      average_premium_ex_vat: parseNumericInput(r[6]) ?? 0,
+      average_rate: parsePercentInput(r[7]) ?? 0, // Parse as percent
     }));
-    const cleaned = mapped.filter(m => Object.values(m).some(v => Number(v) > 0));
+    const cleaned = mapped.filter(m => Object.values(m).some(v => Number(v) !== 0));
     setState(prev => ({ ...prev, [which]: cleaned.length ? cleaned : [defaultRow] }));
+  };
+
+  // Render custom table with NumberCell and PercentCell
+  const renderTable = (
+    section: Section,
+    rows: Band[],
+    tableRef: React.RefObject<HTMLTableElement | null>,
+    onPaste: () => void
+  ) => {
+    return (
+      <div className="space-y-3">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onPaste}
+            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            Paste from Excel
+          </button>
+        </div>
+        <div className="overflow-x-auto w-full">
+          <table
+            ref={tableRef}
+            className={`${autoColumnClasses.table} min-w-full border rounded`}
+            style={{ tableLayout: 'auto' }}
+          >
+            <thead className="bg-gray-100 dark:bg-gray-700">
+              <tr>
+                <th className={autoColumnClasses.th}>Lower Limit</th>
+                <th className={autoColumnClasses.th}>Upper Limit</th>
+                <th className={autoColumnClasses.th}>Number of Risk Items</th>
+                <th className={autoColumnClasses.th}>Total Sum Insured (Ex VAT)</th>
+                <th className={autoColumnClasses.th}>Total Annual Premiums (Ex VAT)</th>
+                <th className={autoColumnClasses.th}>Average Sum Insured (Ex VAT)</th>
+                <th className={autoColumnClasses.th}>Average Premium (Ex VAT)</th>
+                <th className={autoColumnClasses.th}>Average Rate</th>
+                <th className={autoColumnClasses.th}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr key={idx} className="align-top">
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.lower_limit}
+                      onChange={(v) => onChange(section)(idx, 'lower_limit', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.upper_limit}
+                      onChange={(v) => onChange(section)(idx, 'upper_limit', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.number_of_risk_items}
+                      onChange={(v) => onChange(section)(idx, 'number_of_risk_items', v ?? 0)}
+                      decimals={0}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.total_sum_insured_ex_vat}
+                      onChange={(v) => onChange(section)(idx, 'total_sum_insured_ex_vat', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.total_annual_premiums_ex_vat}
+                      onChange={(v) => onChange(section)(idx, 'total_annual_premiums_ex_vat', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.average_sum_insured_ex_vat}
+                      onChange={(v) => onChange(section)(idx, 'average_sum_insured_ex_vat', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <NumberCell
+                      value={row.average_premium_ex_vat}
+                      onChange={(v) => onChange(section)(idx, 'average_premium_ex_vat', v ?? 0)}
+                      decimals={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <PercentCell
+                      value={row.average_rate}
+                      onChange={(v) => onChange(section)(idx, 'average_rate', v ?? 0)}
+                      digits={2}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => onRemoveRow(section)(idx)}
+                      disabled={rows.length === 1}
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
+            onClick={onAddRow(section)}
+            className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Add Row
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="space-y-6">
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">GROSS PROFILES (Net of Fac)</h3>
-  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
-        <FormTable<Band>
-          columns={bandColumns as any}
-          rows={state.gross_pml}
-          onChange={onChange('gross_pml')}
-          onAddRow={onAddRow('gross_pml')}
-          onRemoveRow={onRemoveRow('gross_pml')}
-          errors={errors.gross_pml}
-          onPaste={() => setPasteSection('gross_pml')}
-        />
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
+        {renderTable('gross_pml', state.gross_pml, grossPmlTableRef, () => setPasteSection('gross_pml'))}
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {grossPmlTotals.number_of_risk_items.toLocaleString()}</span>
@@ -313,16 +435,8 @@ export default function StepRiskProfile() {
           <span className="ml-3">Total Annual Premiums (Ex VAT): {grossPmlTotals.total_annual_premiums_ex_vat.toLocaleString()}</span>
         </div>
         <hr className="my-4" />
-  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
-        <FormTable<Band>
-          columns={bandColumns as any}
-          rows={state.gross_turnover}
-          onChange={onChange('gross_turnover')}
-          onAddRow={onAddRow('gross_turnover')}
-          onRemoveRow={onRemoveRow('gross_turnover')}
-          errors={errors.gross_turnover}
-          onPaste={() => setPasteSection('gross_turnover')}
-        />
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
+        {renderTable('gross_turnover', state.gross_turnover, grossTurnoverTableRef, () => setPasteSection('gross_turnover'))}
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {grossTurnTotals.number_of_risk_items.toLocaleString()}</span>
@@ -332,16 +446,8 @@ export default function StepRiskProfile() {
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <h3 className="font-semibold mb-1">NET PROFILES</h3>
-  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
-        <FormTable<Band>
-          columns={bandColumns as any}
-          rows={state.net_pml}
-          onChange={onChange('net_pml')}
-          onAddRow={onAddRow('net_pml')}
-          onRemoveRow={onRemoveRow('net_pml')}
-          errors={errors.net_pml}
-          onPaste={() => setPasteSection('net_pml')}
-        />
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 1: PML or Sum Insured</p>
+        {renderTable('net_pml', state.net_pml, netPmlTableRef, () => setPasteSection('net_pml'))}
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {netPmlTotals.number_of_risk_items.toLocaleString()}</span>
@@ -349,16 +455,8 @@ export default function StepRiskProfile() {
           <span className="ml-3">Total Annual Premiums (Ex VAT): {netPmlTotals.total_annual_premiums_ex_vat.toLocaleString()}</span>
         </div>
         <hr className="my-4" />
-  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
-        <FormTable<Band>
-          columns={bandColumns as any}
-          rows={state.net_turnover}
-          onChange={onChange('net_turnover')}
-          onAddRow={onAddRow('net_turnover')}
-          onRemoveRow={onRemoveRow('net_turnover')}
-          errors={errors.net_turnover}
-          onPaste={() => setPasteSection('net_turnover')}
-        />
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 tracking-wide">Table 2: Turnover amounts</p>
+        {renderTable('net_turnover', state.net_turnover, netTurnoverTableRef, () => setPasteSection('net_turnover'))}
         <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
           <strong>Total:</strong>
           <span className="ml-3">Number of Risk Items: {netTurnTotals.number_of_risk_items.toLocaleString()}</span>

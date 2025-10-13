@@ -50,19 +50,19 @@ export const CLIMATE_EXPOSURE_FIELDS: ClimateExposureFieldMeta[] = [
   { key: 'policy_category', label: 'Policy Category', type: 'text' },
   { key: 'policy_description', label: 'Policy Description', type: 'text' },
   { key: 'nature_of_risk', label: 'Nature of Risk', type: 'text' },
-  { key: 'gross_exposure_tsi', label: 'Gross Exposure (TSI)', type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'cedants_exposure_tsi', label: "Cedants Exposure (TSI)", type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'eml_mpl_limit_applied', label: 'EML/MPL Limit Applied', type: 'number', validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
+  { key: 'gross_exposure_tsi', label: 'Gross Exposure (TSI)', type: 'number', sum: true }, // Allow negatives
+  { key: 'cedants_exposure_tsi', label: "Cedants Exposure (TSI)", type: 'number', sum: true }, // Allow negatives
+  { key: 'eml_mpl_limit_applied', label: 'EML/MPL Limit Applied', type: 'number' }, // Allow negatives
   { key: 'eml_mpl_limit', label: 'EML/MPL Limit', type: 'number', validate: (v, row) => {
       if (row.eml_mpl_limit_applied == null || row.eml_mpl_limit_applied <= 0) return null; // only required if applied > 0
-      return (v == null || v === '') ? 'Required' : (v < 0 ? '>= 0' : null);
+      return (v == null || v === '') ? 'Required' : null; // Allow negatives
     } },
-  { key: 'ceded_prop_reinsurance_exposure', label: 'Ceded to Proportional Reinsurance (Exposure)', type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'net_inuring_prop_reinsurance_exposure', label: 'Net of Inuring Proportional Reinsurance (Exposure)', type: 'number', validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'gross_premium', label: 'Gross Premium', type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'cedants_premium', label: "Cedants Premium", type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'ceded_prop_reinsurance_premium', label: 'Ceded to Proportional Reinsurance (Premium)', type: 'number', sum: true, validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
-  { key: 'net_prop_reinsurance_premium', label: 'Net of Proportional Reinsurance (Premium)', type: 'number', validate: v => (v == null || v === '') ? null : (v < 0 ? '>= 0' : null) },
+  { key: 'ceded_prop_reinsurance_exposure', label: 'Ceded to Proportional Reinsurance (Exposure)', type: 'number', sum: true }, // Allow negatives
+  { key: 'net_inuring_prop_reinsurance_exposure', label: 'Net of Inuring Proportional Reinsurance (Exposure)', type: 'number' }, // Allow negatives
+  { key: 'gross_premium', label: 'Gross Premium', type: 'number', sum: true }, // Allow negatives
+  { key: 'cedants_premium', label: "Cedants Premium", type: 'number', sum: true }, // Allow negatives
+  { key: 'ceded_prop_reinsurance_premium', label: 'Ceded to Proportional Reinsurance (Premium)', type: 'number', sum: true }, // Allow negatives
+  { key: 'net_prop_reinsurance_premium', label: 'Net of Proportional Reinsurance (Premium)', type: 'number' }, // Allow negatives
 ];
 
 export const CLIMATE_EXPOSURE_NUMERIC_KEYS: ClimateExposureFieldKey[] = CLIMATE_EXPOSURE_FIELDS.filter(f => f.type === 'number').map(f => f.key);

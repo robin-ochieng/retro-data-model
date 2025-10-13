@@ -1,28 +1,32 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { useAutosave } from '../../../hooks/useAutosave';
-import FormTable from '../../../components/FormTable';
 import PasteModal from '../../../components/PasteModal';
+import { NumberCell } from '../../../components/table/NumberCell';
+import { YearCell } from '../../../components/table/YearCell';
+import { DateCell } from '../../../components/table/DateCell';
+import { useAutoColumnSize, autoColumnClasses } from '../../../components/table/useAutoColumnSize';
 import { z } from 'zod';
 import { humanizeHeader } from '../../../lib/headerFormat';
+import { parseNumericInput, parseYearInput, parseDateInput, formatNumberDisplay } from '../../../lib/numberFormat';
 
 const RowSchema = z.object({
   loss_id: z.number().int().optional(), // UI only
-  uw_year: z.number().int().nonnegative().optional(),
+  uw_year: z.number().int().optional(),
   name: z.string().optional(),
   dol: z.string().optional(), // ISO date string
   type_of_loss: z.string().optional(),
-  gross_sum_insured: z.number().nonnegative().optional().default(0),
-  gross_incurred: z.number().nonnegative().optional().default(0),
-  paid_to_date: z.number().nonnegative().optional().default(0),
-  gross_outstanding: z.number().nonnegative().optional().default(0),
-  fac_amount: z.number().nonnegative().optional().default(0),
-  net_of_fac: z.number().nonnegative().optional().default(0),
-  surplus_cession: z.number().nonnegative().optional().default(0),
-  qs_cession: z.number().nonnegative().optional().default(0),
-  net_of_proportional: z.number().nonnegative().optional().default(0),
-  xol_payment: z.number().nonnegative().optional().default(0),
+  gross_sum_insured: z.number().optional().default(0),
+  gross_incurred: z.number().optional().default(0),
+  paid_to_date: z.number().optional().default(0),
+  gross_outstanding: z.number().optional().default(0),
+  fac_amount: z.number().optional().default(0),
+  net_of_fac: z.number().optional().default(0),
+  surplus_cession: z.number().optional().default(0),
+  qs_cession: z.number().optional().default(0),
+  net_of_proportional: z.number().optional().default(0),
+  xol_payment: z.number().optional().default(0),
 });
 
 type Row = z.infer<typeof RowSchema>;
@@ -39,6 +43,7 @@ export default function StepLargeLossList() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const tableRef = useAutoColumnSize();
 
   const normalizeDate = (s: string | undefined | null): string | null => {
     if (!s) return null;
@@ -245,28 +250,19 @@ export default function StepLargeLossList() {
   const onRemoveRow = (idx: number) => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
 
   // Paste helpers
-  const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[\s,]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
-  };
-  const isYear = (s: string | undefined) => {
-    const n = toNumber(s);
-    const y = new Date().getFullYear() + 1; // allow next year too
-    return n >= 1900 && n <= y && String(s ?? '').trim().length >= 4;
-  };
   const maybeHasHeader = (cells: string[] = [], expected: string[]) => {
     const lc = cells.map((c) => String(c).trim().toLowerCase());
     let hits = 0;
     expected.forEach((e) => { if (lc.some((c) => c.includes(e))) hits += 1; });
     return hits >= Math.max(2, Math.ceil(expected.length / 2));
   };
+  
   const applyPaste = (grid: string[][]) => {
     if (!grid || grid.length === 0) return;
     let start = 0;
     const first = grid[0] ?? [];
     if (maybeHasHeader(first, ['uw','year','name','dol','type','gross','incurred','paid','outstanding','fac','net','surplus','qs','proportional','xol'])) start = 1;
+    
     // Detect if first column is a pasted loss id to offset columns
     let cOffset = 0;
     if (start === 1) {
@@ -274,30 +270,34 @@ export default function StepLargeLossList() {
       if (lc.some((c) => c.includes('loss') && c.includes('id'))) cOffset = 1;
     } else if (grid.length > 0) {
       const r0 = grid[0] ?? [];
-      if (!isYear(r0[0]) && isYear(r0[1])) cOffset = 1;
+      const firstYear = parseYearInput(r0[0]);
+      const secondYear = parseYearInput(r0[1]);
+      if (!firstYear && secondYear) cOffset = 1;
     }
+    
     const mapped: Row[] = grid.slice(start).map((r, i) => ({
       loss_id: i + 1,
-      uw_year: toNumber(r[cOffset + 0]) || undefined,
+      uw_year: parseYearInput(r[cOffset + 0]) ?? undefined,
       name: String(r[cOffset + 1] ?? '').trim(),
-      dol: String(r[cOffset + 2] ?? '').trim() || undefined,
+      dol: parseDateInput(r[cOffset + 2]) ?? undefined,
       type_of_loss: String(r[cOffset + 3] ?? '').trim(),
-      gross_sum_insured: toNumber(r[cOffset + 4]),
-      gross_incurred: toNumber(r[cOffset + 5]),
-      paid_to_date: toNumber(r[cOffset + 6]),
-      gross_outstanding: toNumber(r[cOffset + 7]),
-      fac_amount: toNumber(r[cOffset + 8]),
-      net_of_fac: toNumber(r[cOffset + 9]),
-      surplus_cession: toNumber(r[cOffset + 10]),
-      qs_cession: toNumber(r[cOffset + 11]),
-      net_of_proportional: toNumber(r[cOffset + 12]),
-      xol_payment: toNumber(r[cOffset + 13]),
+      gross_sum_insured: parseNumericInput(r[cOffset + 4]) ?? 0,
+      gross_incurred: parseNumericInput(r[cOffset + 5]) ?? 0,
+      paid_to_date: parseNumericInput(r[cOffset + 6]) ?? 0,
+      gross_outstanding: parseNumericInput(r[cOffset + 7]) ?? 0,
+      fac_amount: parseNumericInput(r[cOffset + 8]) ?? 0,
+      net_of_fac: parseNumericInput(r[cOffset + 9]) ?? 0,
+      surplus_cession: parseNumericInput(r[cOffset + 10]) ?? 0,
+      qs_cession: parseNumericInput(r[cOffset + 11]) ?? 0,
+      net_of_proportional: parseNumericInput(r[cOffset + 12]) ?? 0,
+      xol_payment: parseNumericInput(r[cOffset + 13]) ?? 0,
     }));
+    
     const cleaned = mapped.filter((m) => (
       (m.uw_year && m.uw_year > 0) ||
       (m.name && m.name.length > 0) ||
       [m.gross_sum_insured, m.gross_incurred, m.paid_to_date, m.gross_outstanding, m.fac_amount, m.net_of_fac, m.surplus_cession, m.qs_cession, m.net_of_proportional, m.xol_payment]
-        .some((v) => Number(v) > 0)
+        .some((v) => Number(v) !== 0)
     ));
     setRows(cleaned.length ? cleaned : [{ loss_id: 1, uw_year: undefined, name: '', dol: undefined, type_of_loss: '', gross_sum_insured: 0, gross_incurred: 0, paid_to_date: 0, gross_outstanding: 0, fac_amount: 0, net_of_fac: 0, surplus_cession: 0, qs_cession: 0, net_of_proportional: 0, xol_payment: 0 }]);
   };
@@ -321,37 +321,222 @@ export default function StepLargeLossList() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Large Loss List</h2>
-  <div className="text-xs text-gray-500">{saveError ? `Error: ${saveError}` : saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPaste(true)}
+            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Paste from Excel
+          </button>
+          <div className="text-xs text-gray-500">
+            {saveError ? `Error: ${saveError}` : saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}
+          </div>
+        </div>
       </div>
-      <FormTable<Row>
-        columns={columns as any}
-        rows={rows}
-        onChange={onChange}
-        onAddRow={onAddRow}
-        onRemoveRow={onRemoveRow}
-        errors={errors}
-        onPaste={() => setShowPaste(true)}
-      />
-      <div className="mt-3 text-sm text-gray-700 dark:text-gray-200">
-        <strong>Totals:</strong>
-        <span className="ml-3">Gross Sum Insured: {totals.gross_sum_insured.toLocaleString()}</span>
-        <span className="ml-3">Gross Incurred: {totals.gross_incurred.toLocaleString()}</span>
-        <span className="ml-3">Paid to Date: {totals.paid_to_date.toLocaleString()}</span>
-        <span className="ml-3">Gross Outstanding: {totals.gross_outstanding.toLocaleString()}</span>
-        <span className="ml-3">FAC Amount: {totals.fac_amount.toLocaleString()}</span>
-        <span className="ml-3">Net of FAC: {totals.net_of_fac.toLocaleString()}</span>
-        <span className="ml-3">Surplus Cession: {totals.surplus_cession.toLocaleString()}</span>
-        <span className="ml-3">QS Cession: {totals.qs_cession.toLocaleString()}</span>
-        <span className="ml-3">Net of Proportional: {totals.net_of_proportional.toLocaleString()}</span>
-        <span className="ml-3">XoL Payment: {totals.xol_payment.toLocaleString()}</span>
+
+      <div className="overflow-x-auto border border-gray-300 dark:border-gray-600 rounded">
+        <table ref={tableRef} className={`w-full text-sm ${autoColumnClasses}`}>
+          <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0">
+            <tr>
+              <th className="px-2 py-2 text-left font-semibold">#</th>
+              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('uw_year')}</th>
+              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('name')}</th>
+              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('dol')}</th>
+              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('type_of_loss')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_sum_insured')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_incurred')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('paid_to_date')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_outstanding')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('fac_amount')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('net_of_fac')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('surplus_cession')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('qs_cession')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('net_of_proportional')}</th>
+              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('xol_payment')}</th>
+              <th className="px-2 py-2 text-center font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-2 py-1">{row.loss_id}</td>
+                <td className="px-2 py-1">
+                  <YearCell
+                    value={row.uw_year}
+                    onChange={(val) => onChange(idx, 'uw_year', val)}
+                    onCommit={() => {}}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <input
+                    type="text"
+                    value={row.name || ''}
+                    onChange={(e) => onChange(idx, 'name', e.target.value)}
+                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <DateCell
+                    value={row.dol}
+                    onChange={(val) => onChange(idx, 'dol', val)}
+                    onCommit={() => {}}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <input
+                    type="text"
+                    value={row.type_of_loss || ''}
+                    onChange={(e) => onChange(idx, 'type_of_loss', e.target.value)}
+                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.gross_sum_insured}
+                    onChange={(val) => onChange(idx, 'gross_sum_insured', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.gross_incurred}
+                    onChange={(val) => onChange(idx, 'gross_incurred', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.paid_to_date}
+                    onChange={(val) => onChange(idx, 'paid_to_date', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.gross_outstanding}
+                    onChange={(val) => onChange(idx, 'gross_outstanding', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.fac_amount}
+                    onChange={(val) => onChange(idx, 'fac_amount', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.net_of_fac}
+                    onChange={(val) => onChange(idx, 'net_of_fac', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.surplus_cession}
+                    onChange={(val) => onChange(idx, 'surplus_cession', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.qs_cession}
+                    onChange={(val) => onChange(idx, 'qs_cession', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.net_of_proportional}
+                    onChange={(val) => onChange(idx, 'net_of_proportional', val)}
+                  />
+                </td>
+                <td className="px-2 py-1">
+                  <NumberCell
+                    value={row.xol_payment}
+                    onChange={(val) => onChange(idx, 'xol_payment', val)}
+                  />
+                </td>
+                <td className="px-2 py-1 text-center">
+                  <button
+                    onClick={() => onRemoveRow(idx)}
+                    disabled={rows.length <= 1}
+                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-  <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
+
+      <button
+        onClick={onAddRow}
+        className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+      >
+        Add Row
+      </button>
+
+      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+        <div className="font-semibold mb-2">Totals:</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Gross Sum Insured:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.gross_sum_insured, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Gross Incurred:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.gross_incurred, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Paid to Date:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.paid_to_date, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Gross Outstanding:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.gross_outstanding, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">FAC Amount:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.fac_amount, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Net of FAC:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.net_of_fac, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Surplus Cession:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.surplus_cession, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">QS Cession:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.qs_cession, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">Net of Proportional:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.net_of_proportional, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div>
+            <span className="text-gray-600 dark:text-gray-400">XoL Payment:</span>
+            <div className="font-medium">{formatNumberDisplay(totals.xol_payment, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
-          <textarea className="input" placeholder="Any notes or guidance for this submission…" value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} />
+          <textarea 
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800" 
+            placeholder="Any notes or guidance for this submission…" 
+            value={additionalComments} 
+            onChange={(e) => setAdditionalComments(e.target.value)}
+            rows={4}
+          />
         </label>
       </div>
-  <PasteModal open={showPaste} onClose={() => setShowPaste(false)} onApply={applyPaste} title="Paste from Excel — Large Loss List" />
+
+      <PasteModal 
+        open={showPaste} 
+        onClose={() => setShowPaste(false)} 
+        onApply={applyPaste} 
+        title="Paste from Excel — Large Loss List" 
+      />
     </div>
   );
 }
