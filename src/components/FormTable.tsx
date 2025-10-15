@@ -96,7 +96,7 @@ export function FormTable<T extends Record<string, any>>({
           {isSaving ? 'Saving…' : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : 'Autosave ready'}
         </div>
       </div>
-      <table className="min-w-full table-auto border rounded">
+      <table className="min-w-full table-auto border rounded" style={{ tableLayout: 'auto' }}>
         <thead className="bg-gray-100 dark:bg-gray-700">
           <tr>
             {columns.map(col => (
@@ -111,7 +111,7 @@ export function FormTable<T extends Record<string, any>>({
           {rows.map((row, idx) => (
             <tr key={idx} className="align-top">
               {columns.map(col => (
-                <td key={col.key} className="px-2 py-1 min-w-[8rem]">
+                <td key={col.key} className={`px-2 py-1 ${col.type === 'text' ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
                   <input
                     type={col.type ?? 'text'}
                     step={col.step}
@@ -122,7 +122,7 @@ export function FormTable<T extends Record<string, any>>({
                       const value = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;
                       onChange(idx, col.key as keyof T, value);
                     }}
-                    className={`px-2 py-1 border rounded w-full ${col.className ?? ''}`}
+                    className={`px-2 py-1 border rounded w-full min-w-0 ${col.className ?? ''}`}
                   />
                   {errors?.[idx]?.[col.key as keyof T] && (
                     <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
@@ -130,7 +130,7 @@ export function FormTable<T extends Record<string, any>>({
                 </td>
               ))}
               {(onAddRow || onRemoveRow || actions) && (
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 whitespace-nowrap">
                   <div className="flex gap-2">
                     {onRemoveRow && (
                       <button

@@ -248,122 +248,122 @@ export default function StepCatLossList() {
       </div>
 
       <div className="overflow-x-auto border border-gray-300 dark:border-gray-600 rounded">
-        <table ref={tableRef} className={`w-full text-sm ${autoColumnClasses}`}>
+        <table ref={tableRef} className="w-full min-w-max text-sm" style={{ tableLayout: 'auto' }}>
           <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0">
             <tr>
-              <th className="px-2 py-2 text-left font-semibold">#</th>
-              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('uw_year')}</th>
-              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('name')}</th>
-              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('dol')}</th>
-              <th className="px-2 py-2 text-left font-semibold">{humanizeHeader('type_of_loss')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_sum_insured')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_incurred')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('paid_to_date')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('gross_outstanding')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('fac_amount')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('net_of_fac')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('surplus_cession')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('qs_cession')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('net_of_proportional')}</th>
-              <th className="px-2 py-2 text-right font-semibold">{humanizeHeader('xol_payment')}</th>
-              <th className="px-2 py-2 text-center font-semibold">Actions</th>
+              <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">#</th>
+              <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">{humanizeHeader('uw_year')}</th>
+              <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">{humanizeHeader('name')}</th>
+              <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">{humanizeHeader('dol')}</th>
+              <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">{humanizeHeader('type_of_loss')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('gross_sum_insured')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('gross_incurred')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('paid_to_date')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('gross_outstanding')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('fac_amount')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('net_of_fac')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('surplus_cession')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('qs_cession')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('net_of_proportional')}</th>
+              <th className="px-2 py-2 text-right font-semibold whitespace-nowrap">{humanizeHeader('xol_payment')}</th>
+              <th className="px-2 py-2 text-center font-semibold whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, idx) => (
               <tr key={idx} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-2 py-1">{row.loss_id}</td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap">{row.loss_id}</td>
+                <td className="px-2 py-1 align-top">
                   <YearCell
                     value={row.uw_year}
                     onChange={(val) => onChange(idx, 'uw_year', val)}
                     onCommit={() => {}}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-normal break-words">
                   <input
                     type="text"
                     value={row.name || ''}
                     onChange={(e) => onChange(idx, 'name', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    className="w-full min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap">
                   <DateCell
                     value={row.dol}
                     onChange={(val) => onChange(idx, 'dol', val)}
                     onCommit={() => {}}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-normal break-words">
                   <input
                     type="text"
                     value={row.type_of_loss || ''}
                     onChange={(e) => onChange(idx, 'type_of_loss', e.target.value)}
-                    className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    className="w-full min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_sum_insured}
                     onChange={(val) => onChange(idx, 'gross_sum_insured', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_incurred}
                     onChange={(val) => onChange(idx, 'gross_incurred', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.paid_to_date}
                     onChange={(val) => onChange(idx, 'paid_to_date', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_outstanding}
                     onChange={(val) => onChange(idx, 'gross_outstanding', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.fac_amount}
                     onChange={(val) => onChange(idx, 'fac_amount', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.net_of_fac}
                     onChange={(val) => onChange(idx, 'net_of_fac', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.surplus_cession}
                     onChange={(val) => onChange(idx, 'surplus_cession', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.qs_cession}
                     onChange={(val) => onChange(idx, 'qs_cession', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.net_of_proportional}
                     onChange={(val) => onChange(idx, 'net_of_proportional', val)}
                   />
                 </td>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.xol_payment}
                     onChange={(val) => onChange(idx, 'xol_payment', val)}
                   />
                 </td>
-                <td className="px-2 py-1 text-center">
+                <td className="px-2 py-1 align-top text-center whitespace-nowrap">
                   <button
                     onClick={() => onRemoveRow(idx)}
                     disabled={rows.length <= 1}

@@ -1,11 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import FormTable from '../../../../components/FormTable';
+import { TriangulationTable } from '../../../../components/TriangulationTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { chunkedSave } from '../../../../utils/chunkedSave';
 import { normalizeDateString } from '../../../../types/climateExposure';
+import { 
+  parseNumericInput, 
+  parseYearInput, 
+  parseDateInput,
+  formatNumberDisplay,
+  validateDate,
+  validateYear,
+  validateNumeric
+} from '../../../../lib/formatUtils';
 
 // Property Large Loss Triangulation
 // Replicates the Casualty structure: a header list and a multi-row development grid.
@@ -226,7 +236,7 @@ export default function StepLargeLossTriangulation() {
     setGridIncurred((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const devCols = useMemo(() => devMonths.map((m) => ({ key: String(m), label: `${m} months`, type: 'number', step: '0.01', min: 0 })), [devMonths]);
+  const devCols = useMemo(() => devMonths.map((m) => ({ key: String(m), label: `${m} months`, type: 'number' as const, step: '0.01', min: 0 })), [devMonths]);
   const rowsFromGrid = (grid: number[][]) => headers.map((_, r) => devMonths.reduce<Record<string, any>>((acc, m, cIdx) => { acc[String(m)] = grid[r]?.[cIdx] ?? 0; return acc; }, {}));
   const [pasteTarget, setPasteTarget] = useState<'headers' | 'paid' | 'reserved' | 'incurred'>('headers');
   const onGridChange = (which: 'paid' | 'reserved', row: number, key: string, value: any) => {
@@ -289,51 +299,38 @@ export default function StepLargeLossTriangulation() {
         <span className="text-gray-500 text-sm">All changes are autosaved</span>
       </div>
 
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold">Development Grid — Paid</h3>
-          <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m</button>
-        </div>
-        <div className="text-xs text-gray-500">Totals: {totalsByCol(gridPaid).map((t) => t.toLocaleString()).join(' | ')}</div>
+      <div className="flex items-center gap-2 mt-6">
+        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m Column</button>
       </div>
 
-      <FormTable<any>
-        columns={devCols as any}
+      <TriangulationTable
+        title="Development Grid — Paid"
+        columns={devCols}
         rows={rowsFromGrid(gridPaid)}
         onChange={(r, k, v) => onGridChange('paid', r, k as any, v)}
         onRemoveRow={removeHeader}
         onPaste={() => { setPasteTarget('paid'); setPasteOpen(true); }}
+        totals={totalsByCol(gridPaid)}
       />
 
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold">Development Grid — Reserved</h3>
-          <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m</button>
-        </div>
-        <div className="text-xs text-gray-500">Totals: {totalsByCol(gridReserved).map((t) => t.toLocaleString()).join(' | ')}</div>
-      </div>
-
-      <FormTable<any>
-        columns={devCols as any}
+      <TriangulationTable
+        title="Development Grid — Reserved"
+        columns={devCols}
         rows={rowsFromGrid(gridReserved)}
         onChange={(r, k, v) => onGridChange('reserved', r, k as any, v)}
         onRemoveRow={removeHeader}
         onPaste={() => { setPasteTarget('reserved'); setPasteOpen(true); }}
+        totals={totalsByCol(gridReserved)}
       />
 
-      <div className="flex items-center justify-between mt-6">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold">Development Grid — Incurred (auto)</h3>
-        </div>
-        <div className="text-xs text-gray-500">Totals: {totalsByCol(gridIncurred).map((t) => t.toLocaleString()).join(' | ')}</div>
-      </div>
-
-      <FormTable<any>
-        columns={devCols as any}
+      <TriangulationTable
+        title="Development Grid — Incurred (auto-calculated)"
+        columns={devCols}
         rows={rowsFromGrid(gridIncurred)}
         onChange={() => { /* read-only */ }}
         onRemoveRow={removeHeader}
-        onPaste={() => { setPasteTarget('incurred'); setPasteOpen(true); }}
+        readonly={true}
+        totals={totalsByCol(gridIncurred)}
       />
 
       <div className="flex justify-between items-center mt-2">
@@ -350,56 +347,93 @@ export default function StepLargeLossTriangulation() {
       <PasteModal
         open={pasteOpen}
         onClose={() => setPasteOpen(false)}
-        title="Paste rows (header table or Paid/Reserved grids)"
+        title={`Paste ${pasteTarget === 'headers' ? 'Loss Header' : pasteTarget === 'paid' ? 'Paid Grid' : pasteTarget === 'reserved' ? 'Reserved Grid' : 'data'}`}
         onApply={(rows) => {
           if (!rows || rows.length === 0) return;
-          const first = rows[0] ?? [];
+          
+          // Filter out completely empty rows
+          const nonEmptyRows = rows.filter(row => 
+            row.some(cell => cell != null && String(cell).trim() !== '')
+          );
+          
+          if (nonEmptyRows.length === 0) return;
+          
+          const first = nonEmptyRows[0] ?? [];
+          
           // Decide by pasteTarget or by column count
           if (pasteTarget === 'paid' || pasteTarget === 'reserved' || first.length > 6) {
             if (pasteTarget === 'incurred') {
-              alert('Incurred is calculated. Paste into Paid or Reserved.');
+              alert('Incurred is calculated automatically. Please paste into Paid or Reserved grids.');
               return;
             }
-            const gridVals = rows.map((r) => r.map((v) => Number(v) || 0));
+            
+            // Parse grid values using parseNumericInput for proper number handling
+            const gridVals = nonEmptyRows.map((r) => 
+              r.map((v) => parseNumericInput(v) ?? 0)
+            );
+            
             if (pasteTarget === 'paid') setGridPaid(gridVals);
             else setGridReserved(gridVals);
+            
+            // Ensure we have enough header rows
             const need = gridVals.length - headers.length;
-            if (need > 0) setHeaders((prev) => [
-              ...prev,
-              ...Array.from({ length: need }, (_, i) => ({
-                loss_identifier: `LOSS-${prev.length + i + 1}`,
-                year: '' as const,
-                loss_description: '',
-                date_of_loss: '',
-                threshold: '' as const,
-                claim_policy_no: '',
-                claim_status: '',
-              })),
-            ]);
-            // recompute incurred
+            if (need > 0) {
+              setHeaders((prev) => [
+                ...prev,
+                ...Array.from({ length: need }, (_, i) => ({
+                  loss_identifier: `LOSS-${prev.length + i + 1}`,
+                  year: '' as const,
+                  loss_description: '',
+                  date_of_loss: '',
+                  threshold: '' as const,
+                  claim_policy_no: '',
+                  claim_status: '',
+                })),
+              ]);
+            }
+            
+            // Recompute incurred grid
             const paid = pasteTarget === 'paid' ? gridVals : gridPaid;
             const res = pasteTarget === 'reserved' ? gridVals : gridReserved;
             setGridIncurred(paid.map((row, r) => row.map((v, c) => v + (res[r]?.[c] ?? 0))));
           } else {
-            // header paste
-            const mapped = rows.map((r, i) => ({
-              loss_identifier: `LOSS-${i + 1}`,
-              year: r[0] ? Number(r[0]) : ('' as const),
-              loss_description: r[1] ?? '',
-              date_of_loss: r[2] ?? '',
-              threshold: r[3] ? Number(r[3]) : ('' as const),
-              claim_policy_no: r[4] ?? '',
-              claim_status: r[5] ?? '',
-            }));
+            // Loss Header paste with proper parsing
+            const mapped = nonEmptyRows.map((r, i) => {
+              // Parse year (column 0): must be 4-digit year
+              const yearRaw = r[0];
+              const yearParsed = parseYearInput(yearRaw);
+              
+              // Parse date (column 2): handle Excel serials and multiple formats
+              const dateRaw = r[2];
+              const dateParsed = parseDateInput(dateRaw);
+              
+              // Parse threshold (column 3): numeric with comma support
+              const thresholdRaw = r[3];
+              const thresholdParsed = parseNumericInput(thresholdRaw);
+              
+              return {
+                loss_identifier: `LOSS-${i + 1}`,
+                year: yearParsed ?? ('' as const),
+                loss_description: (r[1] ?? '').toString().trim(),
+                date_of_loss: dateParsed ?? '',
+                threshold: thresholdParsed ?? ('' as const),
+                claim_policy_no: (r[4] ?? '').toString().trim(),
+                claim_status: (r[5] ?? '').toString().trim() || 'Open',
+              };
+            });
+            
             setHeaders(mapped);
-            // align grid rows
+            
+            // Align grid rows to match header count
             const align = (set: React.Dispatch<React.SetStateAction<number[][]>>) => set(prev => {
               const copy = prev.map((r) => r.slice());
               while (copy.length < mapped.length) copy.push(new Array(devMonths.length).fill(0));
               while (copy.length > mapped.length) copy.pop();
               return copy;
             });
-            align(setGridPaid); align(setGridReserved); align(setGridIncurred);
+            align(setGridPaid); 
+            align(setGridReserved); 
+            align(setGridIncurred);
           }
         }}
       />
