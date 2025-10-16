@@ -74,6 +74,23 @@
   textarea.input {
     @apply min-h-[96px];
   }
+
+  /* Layered table headers for Cresta Zone Control */
+  .thead-layer-1 {
+    @apply bg-slate-800 text-slate-100/90 font-semibold;
+  }
+
+  .thead-layer-2 {
+    @apply bg-slate-700 text-slate-100/80;
+  }
+
+  .thead-sticky {
+    @apply sticky top-0 z-10;
+  }
+
+  .th-tight {
+    @apply px-3 py-2 align-middle;
+  }
 }
 
 /* === Table Cell Overrides for Light Mode Visibility === */
