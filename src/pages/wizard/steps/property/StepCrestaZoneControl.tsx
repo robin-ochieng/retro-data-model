@@ -4,6 +4,8 @@ import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { getCresta, replaceCrestaSection, upsertCrestaCell } from '../../../../lib/cresta';
 import PasteModal from '../../../../components/PasteModal';
+import { NumberCell } from '../../../../components/table/NumberCell';
+import { parseNumericInput } from '../../../../lib/formatUtils';
 
 type Pair = { gross: number; net: number };
 type Row = { zone: number | 'Unallocated'; zone_description: string; values: Record<string, Pair> };
@@ -211,12 +213,6 @@ export default function StepCrestaZoneControl() {
     setLastSaved(new Date());
   }, 600);
 
-  const numberInput = 'w-full border rounded px-3 py-2 text-right text-base h-10';
-  const textInput = 'w-full border rounded px-3 py-2 text-base h-10';
-  const numberInputBase = 'border rounded px-3 py-2 text-base h-10';
-  const czcNumCol = 'min-w-[88px] w-[88px] md:min-w-[104px] md:w-[104px]';
-  const czcNumInput = 'min-w-[88px] w-[88px] md:min-w-[104px] md:w-[104px] text-center';
-
   function setZoneDesc(tab: keyof State, rowIdx: number, v: string) {
     setState((prev) => {
       const copy = { ...prev } as State;
@@ -278,11 +274,9 @@ export default function StepCrestaZoneControl() {
     return rows.reduce((acc, r) => ({ gross: acc.gross + (Number(r.gross) || 0), net: acc.net + (Number(r.net) || 0) }), { gross: 0, net: 0 });
   }
 
+  // Use parseNumericInput for robust Excel paste support (handles commas, negatives, decimals)
   const toNumber = (s: string | undefined) => {
-    if (s == null) return 0;
-    const cleaned = String(s).replace(/[\s,]/g, '');
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
+    return parseNumericInput(s) ?? 0;
   };
   const maybeHasHeader = (cells: string[] = [], expected: string[]) => {
     const lc = cells.map((c) => String(c).trim().toLowerCase());
@@ -381,75 +375,63 @@ export default function StepCrestaZoneControl() {
   const Table = ({ def }: { def: TableDef }) => {
     const rows = state[def.key] as Row[];
     const t = useMemo(() => totals(rows, def.categories), [rows, def.categories]);
-    const isTargetTable = def.key === 'personal' || def.key === 'commercial' || def.key === 'industrial';
-    const isTargetCategory = (catKey: string) =>
-      isTargetTable && (catKey === 'buildings' || catKey === 'content' || catKey === 'buildings_contents' || catKey === 'motor');
     return (
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-3">
+      <div className="overflow-x-auto overscroll-contain bg-white dark:bg-gray-800 rounded shadow p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold">{def.title}</h4>
           <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget(def.key)}>Paste from Excel</button>
         </div>
-        <table className="min-w-full table-auto border">
+        <table className="w-full table-auto border" style={{ tableLayout: 'auto' }}>
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-3 py-2 w-20"></th>
-              <th className="px-3 py-2"></th>
-              <th className="px-3 py-2 text-center text-sm md:text-base" colSpan={def.categories.length * 2}>{def.title}</th>
+            {/* Layer 1: Title row */}
+            <tr className="thead-layer-1 thead-sticky">
+              <th className="th-tight text-left" colSpan={2 + def.categories.length * 2}>{def.title}</th>
             </tr>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-3 py-2 text-left text-sm md:text-base">Zone</th>
-              <th className="px-3 py-2 text-left text-sm md:text-base">Zone Description</th>
+            {/* Layer 2a: Category groups */}
+            <tr className="thead-layer-2 thead-sticky">
+              <th className="th-tight text-left">Zone</th>
+              <th className="th-tight text-left">Zone Description</th>
               {def.categories.map((c) => (
-                <th key={`${c.key}-gross`} className="px-3 py-2 text-left text-sm md:text-base" colSpan={2}>{c.label}</th>
+                <th key={`${c.key}-cat`} className="th-tight text-center" colSpan={2}>{c.label}</th>
               ))}
             </tr>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th></th>
-              <th></th>
+            {/* Layer 2b: Column labels */}
+            <tr className="thead-layer-2 thead-sticky">
+              <th className="th-tight"></th>
+              <th className="th-tight"></th>
               {def.categories.map((c) => (
-                <>
-                  <th
-                    key={`${c.key}-gross-h`}
-                    className={`px-3 py-2 text-left text-sm md:text-base ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}
-                  >
-                    Gross (net of Fac)
-                  </th>
-                  <th
-                    key={`${c.key}-net-h`}
-                    className={`px-3 py-2 text-left text-sm md:text-base ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}
-                  >
-                    Net
-                  </th>
-                </>
+                <React.Fragment key={`${c.key}-labels`}>
+                  <th className="th-tight text-right">Gross (net of Fac)</th>
+                  <th className="th-tight text-right">Net</th>
+                </React.Fragment>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={String(r.zone)} className="border-t">
-                <td className="px-3 py-2 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
-                <td className="px-3 py-2"><input className={textInput + ' w-[14rem]'} value={r.zone_description} onChange={(e) => setZoneDesc(def.key, i, e.target.value)} /></td>
+              <tr key={String(r.zone)} className="border-t align-top hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-3 py-2 whitespace-nowrap align-top">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
+                <td className="px-3 py-2 whitespace-normal break-words align-top">
+                  <input 
+                    className="w-full min-w-0 border rounded px-3 py-2" 
+                    value={r.zone_description} 
+                    onChange={(e) => setZoneDesc(def.key, i, e.target.value)} 
+                  />
+                </td>
                 {def.categories.map((c) => (
                   <React.Fragment key={`${i}-${c.key}-frag`}>
-                    <td className={`px-3 py-2 ${isTargetCategory(c.key) ? czcNumCol : 'w-40'}`}>
-                      <input
-                        className={isTargetCategory(c.key) ? `${numberInputBase} ${czcNumInput}` : numberInput}
-                        type="number"
-                        step="0.01"
-                        min="0"
+                    <td className="px-3 py-2 text-right whitespace-nowrap align-top">
+                      <NumberCell
                         value={r.values[c.key]?.gross ?? 0}
-                        onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'gross', e.target.value)}
+                        onChange={(v) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'gross', v ?? 0)}
+                        decimals={2}
                       />
                     </td>
-                    <td className={`px-3 py-2 ${isTargetCategory(c.key) ? czcNumCol : 'w-40'}`}>
-                      <input
-                        className={isTargetCategory(c.key) ? `${numberInputBase} ${czcNumInput}` : numberInput}
-                        type="number"
-                        step="0.01"
-                        min="0"
+                    <td className="px-3 py-2 text-right whitespace-nowrap align-top">
+                      <NumberCell
                         value={r.values[c.key]?.net ?? 0}
-                        onChange={(e) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'net', e.target.value)}
+                        onChange={(v) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'net', v ?? 0)}
+                        decimals={2}
                       />
                     </td>
                   </React.Fragment>
@@ -462,8 +444,8 @@ export default function StepCrestaZoneControl() {
               <td className="px-3 py-2"></td>
               {def.categories.map((c) => (
                 <React.Fragment key={`tot-${c.key}-frag`}>
-                  <td className={`px-3 py-2 text-right font-semibold ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}>{t[c.key]!.gross.toLocaleString()}</td>
-                  <td className={`px-3 py-2 text-right font-semibold ${isTargetCategory(c.key) ? czcNumCol : (isTargetTable ? 'w-40' : '')}`}>{t[c.key]!.net.toLocaleString()}</td>
+                  <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">{t[c.key]!.gross.toLocaleString()}</td>
+                  <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">{t[c.key]!.net.toLocaleString()}</td>
                 </React.Fragment>
               ))}
             </tr>
@@ -477,39 +459,57 @@ export default function StepCrestaZoneControl() {
     const rows = state.sum_insured;
     const t = useMemo(() => totalsSimple(rows), [rows]);
     return (
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded shadow p-3">
+      <div className="overflow-x-auto overscroll-contain bg-white dark:bg-gray-800 rounded shadow p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold">Sum Insured</h4>
           <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget('sum_insured')}>Paste from Excel</button>
         </div>
-        <table className="min-w-full table-auto border">
+        <table className="w-full table-auto border" style={{ tableLayout: 'auto' }}>
           <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-3 py-2 w-20"></th>
-              <th className="px-3 py-2"></th>
-              <th className="px-3 py-2 text-center text-sm md:text-base" colSpan={2}>Sum Insured</th>
+            {/* Layer 1: Title row */}
+            <tr className="thead-layer-1 thead-sticky">
+              <th className="th-tight text-left" colSpan={4}>Sum Insured</th>
             </tr>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-3 py-2 text-left text-sm md:text-base">Zone</th>
-              <th className="px-3 py-2 text-left text-sm md:text-base">Zone Description</th>
-              <th className="px-3 py-2 text-left text-sm md:text-base">Gross (net of Fac)</th>
-              <th className="px-3 py-2 text-left text-sm md:text-base">Net</th>
+            {/* Layer 2: Column labels */}
+            <tr className="thead-layer-2 thead-sticky">
+              <th className="th-tight text-left">Zone</th>
+              <th className="th-tight text-left">Zone Description</th>
+              <th className="th-tight text-right">Gross (net of Fac)</th>
+              <th className="th-tight text-right">Net</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={String(r.zone)} className="border-t">
-                <td className="px-3 py-2 whitespace-nowrap">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
-                <td className="px-3 py-2"><input className={textInput + ' w-[14rem]'} value={r.zone_description} onChange={(e) => setSimpleDesc(i, e.target.value)} /></td>
-                <td className="px-3 py-2 w-40"><input className={numberInput} type="number" step="0.01" min="0" value={r.gross} onChange={(e) => setSimpleCell(i, 'gross', e.target.value)} /></td>
-                <td className="px-3 py-2 w-40"><input className={numberInput} type="number" step="0.01" min="0" value={r.net} onChange={(e) => setSimpleCell(i, 'net', e.target.value)} /></td>
+              <tr key={String(r.zone)} className="border-t align-top hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="px-3 py-2 whitespace-nowrap align-top">{typeof r.zone === 'number' ? r.zone : 'Unallocated'}</td>
+                <td className="px-3 py-2 whitespace-normal break-words align-top">
+                  <input 
+                    className="w-full min-w-0 border rounded px-3 py-2" 
+                    value={r.zone_description} 
+                    onChange={(e) => setSimpleDesc(i, e.target.value)} 
+                  />
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap align-top">
+                  <NumberCell
+                    value={r.gross}
+                    onChange={(v) => setSimpleCell(i, 'gross', v ?? 0)}
+                    decimals={2}
+                  />
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap align-top">
+                  <NumberCell
+                    value={r.net}
+                    onChange={(v) => setSimpleCell(i, 'net', v ?? 0)}
+                    decimals={2}
+                  />
+                </td>
               </tr>
             ))}
             <tr className="border-t bg-gray-50 dark:bg-gray-900">
               <td className="px-3 py-2 font-semibold">Total</td>
               <td className="px-3 py-2" />
-              <td className="px-3 py-2 text-right font-semibold">{t.gross.toLocaleString()}</td>
-              <td className="px-3 py-2 text-right font-semibold">{t.net.toLocaleString()}</td>
+              <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">{t.gross.toLocaleString()}</td>
+              <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">{t.net.toLocaleString()}</td>
             </tr>
           </tbody>
         </table>
