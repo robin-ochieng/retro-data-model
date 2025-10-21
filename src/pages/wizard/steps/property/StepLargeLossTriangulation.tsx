@@ -16,6 +16,7 @@ import {
   validateYear,
   validateNumeric
 } from '../../../../lib/formatUtils';
+import { ensureLossIdentifier, mergeLossHeadersByIdentifier } from '../../../../lib/ids';
 
 // Property Large Loss Triangulation
 // Replicates the Casualty structure: a header list and a multi-row development grid.
@@ -35,8 +36,9 @@ type HeaderRow = {
 
 export default function StepLargeLossTriangulation() {
   const { submissionId } = useParams();
+  // Initialize with a row that has a UUID identifier
   const [headers, setHeaders] = useState<HeaderRow[]>([
-    { loss_identifier: 'LOSS-1', year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' },
+    ensureLossIdentifier({ year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' } as HeaderRow),
   ]);
   const [devMonths, setDevMonths] = useState<number[]>([12, 24, 36, 48, 60, 72, 84]);
   const [gridPaid, setGridPaid] = useState<number[][]>([[0, 0, 0, 0, 0, 0, 0]]);
@@ -56,16 +58,20 @@ export default function StepLargeLossTriangulation() {
         .from('large_loss_triangle_header_prop')
         .select('*')
         .eq('submission_id', submissionId);
-      const loadedHeaders: HeaderRow[] = (hq.data as any[] | null)?.map((r: any) => ({
-        loss_identifier: r.loss_identifier,
-        year: r.uw_or_acc_year ?? '',
-        loss_description: r.loss_description ?? '',
-        date_of_loss: r.date_of_loss ?? '',
-        threshold: r.threshold ?? '',
-        claim_policy_no: r.claim_policy_no ?? '',
-        claim_status: r.claim_status ?? 'Open',
-      })) ?? [];
-      setHeaders(loadedHeaders.length ? loadedHeaders : [{ loss_identifier: 'LOSS-1', year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' }]);
+      const loadedHeaders: HeaderRow[] = (hq.data as any[] | null)?.map((r: any) => 
+        ensureLossIdentifier({
+          loss_identifier: r.loss_identifier,
+          year: r.uw_or_acc_year ?? '',
+          loss_description: r.loss_description ?? '',
+          date_of_loss: r.date_of_loss ?? '',
+          threshold: r.threshold ?? '',
+          claim_policy_no: r.claim_policy_no ?? '',
+          claim_status: r.claim_status ?? 'Open',
+        } as HeaderRow)
+      ) ?? [];
+      setHeaders(loadedHeaders.length ? loadedHeaders : [
+        ensureLossIdentifier({ year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' } as HeaderRow)
+      ]);
 
       // Load dev values for paid & reserved; incurred will be recomputed and loaded if exists
       const [pq, rq, iq] = await Promise.all([
@@ -79,7 +85,8 @@ export default function StepLargeLossTriangulation() {
         .sort((a: number, b: number) => a - b);
       const devs: number[] = uniqueDev.length ? uniqueDev : devMonths;
       setDevMonths(devs as number[]);
-      const ids = (loadedHeaders.length ? loadedHeaders : [{ loss_identifier: 'LOSS-1' }]).map(h => String(h.loss_identifier));
+      // Headers now always have loss_identifier after ensureLossIdentifier
+      const ids = loadedHeaders.map(h => h.loss_identifier!);
       const toGrid = (rows: any[]): number[][] => {
         const byLoss = new Map<string, Map<number, number>>();
         (rows || []).forEach((r: any) => {
@@ -105,26 +112,14 @@ export default function StepLargeLossTriangulation() {
     if (!submissionId) return;
     setSaving(true);
     setSaveError(null);
-    // Normalize headers with ids and persist header table
-    const baseIds = payload.headers.map((h, i) => ({ ...h, loss_identifier: h.loss_identifier || `LOSS-${i + 1}` }));
-    // Ensure unique loss_identifier values to satisfy unique(submission_id, loss_identifier)
-    const seen = new Set<string>();
-    const withIds = baseIds.map((h) => {
-      let id = String(h.loss_identifier || '').trim();
-      if (!id) id = 'LOSS-1';
-      if (!seen.has(id)) { seen.add(id); return { ...h, loss_identifier: id }; }
-      // duplicate: find next available LOSS-n
-      const m = id.match(/LOSS-(\d+)/);
-      let n = m ? Number(m[1]) || 1 : 1;
-      let cand = id;
-      while (seen.has(cand)) { n += 1; cand = `LOSS-${n}`; }
-      seen.add(cand);
-      return { ...h, loss_identifier: cand };
-    });
-    // Upsert header rows for this submission; then cleanup rows no longer present
+    
+    // Ensure all headers have stable loss_identifier values
+    const withIds = payload.headers.map(ensureLossIdentifier);
+    
+    // Build upsert payload for header table
     const headerRows = withIds.map(h => ({
       submission_id: submissionId,
-      loss_identifier: String(h.loss_identifier),
+      loss_identifier: h.loss_identifier,
       uw_or_acc_year: h.year || null,
       loss_description: h.loss_description || null,
       // Normalize various user-entered formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY)
@@ -134,50 +129,77 @@ export default function StepLargeLossTriangulation() {
       claim_status: h.claim_status || 'Open',
       updated_at: new Date().toISOString(),
     }));
-    const idsNow = withIds.map(h => String(h.loss_identifier));
+    
     if (headerRows.length) {
-      const { error: delErr } = await (supabase as any)
-        .from('large_loss_triangle_header_prop')
-        .delete()
-        .eq('submission_id', submissionId);
-      if (delErr) { setSaving(false); setSaveError(delErr.message || 'Failed to clear header rows before save'); return; }
       try {
+        // Use proper upsert with the correct conflict target matching the unique index
+        // unique index: uidx_large_loss_triangle_header_prop on (submission_id, loss_identifier)
         await chunkedSave(headerRows, 400, async (chunk) => {
           const { error } = await (supabase as any)
             .from('large_loss_triangle_header_prop')
-            .insert(chunk);
-          if (error) throw new Error(error.message || 'Failed to insert header rows');
+            .upsert(chunk, { 
+              onConflict: 'submission_id,loss_identifier',
+              ignoreDuplicates: false 
+            });
+          if (error) throw new Error(error.message || 'Failed to upsert header rows');
         });
+        
+        // Delete rows that are no longer in the current set
+        const currentIdentifiers = withIds.map(h => h.loss_identifier);
+        const { error: cleanupErr } = await (supabase as any)
+          .from('large_loss_triangle_header_prop')
+          .delete()
+          .eq('submission_id', submissionId)
+          .not('loss_identifier', 'in', `(${currentIdentifiers.map(id => `"${id}"`).join(',')})`);
+        
+        // Don't fail on cleanup errors if list is empty
+        if (cleanupErr && currentIdentifiers.length > 0) {
+          console.warn('Cleanup error (non-fatal):', cleanupErr);
+        }
       } catch (e: any) {
-        setSaving(false); setSaveError(e?.message || 'Failed to insert header rows'); return;
+        setSaving(false); 
+        setSaveError(e?.message || 'Failed to save header rows'); 
+        return;
       }
-      // Note: Removed RLS verification that was causing false errors
-      // The chunkedSave above will throw an error if the insert fails due to RLS
     } else {
       // If no headers, clear all
       const { error } = await (supabase as any)
         .from('large_loss_triangle_header_prop')
         .delete()
         .eq('submission_id', submissionId);
-      if (error) { setSaving(false); setSaveError(error.message || 'Failed to clear header rows'); return; }
+      if (error) { 
+        setSaving(false); 
+        setSaveError(error.message || 'Failed to clear header rows'); 
+        return; 
+      }
     }
 
-    // Helper to upsert grid rows
+    // Helper to upsert grid rows with proper conflict handling
     const replaceGrid = async (table: string, rows: number[][]) => {
       const map = new Map<string, any>();
       withIds.forEach((h, rIdx) => {
-        const lid = String(h.loss_identifier);
+        const lid = h.loss_identifier;
         payload.devMonths.forEach((m, cIdx) => {
           const v = rows[rIdx]?.[cIdx];
           if (v === undefined || v === null) return;
           const key = `${lid}__${m}`;
-          map.set(key, { submission_id: submissionId, loss_identifier: lid, development_months: m, amount: Number(v) || 0 });
+          map.set(key, { 
+            submission_id: submissionId, 
+            loss_identifier: lid, 
+            development_months: m, 
+            amount: Number(v) || 0 
+          });
         });
       });
       const toInsert: any[] = Array.from(map.values());
       if (toInsert.length) {
         await chunkedSave(toInsert, 400, async (chunk) => {
-          const { error } = await (supabase as any).from(table).upsert(chunk, { onConflict: 'submission_id,loss_identifier,development_months' });
+          const { error } = await (supabase as any)
+            .from(table)
+            .upsert(chunk, { 
+              onConflict: 'submission_id,loss_identifier,development_months',
+              ignoreDuplicates: false
+            });
           if (error) throw new Error(error.message || `Failed to upsert into ${table}`);
         });
       }
@@ -199,32 +221,41 @@ export default function StepLargeLossTriangulation() {
 
   // UI config similar to Casualty
   const headerCols = [
-    { key: 'year', label: 'UW or Acc Year', type: 'number', step: '1', min: 1900 },
-    { key: 'loss_description', label: 'Loss Description' },
-    { key: 'date_of_loss', label: 'Date of Loss' },
-    { key: 'threshold', label: 'Threshold', type: 'number', step: '0.01', min: 0 },
-    { key: 'claim_policy_no', label: 'Claim / Policy No.' },
-    { key: 'claim_status', label: 'Claim Status (Settled/Open)' },
+    { key: 'year', label: 'UW or Acc Year', type: 'number' as const, step: '1', min: 1900 },
+    { key: 'loss_description', label: 'Loss Description', type: 'text' as const },
+    { key: 'date_of_loss', label: 'Date of Loss', type: 'date' as const, useSpecializedCell: true },
+    { key: 'threshold', label: 'Threshold', type: 'number' as const, useSpecializedCell: true, decimals: 2 },
+    { key: 'claim_policy_no', label: 'Claim / Policy No.', type: 'text' as const },
+    { key: 'claim_status', label: 'Claim Status (Settled/Open)', type: 'text' as const },
   ];
 
   const onHeaderChange = (row: number, key: keyof HeaderRow, value: any) => {
     setHeaders((prev) => {
       const next = prev.slice();
-      if (!next[row]?.loss_identifier) next[row] = { ...(next[row] || {}), loss_identifier: `LOSS-${row + 1}` };
-      (next[row] as any)[key] = value;
+      // Ensure row exists with identifier (should always be present, but safeguard)
+      if (!next[row]) {
+        next[row] = ensureLossIdentifier({ year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' } as HeaderRow);
+      }
+      // CRITICAL: Never change loss_identifier during edits - preserve it
+      if (key !== 'loss_identifier') {
+        (next[row] as any)[key] = value;
+      }
       return next;
     });
   };
+  
   const addHeader = () => {
-    setHeaders((prev) => {
-      const maxN = prev.reduce((m, h) => {
-        const mtx = String(h.loss_identifier || '').match(/LOSS-(\d+)/);
-        const n = mtx ? Number(mtx[1]) : 0;
-        return Number.isFinite(n) ? Math.max(m, n) : m;
-      }, 0);
-      const nextId = `LOSS-${maxN + 1}`;
-      return [...prev, { loss_identifier: nextId, year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' }];
-    });
+    // Use UUID for new rows instead of LOSS-n pattern
+    const newRow = ensureLossIdentifier({ 
+      year: '', 
+      loss_description: '', 
+      date_of_loss: '', 
+      threshold: '', 
+      claim_policy_no: '', 
+      claim_status: '' 
+    } as HeaderRow);
+    
+    setHeaders((prev) => [...prev, newRow]);
     setGridPaid((prev) => [...prev, new Array(devMonths.length).fill(0)]);
     setGridReserved((prev) => [...prev, new Array(devMonths.length).fill(0)]);
     setGridIncurred((prev) => [...prev, new Array(devMonths.length).fill(0)]);
@@ -375,20 +406,21 @@ export default function StepLargeLossTriangulation() {
             if (pasteTarget === 'paid') setGridPaid(gridVals);
             else setGridReserved(gridVals);
             
-            // Ensure we have enough header rows
+            // Ensure we have enough header rows with proper UUIDs
             const need = gridVals.length - headers.length;
             if (need > 0) {
               setHeaders((prev) => [
                 ...prev,
-                ...Array.from({ length: need }, (_, i) => ({
-                  loss_identifier: `LOSS-${prev.length + i + 1}`,
-                  year: '' as const,
-                  loss_description: '',
-                  date_of_loss: '',
-                  threshold: '' as const,
-                  claim_policy_no: '',
-                  claim_status: '',
-                })),
+                ...Array.from({ length: need }, () => 
+                  ensureLossIdentifier({
+                    year: '' as const,
+                    loss_description: '',
+                    date_of_loss: '',
+                    threshold: '' as const,
+                    claim_policy_no: '',
+                    claim_status: '',
+                  } as HeaderRow)
+                ),
               ]);
             }
             
@@ -398,7 +430,7 @@ export default function StepLargeLossTriangulation() {
             setGridIncurred(paid.map((row, r) => row.map((v, c) => v + (res[r]?.[c] ?? 0))));
           } else {
             // Loss Header paste with proper parsing
-            const mapped = nonEmptyRows.map((r, i) => {
+            const parsedRows = nonEmptyRows.map((r) => {
               // Parse year (column 0): must be 4-digit year
               const yearRaw = r[0];
               const yearParsed = parseYearInput(yearRaw);
@@ -412,23 +444,24 @@ export default function StepLargeLossTriangulation() {
               const thresholdParsed = parseNumericInput(thresholdRaw);
               
               return {
-                loss_identifier: `LOSS-${i + 1}`,
                 year: yearParsed ?? ('' as const),
                 loss_description: (r[1] ?? '').toString().trim(),
                 date_of_loss: dateParsed ?? '',
                 threshold: thresholdParsed ?? ('' as const),
                 claim_policy_no: (r[4] ?? '').toString().trim(),
                 claim_status: (r[5] ?? '').toString().trim() || 'Open',
-              };
+              } as HeaderRow;
             });
             
-            setHeaders(mapped);
+            // Merge with existing headers to preserve loss_identifier where possible
+            const merged = mergeLossHeadersByIdentifier(headers, parsedRows);
+            setHeaders(merged);
             
             // Align grid rows to match header count
             const align = (set: React.Dispatch<React.SetStateAction<number[][]>>) => set(prev => {
               const copy = prev.map((r) => r.slice());
-              while (copy.length < mapped.length) copy.push(new Array(devMonths.length).fill(0));
-              while (copy.length > mapped.length) copy.pop();
+              while (copy.length < merged.length) copy.push(new Array(devMonths.length).fill(0));
+              while (copy.length > merged.length) copy.pop();
               return copy;
             });
             align(setGridPaid); 

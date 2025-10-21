@@ -71,12 +71,12 @@ export default function StepLargeLossTriangulationCasualty() {
   });
 
   const headerCols = [
-    { key: 'year', label: 'UW or Acc Year', type: 'number', step: '1', min: 1900 },
-    { key: 'loss_description', label: 'Loss Description' },
-    { key: 'date_of_loss', label: 'Date of Loss' },
-    { key: 'threshold', label: 'Threshold', type: 'number', step: '0.01', min: 0 },
-    { key: 'claim_no', label: 'Claim / Policy No.' },
-    { key: 'claim_status', label: 'Claim Status (Settled/Open)' },
+    { key: 'year', label: 'UW or Acc Year', type: 'number' as const, step: '1', min: 1900 },
+    { key: 'loss_description', label: 'Loss Description', type: 'text' as const },
+    { key: 'date_of_loss', label: 'Date of Loss', type: 'date' as const, useSpecializedCell: true },
+    { key: 'threshold', label: 'Threshold', type: 'number' as const, useSpecializedCell: true, decimals: 2 },
+    { key: 'claim_no', label: 'Claim / Policy No.', type: 'text' as const },
+    { key: 'claim_status', label: 'Claim Status (Settled/Open)', type: 'text' as const },
   ];
 
   const onHeaderChange = (row: number, key: keyof HeaderRow, value: any) => {

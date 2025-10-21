@@ -1,294 +1,572 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { parseCsv } from '../../../../utils/csv';
-import { toNumberStrict } from '../../../../utils/clipboard';
-import { getPropertyTriangle, replacePropertyTriangle, upsertPropertyTriangleCell, type TriangleRow, type TriangleMeasure } from '../../../../lib/triangles';
+import { parseNumericInput, parseYearInput } from '../../../../lib/formatUtils';
+import {
+  getPropertyTriangle,
+  replacePropertyTriangle,
+  upsertPropertyTriangleCell,
+  type TriangleMeasure,
+  type TriangleRow,
+} from '../../../../lib/triangles';
+import WrittenPremiumTable from '../../../../features/triangulation/WrittenPremiumTable';
+import NumberOfLossesTable from '../../../../features/triangulation/NumberOfLossesTable';
+import PaidLossesTable from '../../../../features/triangulation/PaidLossesTable';
+import LossReservesTable from '../../../../features/triangulation/LossReservesTable';
+import IncurredLossesTable from '../../../../features/triangulation/IncurredLossesTable';
+import WiLrTable from '../../../../features/triangulation/WiLrTable';
 
-// Aggregate Triangulation (Property)
-// Mirrors the Casualty version: six sections rendered with Year + development months (12-120).
-// Data model: normalized rows in property_aggregate_triangle_values with autosave per cell.
+const DEV_MONTHS = [12, 24, 36, 48, 60, 72, 84, 96, 108, 120] as const;
+type DevMonth = (typeof DEV_MONTHS)[number];
 
-type Cell = number | '';
-type Grid = Cell[][]; // rows x devCols
+type SectionKey =
+  | 'written_premium'
+  | 'number_of_losses'
+  | 'paid_losses'
+  | 'loss_reserves'
+  | 'incurred_losses'
+  | 'wi_lr_pct';
 
-type SectionKey = 'written_premium' | 'number_of_losses' | 'paid_losses' | 'loss_reserves' | 'incurred_losses' | 'wi_lr_pct';
+type SectionGrid = Array<Array<number | null>>;
 
-const LABELS: Record<SectionKey, string> = {
-  written_premium: 'Written Premium',
-  number_of_losses: 'Number of Losses',
-  paid_losses: 'Paid Losses',
-  loss_reserves: 'Loss Reserves',
-  incurred_losses: 'Incurred Losses',
-  wi_lr_pct: 'W/I L/R (0-1)'
+type SectionErrors = Record<number, { months?: Record<number, string> }>;
+
+type SectionErrorsState = Record<SectionKey, SectionErrors>;
+
+type PendingEdit = {
+  measure: TriangleMeasure;
+  uw_year: number;
+  development_months: DevMonth;
+  value: number | null;
 };
+
+const SECTION_KEYS: SectionKey[] = [
+  'written_premium',
+  'number_of_losses',
+  'paid_losses',
+  'loss_reserves',
+  'incurred_losses',
+  'wi_lr_pct',
+];
+
+const DEV_MONTHS_VALUES: number[] = [...DEV_MONTHS];
+
+const createEmptySectionState = (): Record<SectionKey, SectionGrid> => ({
+  written_premium: [],
+  number_of_losses: [],
+  paid_losses: [],
+  loss_reserves: [],
+  incurred_losses: [],
+  wi_lr_pct: [],
+});
+
+const createEmptyErrorState = (): SectionErrorsState => ({
+  written_premium: {},
+  number_of_losses: {},
+  paid_losses: {},
+  loss_reserves: {},
+  incurred_losses: {},
+  wi_lr_pct: {},
+});
+
+function cloneGridWithLength(grid: SectionGrid, targetRows: number): SectionGrid {
+  return Array.from({ length: targetRows }, (_, rowIndex) => {
+    const source = grid[rowIndex] ?? [];
+    return DEV_MONTHS_VALUES.map((_, colIndex) => source[colIndex] ?? null);
+  });
+}
 
 export default function StepTriangulation() {
   const { submissionId } = useParams();
-  const [years, setYears] = useState<Array<number | ''>>([]);
-  const [devMonths, setDevMonths] = useState<number[]>([12,24,36,48,60,72,84,96,108,120]);
-  const [sections, setSections] = useState<Record<SectionKey, Grid>>({
-    written_premium: [],
-    number_of_losses: [],
-    paid_losses: [],
-    loss_reserves: [],
-    incurred_losses: [],
-    wi_lr_pct: [],
-  });
-  const [pasteOpenFor, setPasteOpenFor] = useState<SectionKey | null>(null);
+  const [years, setYears] = useState<Array<number | null>>([]);
+  const [sections, setSections] = useState(createEmptySectionState);
+  const [sectionErrors, setSectionErrors] = useState<SectionErrorsState>(createEmptyErrorState);
+  const [yearErrors, setYearErrors] = useState<Record<number, string>>({});
+  const [pending, setPending] = useState<PendingEdit[]>([]);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pasteOpenFor, setPasteOpenFor] = useState<SectionKey | null>(null);
+  const [isReplacing, setIsReplacing] = useState(false);
 
-  type PendingEdit = { measure: TriangleMeasure; uw_year: number; development_months: number; value: number | null };
-  const [pending, setPending] = useState<PendingEdit[]>([]);
-
-  // Load
   useEffect(() => {
-    (async () => {
-      if (!submissionId) return;
+    let cancelled = false;
+
+    async function load() {
+      if (!submissionId) {
+        setYears([]);
+        setSections(createEmptySectionState());
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
+      setSectionErrors(createEmptyErrorState());
+      setYearErrors({});
+
       try {
         const rows = await getPropertyTriangle(submissionId);
-        // derive years and dev months from data if present
+        if (cancelled) return;
+
         const yearsSet = new Set<number>();
-        const devSet = new Set<number>();
-        rows.forEach((r) => { yearsSet.add(r.uw_year); devSet.add(r.development_months); });
-        const yearsArr = Array.from(yearsSet).sort((a,b)=>a-b);
-        const devArr = Array.from(devSet).sort((a,b)=>a-b);
-        if (yearsArr.length) setYears(yearsArr);
-        if (devArr.length) setDevMonths(devArr);
-        // build grids per measure
-        const byMeasure: Record<SectionKey, Grid> = {
-          written_premium: [], number_of_losses: [], paid_losses: [], loss_reserves: [], incurred_losses: [], wi_lr_pct: []
-        };
-        const yearIdx = new Map<number, number>();
-        const yrs = yearsArr.length ? yearsArr : years.filter((y): y is number => typeof y === 'number');
-        yrs.forEach((y, i) => yearIdx.set(y, i));
-        const devIdx = new Map<number, number>();
-        const devs = (devArr.length ? devArr : devMonths);
-        devs.forEach((d, i) => devIdx.set(d, i));
-        (Object.keys(byMeasure) as SectionKey[]).forEach((m) => {
-          byMeasure[m] = new Array(yrs.length).fill(null).map(() => new Array(devs.length).fill(''));
+        rows.forEach((row) => {
+          if (row.uw_year) yearsSet.add(row.uw_year);
         });
-        rows.forEach((r) => {
-          const m = r.measure as SectionKey;
-          const ri = yearIdx.get(r.uw_year); const ci = devIdx.get(r.development_months);
-          if (ri === undefined || ci === undefined) return;
-          (byMeasure[m]![ri]![ci] as any) = r.value ?? '';
+
+        const sortedYears = Array.from(yearsSet).sort((a, b) => a - b);
+        const rowCount = sortedYears.length;
+
+        const yearIndex = new Map<number, number>();
+        sortedYears.forEach((yr, idx) => yearIndex.set(yr, idx));
+
+        const nextSections = createEmptySectionState();
+        SECTION_KEYS.forEach((key) => {
+          nextSections[key] = cloneGridWithLength(nextSections[key], rowCount);
         });
-        setSections(byMeasure);
+
+        rows.forEach((row) => {
+          const measure = row.measure as SectionKey;
+          const rowIdx = yearIndex.get(row.uw_year);
+          const colIdx = DEV_MONTHS_VALUES.indexOf(row.development_months as DevMonth);
+          if (rowIdx === undefined || colIdx === -1) return;
+          if (!nextSections[measure]) {
+            nextSections[measure] = cloneGridWithLength([], rowCount);
+          }
+          const targetRow = nextSections[measure][rowIdx] ?? (nextSections[measure][rowIdx] = Array(DEV_MONTHS_VALUES.length).fill(null));
+          targetRow[colIdx] = row.value ?? null;
+        });
+
+        setYears(sortedYears);
+        setSections(nextSections);
+      } catch (error) {
+        console.error('Failed to load property triangulation', error);
       } finally {
-        setLoading(false);
-      }
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submissionId]);
-
-  // Autosave pending edits to relational table
-  useAutosave(pending, async (items) => {
-    if (!submissionId || !items.length) return;
-    // keep last edit per key
-    const map = new Map<string, PendingEdit>();
-    for (const it of items) {
-      const k = `${it.measure}|${it.uw_year}|${it.development_months}`;
-      map.set(k, it);
-    }
-    const todo = Array.from(map.values());
-    for (const e of todo) {
-      await upsertPropertyTriangleCell({
-        submissionId,
-        measure: e.measure as TriangleMeasure,
-        uwYear: e.uw_year,
-        developmentMonths: e.development_months,
-        value: e.value,
-      });
-    }
-    setLastSaved(new Date());
-    setPending([]);
-  }, 900, true);
-
-  // Helpers for table rendering
-  const columns = useMemo(() => [{ key: 'year', label: 'Year', type: 'number' as const }, ...devMonths.map((m) => ({ key: String(m), label: `${m} months`, type: 'number' as const, step: '0.01', min: 0 }))], [devMonths]);
-
-  function getRows(grid: Grid) {
-    const rowCount = Math.max(years.length, grid.length);
-    return new Array(rowCount).fill(null).map((_, rIdx) => ({
-      year: years[rIdx] ?? '',
-      ...Object.fromEntries(devMonths.map((m, cIdx) => [String(m), grid[rIdx]?.[cIdx] ?? '']))
-    }));
-  }
-
-  function setCell(key: SectionKey, row: number, colKey: string, value: any) {
-    const c = devMonths.indexOf(Number(colKey)); if (c < 0) return;
-    setSections((prev) => {
-      const copy: Record<SectionKey, Grid> = { ...prev } as any;
-      const g = (copy[key] ?? []).map((r) => r.slice());
-      const needed = Math.max(years.length, row + 1);
-      while (g.length < needed) g.push(new Array(devMonths.length).fill(''));
-      const rowArr = g[row] ?? (g[row] = new Array(devMonths.length).fill(''));
-      while (rowArr.length < devMonths.length) rowArr.push('');
-      const v = value === '' ? '' : toNumberStrict(String(value));
-      rowArr[c] = v;
-      copy[key] = g;
-      return copy;
-    });
-    const yr = years[row];
-    const uwYear = typeof yr === 'number' ? yr : undefined;
-    if (submissionId && uwYear !== undefined) {
-      setPending((prev) => [
-        ...prev,
-        { measure: key as TriangleMeasure, uw_year: uwYear, development_months: Number(colKey), value: (value === '' ? null : Number(toNumberStrict(String(value)))) },
-      ]);
-    }
-  }
-
-  function applyPaste(key: SectionKey, data: string[][]) {
-    if (!data.length) return;
-    // Determine if first column is Year, and whether first row is a header.
-    const cellText = (r: number, c: number) => (data[r]?.[c] ?? '').toString();
-    const hasHeader = /year/i.test(cellText(0, 0));
-    const startRow = hasHeader ? 1 : 0;
-    const firstDataCell = cellText(startRow, 0);
-    const firstYearCandidate = toNumberStrict(firstDataCell);
-    const looksLikeYear = Number.isFinite(firstYearCandidate) && firstYearCandidate >= 1800 && firstYearCandidate <= 2200;
-    const colOffset = looksLikeYear ? 1 : 0;
-
-    const dataRows = data.slice(startRow);
-    const neededRows = Math.max(years.length, dataRows.length);
-    let newYears: Array<number | ''> = years.slice();
-    if (colOffset === 1) {
-      newYears = new Array(dataRows.length).fill('');
-      for (let r = 0; r < dataRows.length; r++) {
-        const yrCell = dataRows[r]?.[0];
-        const parsed = yrCell == null || yrCell === '' ? '' : toNumberStrict(yrCell);
-        newYears[r] = (typeof parsed === 'number' && parsed >= 1800 && parsed <= 2200) ? parsed : '';
-      }
-      setYears(newYears);
-    } else {
-      while (newYears.length < neededRows) newYears.push('');
-      setYears(newYears);
-    }
-
-    // Build grid and prepare rows for RPC
-    const g: Grid = new Array(neededRows).fill(null).map(() => new Array(devMonths.length).fill(''));
-    const rows: TriangleRow[] = [];
-    for (let r = 0; r < Math.min(dataRows.length, neededRows); r++) {
-      const row = dataRows[r] ?? [];
-      const yr = newYears[r];
-      if (typeof yr !== 'number') continue;
-      for (let c = 0; c < devMonths.length; c++) {
-        const src = row[colOffset + c];
-        const val = src == null || src === '' ? '' : toNumberStrict(src);
-        g[r]![c] = val;
-        if (val !== '') {
-          rows.push({ measure: key as TriangleMeasure, uw_year: yr, development_months: devMonths[c]!, value: Number(val) });
+        if (!cancelled) {
+          setLoading(false);
         }
       }
     }
-    setSections((prev) => ({ ...prev, [key]: g } as any));
-    if (submissionId && rows.length) {
-      // Upsert only provided rows, do not delete others by default
-      replacePropertyTriangle({ submissionId, rows, deleteMissing: false }).then(() => setLastSaved(new Date()));
-    }
-  }
 
-  const onAddRow = () => {
-    setYears((prev) => [...prev, '']);
-    setSections((prev) => {
-      const next = { ...prev } as Record<SectionKey, Grid>;
-      (Object.keys(next) as SectionKey[]).forEach((k) => {
-        next[k] = [...(next[k] ?? []), new Array(devMonths.length).fill('')];
-      });
-      return next;
-    });
-  };
+    load();
 
-  const onRemoveRow = (idx: number) => {
-    setYears((prev) => prev.filter((_, i) => i !== idx));
-    setSections((prev) => {
-      const next = { ...prev } as Record<SectionKey, Grid>;
-      (Object.keys(next) as SectionKey[]).forEach((k) => {
-        next[k] = (next[k] ?? []).filter((_, i) => i !== idx);
-      });
-      return next;
-    });
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [submissionId]);
 
-  function exportSectionJSON(sk: SectionKey) {
-    const rows: TriangleRow[] = [];
-    for (let r = 0; r < years.length; r++) {
-      const yr = years[r]; if (typeof yr !== 'number') continue;
-      for (let c = 0; c < devMonths.length; c++) {
-        const v = sections[sk]?.[r]?.[c];
-        if (v !== '' && v != null) rows.push({ measure: sk as TriangleMeasure, uw_year: yr, development_months: devMonths[c]!, value: Number(v) });
+  useAutosave(
+    pending,
+    async (items) => {
+      if (!submissionId || !items.length) return;
+
+      const latest = new Map<string, PendingEdit>();
+      for (const item of items) {
+        const key = `${item.measure}|${item.uw_year}|${item.development_months}`;
+        latest.set(key, item);
       }
-    }
-    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${sk}-triangle.json`; a.click();
-    URL.revokeObjectURL(url);
-  }
 
-  const Section = ({ sk }: { sk: SectionKey }) => (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h4 className="font-semibold">{LABELS[sk]}</h4>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700"
-            onClick={() => exportSectionJSON(sk)}
-            title="Export section as JSON"
-          >
-            Export JSON
-          </button>
-          <div className="text-xs text-gray-500">{loading ? 'Loading…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosave ready'}</div>
-        </div>
-      </div>
-      <FormTable<any>
-        columns={columns as any}
-        rows={getRows(sections[sk])}
-        onChange={(r, key, value) => {
-          if (key === 'year') {
-            setYears((prev) => {
-              const arr = prev.slice();
-              if (r < 0 || r >= arr.length) return arr;
-              if (value === '') { arr[r] = ''; return arr; }
-              const num = Number(value);
-              const cur = arr[r] as number | '';
-              arr[r] = Number.isFinite(num) ? (num as number) : cur;
-              return arr;
-            });
-          } else {
-            setCell(sk, r, key as string, value);
-          }
-        }}
-        onAddRow={onAddRow}
-        onRemoveRow={(idx) => onRemoveRow(idx)}
-        onPaste={() => setPasteOpenFor(sk)}
-        onImportCsv={() => {
-          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv';
-          inp.onchange = async () => { const f = inp.files?.[0]; if (!f) return; const txt = await f.text(); applyPaste(sk, parseCsv(txt)); };
-          inp.click();
-        }}
-      />
-    </div>
+      const todo = Array.from(latest.values());
+      for (const entry of todo) {
+        await upsertPropertyTriangleCell({
+          submissionId,
+          measure: entry.measure,
+          uwYear: entry.uw_year,
+          developmentMonths: entry.development_months,
+          value: entry.value,
+        });
+      }
+
+      setLastSaved(new Date());
+      setPending([]);
+    },
+    900,
+    true,
   );
+
+  const isSaving = pending.length > 0 || isReplacing;
+
+  const ensureGridHasRow = (grid: SectionGrid, rowIndex: number): SectionGrid => {
+    const targetLength = Math.max(grid.length, rowIndex + 1);
+    const next = cloneGridWithLength(grid, targetLength);
+    return next;
+  };
+
+  const handleYearChange = (rowIndex: number, value: number | null) => {
+    setYears((prev) => {
+      const next = [...prev];
+      while (next.length <= rowIndex) {
+        next.push(null);
+      }
+      next[rowIndex] = value;
+      return next;
+    });
+
+    setYearErrors((prev) => {
+      const next = { ...prev };
+      if (value != null) {
+        delete next[rowIndex];
+      }
+      return next;
+    });
+  };
+
+  const handleValueChange = (sectionKey: SectionKey, rowIndex: number, devMonth: number, value: number | null) => {
+    const columnIndex = DEV_MONTHS_VALUES.indexOf(devMonth as DevMonth);
+    if (columnIndex === -1) return;
+
+    setSections((prev) => {
+      const next = { ...prev } as Record<SectionKey, SectionGrid>;
+      const grid = ensureGridHasRow(prev[sectionKey] ?? [], rowIndex);
+      const row = grid[rowIndex] ?? (grid[rowIndex] = Array(DEV_MONTHS_VALUES.length).fill(null));
+      row[columnIndex] = value;
+      next[sectionKey] = grid;
+      return next;
+    });
+
+    setSectionErrors((prev) => {
+      const copy = { ...prev };
+      const section = { ...(copy[sectionKey] ?? {}) };
+      const existing = { ...(section[rowIndex] ?? {}) };
+      if (existing.months) {
+        const monthErrors = { ...existing.months };
+        delete monthErrors[devMonth];
+        if (Object.keys(monthErrors).length > 0) {
+          existing.months = monthErrors;
+          section[rowIndex] = existing;
+        } else {
+          delete existing.months;
+          if (Object.keys(existing).length > 0) {
+            section[rowIndex] = existing;
+          } else {
+            delete section[rowIndex];
+          }
+        }
+      } else {
+        delete section[rowIndex];
+      }
+      copy[sectionKey] = section;
+      return copy;
+    });
+
+    const uwYear = years[rowIndex];
+    if (submissionId && typeof uwYear === 'number') {
+      setPending((prev) => [
+        ...prev,
+        {
+          measure: sectionKey,
+          uw_year: uwYear,
+          development_months: devMonth as DevMonth,
+          value,
+        },
+      ]);
+    }
+  };
+
+  const handleAddRow = () => {
+    setYears((prev) => [...prev, null]);
+    setSections((prev) => {
+      const next = { ...prev } as Record<SectionKey, SectionGrid>;
+      SECTION_KEYS.forEach((key) => {
+        const grid = prev[key] ?? [];
+        const cloned = grid.map((row) => [...row]);
+        cloned.push(Array(DEV_MONTHS_VALUES.length).fill(null));
+        next[key] = cloned;
+      });
+      return next;
+    });
+  };
+
+  const handleRemoveRow = (rowIndex: number) => {
+    setYears((prev) => prev.filter((_, idx) => idx !== rowIndex));
+    setSections((prev) => {
+      const next = { ...prev } as Record<SectionKey, SectionGrid>;
+      SECTION_KEYS.forEach((key) => {
+        next[key] = (prev[key] ?? []).filter((_, idx) => idx !== rowIndex).map((row) => [...row]);
+      });
+      return next;
+    });
+
+    setYearErrors((prev) => {
+      const next: Record<number, string> = {};
+      Object.entries(prev).forEach(([idxStr, message]) => {
+        const idx = Number(idxStr);
+        if (idx < rowIndex) {
+          next[idx] = message;
+        } else if (idx > rowIndex) {
+          next[idx - 1] = message;
+        }
+      });
+      return next;
+    });
+
+    setSectionErrors((prev) => {
+      const next = createEmptyErrorState();
+      SECTION_KEYS.forEach((key) => {
+        const current = prev[key] ?? {};
+        const updated: SectionErrors = {};
+        Object.entries(current).forEach(([idxStr, value]) => {
+          const idx = Number(idxStr);
+          if (idx < rowIndex) {
+            updated[idx] = value;
+          } else if (idx > rowIndex) {
+            updated[idx - 1] = value;
+          }
+        });
+        next[key] = updated;
+      });
+      return next;
+    });
+  };
+
+  const handleImportCsv = (key: SectionKey) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,text/csv';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      applyPaste(key, parseCsv(text));
+    };
+    input.click();
+  };
+
+  const applyPaste = (key: SectionKey, rawGrid: string[][]) => {
+    if (!rawGrid.length) return;
+
+    const cleanedRows = rawGrid
+      .map((row) => row.map((cell) => (cell ?? '').toString()))
+      .filter((row) => row.some((cell) => cell.trim() !== ''));
+
+    if (!cleanedRows.length) return;
+
+    const hasHeader = /year/i.test(cleanedRows[0]?.[0] ?? '');
+    const dataRows = hasHeader ? cleanedRows.slice(1) : cleanedRows;
+    if (!dataRows.length) return;
+
+    const includesYear = parseYearInput((dataRows[0]?.[0] ?? '').trim()) !== null;
+    const colOffset = includesYear ? 1 : 0;
+    const targetRows = Math.max(years.length, dataRows.length);
+
+    const nextYears = [...years];
+    while (nextYears.length < targetRows) {
+      nextYears.push(null);
+    }
+
+    const currentGrid = sections[key] ?? [];
+    const nextGrid = cloneGridWithLength(currentGrid, targetRows);
+
+    const touchedRows = new Set<number>();
+    const monthErrors = new Map<number, Record<number, string>>();
+    const updatedYearErrors: Record<number, string> = {};
+    const upsertRows: TriangleRow[] = [];
+
+    dataRows.forEach((row, idx) => {
+      const rowIndex = idx;
+      touchedRows.add(rowIndex);
+      const targetRow = nextGrid[rowIndex] ?? (nextGrid[rowIndex] = Array(DEV_MONTHS_VALUES.length).fill(null));
+
+      if (colOffset === 1) {
+        const rawYear = (row[0] ?? '').trim();
+        if (rawYear === '') {
+          // Leave existing value as-is
+        } else {
+          const parsedYear = parseYearInput(rawYear);
+          if (parsedYear === null) {
+            nextYears[rowIndex] = null;
+            updatedYearErrors[rowIndex] = `Invalid year: ${rawYear}`;
+          } else {
+            nextYears[rowIndex] = parsedYear;
+          }
+        }
+      }
+
+      const rowMonthErrors: Record<number, string> = {};
+      DEV_MONTHS_VALUES.forEach((devMonth, colIdx) => {
+        const rawValue = row[colOffset + colIdx] ?? '';
+        const trimmed = rawValue.trim();
+
+        if (trimmed === '') {
+          targetRow[colIdx] = null;
+          return;
+        }
+
+        const parsedValue = parseNumericInput(trimmed);
+        if (parsedValue === null) {
+          rowMonthErrors[devMonth] = `Invalid number: ${rawValue}`;
+          return;
+        }
+
+        targetRow[colIdx] = parsedValue;
+        const uwYear = nextYears[rowIndex];
+        if (typeof uwYear === 'number') {
+          upsertRows.push({
+            measure: key,
+            uw_year: uwYear,
+            development_months: devMonth,
+            value: parsedValue,
+          });
+        }
+      });
+
+      if (Object.keys(rowMonthErrors).length > 0) {
+        monthErrors.set(rowIndex, rowMonthErrors);
+      }
+    });
+
+    setYears(nextYears);
+    setSections((prev) => ({ ...prev, [key]: nextGrid }));
+
+    setSectionErrors((prev) => {
+      const copy = { ...prev };
+      const section = { ...(copy[key] ?? {}) };
+      touchedRows.forEach((rowIndex) => {
+        delete section[rowIndex];
+      });
+      monthErrors.forEach((value, rowIndex) => {
+        section[rowIndex] = { months: value };
+      });
+      copy[key] = section;
+      return copy;
+    });
+
+    setYearErrors((prev) => {
+      const copy = { ...prev };
+      touchedRows.forEach((rowIndex) => {
+        const message = updatedYearErrors[rowIndex];
+        if (message) {
+          copy[rowIndex] = message;
+        } else {
+          delete copy[rowIndex];
+        }
+      });
+      return copy;
+    });
+
+    if (submissionId && upsertRows.length > 0) {
+      setIsReplacing(true);
+      replacePropertyTriangle({ submissionId, rows: upsertRows, deleteMissing: false })
+        .then(() => setLastSaved(new Date()))
+        .catch((error) => console.error('Failed to replace property triangulation', error))
+        .finally(() => setIsReplacing(false));
+    }
+  };
 
   return (
     <div className="space-y-8">
-      {(['written_premium','number_of_losses','paid_losses','loss_reserves','incurred_losses','wi_lr_pct'] as SectionKey[]).map((sk) => (
-        <Section key={sk} sk={sk} />
-      ))}
+      <WrittenPremiumTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.written_premium}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('written_premium', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('written_premium')}
+        onImportCsv={() => handleImportCsv('written_premium')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.written_premium}
+        loading={loading}
+      />
+
+      <NumberOfLossesTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.number_of_losses}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('number_of_losses', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('number_of_losses')}
+        onImportCsv={() => handleImportCsv('number_of_losses')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.number_of_losses}
+        loading={loading}
+      />
+
+      <PaidLossesTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.paid_losses}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('paid_losses', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('paid_losses')}
+        onImportCsv={() => handleImportCsv('paid_losses')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.paid_losses}
+        loading={loading}
+      />
+
+      <LossReservesTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.loss_reserves}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('loss_reserves', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('loss_reserves')}
+        onImportCsv={() => handleImportCsv('loss_reserves')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.loss_reserves}
+        loading={loading}
+      />
+
+      <IncurredLossesTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.incurred_losses}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('incurred_losses', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('incurred_losses')}
+        onImportCsv={() => handleImportCsv('incurred_losses')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.incurred_losses}
+        loading={loading}
+      />
+
+      <WiLrTable
+        years={years}
+        devMonths={DEV_MONTHS_VALUES}
+        values={sections.wi_lr_pct}
+        onYearChange={handleYearChange}
+        onValueChange={(rowIdx, devMonth, value) => handleValueChange('wi_lr_pct', rowIdx, devMonth, value)}
+        onAddRow={handleAddRow}
+        onRemoveRow={handleRemoveRow}
+        onPaste={() => setPasteOpenFor('wi_lr_pct')}
+        onImportCsv={() => handleImportCsv('wi_lr_pct')}
+        isSaving={isSaving}
+        lastSavedAt={lastSaved}
+        yearErrors={yearErrors}
+        cellErrors={sectionErrors.wi_lr_pct}
+        loading={loading}
+      />
 
       <PasteModal
         open={pasteOpenFor !== null}
         onClose={() => setPasteOpenFor(null)}
         title="Paste rows (Year column optional)"
-        onApply={(rows) => { if (pasteOpenFor) applyPaste(pasteOpenFor, rows); setPasteOpenFor(null); }}
+        onApply={(rows) => {
+          if (pasteOpenFor) {
+            applyPaste(pasteOpenFor, rows);
+          }
+          setPasteOpenFor(null);
+        }}
       />
     </div>
   );

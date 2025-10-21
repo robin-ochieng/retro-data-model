@@ -8,14 +8,18 @@
  * @param value - The numeric value to format
  * @returns Formatted string with commas, or empty string if null/undefined
  */
-export function formatNumberDisplay(value?: number | string | null): string {
+export function formatNumberDisplay(
+  value?: number | string | null,
+  opts?: Intl.NumberFormatOptions
+): string {
   if (value == null || value === '') return '';
   const num = typeof value === 'string' ? Number(value) : value;
   if (isNaN(num)) return '';
-  return new Intl.NumberFormat('en-KE', { 
+  const defaults: Intl.NumberFormatOptions = {
     maximumFractionDigits: 2,
-    minimumFractionDigits: 0
-  }).format(num);
+    minimumFractionDigits: 0,
+  };
+  return new Intl.NumberFormat('en-KE', { ...defaults, ...opts }).format(num);
 }
 
 /**
@@ -25,23 +29,50 @@ export function formatNumberDisplay(value?: number | string | null): string {
  * @returns Parsed number or null if invalid
  */
 export function parseNumericInput(raw: string | number | null | undefined): number | null {
-  if (raw == null || raw === '') return null;
-  
-  // Already a number
+  if (raw == null) return null;
+
   if (typeof raw === 'number') {
     return isNaN(raw) ? null : raw;
   }
-  
-  // String parsing: remove commas and spaces
-  const normalized = String(raw)
-    .trim()
-    .replace(/[,\s]/g, '') // Remove commas and spaces
-    .replace(/^[^-\d.]+/, ''); // Remove leading non-numeric chars except - and .
-  
-  if (normalized === '' || normalized === '-') return null;
-  
-  const parsed = Number(normalized);
-  return isNaN(parsed) ? null : parsed;
+
+  let str = String(raw).trim();
+  if (str === '') return null;
+
+  const hasComma = str.includes(',');
+  const hasPeriod = str.includes('.');
+
+  if (hasComma && hasPeriod) {
+    const lastComma = str.lastIndexOf(',');
+    const lastPeriod = str.lastIndexOf('.');
+    if (lastComma > lastPeriod) {
+      // European style: 1.234,56
+      str = str.replace(/\./g, '').replace(/,/g, '.');
+    } else {
+      // Standard style: 1,234.56
+      str = str.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    const lastComma = str.lastIndexOf(',');
+    const digitsAfter = str.length - lastComma - 1;
+    if (digitsAfter > 0 && digitsAfter <= 2) {
+      // Treat comma as decimal separator
+      str = str.replace(/,/g, '.');
+    } else {
+      // Treat comma as thousands separator
+      str = str.replace(/,/g, '');
+    }
+  }
+
+  // Drop spaces and thin spaces used as group separators
+  str = str.replace(/[\s\u00A0]/g, '');
+
+  // Allow leading +/-, strip all characters except digits, sign, decimal point
+  str = str.replace(/[^0-9+\-\.]/g, '');
+
+  if (str === '' || str === '-' || str === '+') return null;
+
+  const parsed = Number(str);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /**
@@ -51,9 +82,12 @@ export function parseNumericInput(raw: string | number | null | undefined): numb
  */
 export function parseYearInput(raw: string | number | null | undefined): number | null {
   if (raw == null || raw === '') return null;
-  
-  const val = String(raw).trim().replace(/,/g, ''); // Remove commas from year like "2,024"
-  
+
+  const val = String(raw).trim();
+
+  // Reject commas or any non-digit characters
+  if (/,/.test(val)) return null;
+
   // Must be exactly 4 digits
   if (!/^\d{4}$/.test(val)) return null;
   

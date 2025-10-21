@@ -362,9 +362,8 @@ export default function StepLargeLossList() {
                 <td className="px-2 py-1 align-top whitespace-nowrap">{row.loss_id}</td>
                 <td className="px-2 py-1 align-top">
                   <YearCell
-                    value={row.uw_year}
+                    value={row.uw_year ?? null}
                     onChange={(val) => onChange(idx, 'uw_year', val)}
-                    onCommit={() => {}}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-normal break-words">

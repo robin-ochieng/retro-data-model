@@ -1,4 +1,6 @@
 import React from 'react';
+import { NumberCell } from './table/NumberCell';
+import { DateCell } from './table/DateCell';
 
 type Column = {
   key: string;
@@ -7,6 +9,10 @@ type Column = {
   step?: string;
   min?: number;
   className?: string;
+  /** Use specialized cell component (NumberCell or DateCell) instead of plain input */
+  useSpecializedCell?: boolean;
+  /** Number of decimal places for NumberCell (default: 2) */
+  decimals?: number;
 };
 
 type FormTableProps<T> = {
@@ -110,25 +116,71 @@ export function FormTable<T extends Record<string, any>>({
         <tbody>
           {rows.map((row, idx) => (
             <tr key={idx} className="align-top">
-              {columns.map(col => (
-                <td key={col.key} className={`px-2 py-1 ${col.type === 'text' ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
-                  <input
-                    type={col.type ?? 'text'}
-                    step={col.step}
-                    min={col.min}
-                    aria-label={col.label}
-                    value={row[col.key] ?? ''}
-                    onChange={e => {
-                      const value = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;
-                      onChange(idx, col.key as keyof T, value);
-                    }}
-                    className={`px-2 py-1 border rounded w-full min-w-0 ${col.className ?? ''}`}
-                  />
-                  {errors?.[idx]?.[col.key as keyof T] && (
-                    <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
-                  )}
-                </td>
-              ))}
+              {columns.map(col => {
+                // Determine cell alignment and wrapping
+                const isNumeric = col.type === 'number';
+                const isDate = col.type === 'date';
+                const isText = col.type === 'text' || !col.type;
+                
+                const cellClassName = `px-2 py-1 ${
+                  isText ? 'whitespace-normal break-words' : 
+                  isDate ? 'whitespace-nowrap' :
+                  isNumeric ? 'whitespace-nowrap text-right' : ''
+                }`;
+
+                // Use specialized cell components if requested
+                if (col.useSpecializedCell && isNumeric) {
+                  return (
+                    <td key={col.key} className={cellClassName}>
+                      <NumberCell
+                        value={row[col.key] === '' ? null : Number(row[col.key])}
+                        onChange={(value) => onChange(idx, col.key as keyof T, value === null ? '' : value)}
+                        decimals={col.decimals ?? 2}
+                        ariaLabel={col.label}
+                      />
+                      {errors?.[idx]?.[col.key as keyof T] && (
+                        <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
+                      )}
+                    </td>
+                  );
+                }
+
+                if (col.useSpecializedCell && isDate) {
+                  return (
+                    <td key={col.key} className={cellClassName}>
+                      <DateCell
+                        value={row[col.key]}
+                        onChange={(value) => onChange(idx, col.key as keyof T, value)}
+                        onCommit={() => {/* autosave will handle */}}
+                      />
+                      {errors?.[idx]?.[col.key as keyof T] && (
+                        <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
+                      )}
+                    </td>
+                  );
+                }
+
+                // Default input rendering
+                return (
+                  <td key={col.key} className={cellClassName}>
+                    <input
+                      type={col.type ?? 'text'}
+                      step={col.step}
+                      min={col.min}
+                      aria-label={col.label}
+                      value={row[col.key] ?? ''}
+                      onChange={e => {
+                        const value = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;
+                        onChange(idx, col.key as keyof T, value);
+                      }}
+                      className={`px-2 py-1 border rounded w-full min-w-0 ${col.className ?? ''}`}
+                    />
+                    {errors?.[idx]?.[col.key as keyof T] && (
+                      <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
+                    )}
+                  </td>
+                );
+              })}
               {(onAddRow || onRemoveRow || actions) && (
                 <td className="px-2 py-1 whitespace-nowrap">
                   <div className="flex gap-2">
