@@ -7,7 +7,7 @@ export function IncurredLossesTable({ decimals, ...rest }: Props) {
   return (
     <TriangulationTable
       title="Incurred Losses"
-      decimals={decimals ?? 2}
+      decimals={decimals ?? 0}
       {...rest}
     />
   );

@@ -78,6 +78,68 @@ function cloneGridWithLength(grid: SectionGrid, targetRows: number): SectionGrid
   });
 }
 
+const isFiniteNumber = (value: number | null | undefined): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+function computeIncurredGrid(
+  paidLosses: SectionGrid,
+  lossReserves: SectionGrid,
+  rowCount: number,
+): SectionGrid {
+  return Array.from({ length: rowCount }, (_, rowIndex) =>
+    DEV_MONTHS_VALUES.map((_, colIndex) => {
+      const paid = paidLosses[rowIndex]?.[colIndex];
+      const reserve = lossReserves[rowIndex]?.[colIndex];
+      if (!isFiniteNumber(paid) || !isFiniteNumber(reserve)) {
+        return null;
+      }
+      return paid + reserve;
+    }),
+  );
+}
+
+function computeWiLrGrid(
+  incurred: SectionGrid,
+  writtenPremium: SectionGrid,
+  rowCount: number,
+): SectionGrid {
+  return Array.from({ length: rowCount }, (_, rowIndex) =>
+    DEV_MONTHS_VALUES.map((_, colIndex) => {
+      const incurredValue = incurred[rowIndex]?.[colIndex];
+      const writtenValue = writtenPremium[rowIndex]?.[colIndex];
+      if (!isFiniteNumber(incurredValue) || !isFiniteNumber(writtenValue) || writtenValue === 0) {
+        return null;
+      }
+      const ratio = incurredValue / writtenValue;
+      return Number.isFinite(ratio) ? ratio : null;
+    }),
+  );
+}
+
+type GridDiff = {
+  changed: boolean;
+  cells: Array<{ rowIndex: number; colIndex: number; value: number | null }>;
+};
+
+function diffGrids(existing: SectionGrid, computed: SectionGrid): GridDiff {
+  let changed = false;
+  const cells: GridDiff['cells'] = [];
+  for (let rowIndex = 0; rowIndex < computed.length; rowIndex += 1) {
+    for (let colIndex = 0; colIndex < DEV_MONTHS_VALUES.length; colIndex += 1) {
+      const currentRaw = existing[rowIndex]?.[colIndex];
+      const nextRaw = computed[rowIndex]?.[colIndex];
+      const current = isFiniteNumber(currentRaw) ? currentRaw : null;
+      const next = isFiniteNumber(nextRaw) ? nextRaw : null;
+      const valuesEqual = (current === next) || (current === null && next === null);
+      if (!valuesEqual) {
+        changed = true;
+        cells.push({ rowIndex, colIndex, value: next });
+      }
+    }
+  }
+  return { changed, cells };
+}
+
 export default function StepTriangulation() {
   const { submissionId } = useParams();
   const [years, setYears] = useState<Array<number | null>>([]);
@@ -185,6 +247,87 @@ export default function StepTriangulation() {
   );
 
   const isSaving = pending.length > 0 || isReplacing;
+
+    useEffect(() => {
+      const rowCount = Math.max(
+        years.length,
+        sections.paid_losses.length,
+        sections.loss_reserves.length,
+        sections.written_premium.length,
+      );
+
+      const incurredGrid = computeIncurredGrid(sections.paid_losses, sections.loss_reserves, rowCount);
+      const wiLrGrid = computeWiLrGrid(incurredGrid, sections.written_premium, rowCount);
+
+      const normalizedIncurred = cloneGridWithLength(sections.incurred_losses ?? [], rowCount);
+      const normalizedWiLr = cloneGridWithLength(sections.wi_lr_pct ?? [], rowCount);
+
+      const incurredDiff = diffGrids(normalizedIncurred, incurredGrid);
+      const wiLrDiff = diffGrids(normalizedWiLr, wiLrGrid);
+
+      if (!incurredDiff.changed && !wiLrDiff.changed) {
+        return;
+      }
+
+      setSections((prev) => ({
+        ...prev,
+        incurred_losses: incurredGrid,
+        wi_lr_pct: wiLrGrid,
+      }));
+
+      setSectionErrors((prev) => {
+        const existingIncurred = prev.incurred_losses ?? {};
+        const existingWilr = prev.wi_lr_pct ?? {};
+        if (Object.keys(existingIncurred).length === 0 && Object.keys(existingWilr).length === 0) {
+          return prev;
+        }
+        return {
+          ...prev,
+          incurred_losses: {},
+          wi_lr_pct: {},
+        };
+      });
+
+      if (!submissionId) {
+        return;
+      }
+
+      const edits: PendingEdit[] = [];
+
+      incurredDiff.cells.forEach(({ rowIndex, colIndex, value }) => {
+        const year = years[rowIndex];
+        if (typeof year !== 'number') return;
+        edits.push({
+          measure: 'incurred_losses',
+          uw_year: year,
+          development_months: DEV_MONTHS_VALUES[colIndex] as DevMonth,
+          value,
+        });
+      });
+
+      wiLrDiff.cells.forEach(({ rowIndex, colIndex, value }) => {
+        const year = years[rowIndex];
+        if (typeof year !== 'number') return;
+        edits.push({
+          measure: 'wi_lr_pct',
+          uw_year: year,
+          development_months: DEV_MONTHS_VALUES[colIndex] as DevMonth,
+          value,
+        });
+      });
+
+      if (edits.length > 0) {
+        setPending((prev) => [...prev, ...edits]);
+      }
+    }, [
+      sections.incurred_losses,
+      sections.loss_reserves,
+      sections.paid_losses,
+      sections.wi_lr_pct,
+      sections.written_premium,
+      years,
+      submissionId,
+    ]);
 
   const ensureGridHasRow = (grid: SectionGrid, rowIndex: number): SectionGrid => {
     const targetLength = Math.max(grid.length, rowIndex + 1);
@@ -527,16 +670,12 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.incurred_losses}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('incurred_losses', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('incurred_losses')}
-        onImportCsv={() => handleImportCsv('incurred_losses')}
+        readOnly
+        badge="auto-calculated"
         isSaving={isSaving}
         lastSavedAt={lastSaved}
+        decimals={0}
         yearErrors={yearErrors}
-        cellErrors={sectionErrors.incurred_losses}
         loading={loading}
       />
 
@@ -544,16 +683,11 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.wi_lr_pct}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('wi_lr_pct', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('wi_lr_pct')}
-        onImportCsv={() => handleImportCsv('wi_lr_pct')}
+        readOnly
+        badge="auto-calculated"
         isSaving={isSaving}
         lastSavedAt={lastSaved}
         yearErrors={yearErrors}
-        cellErrors={sectionErrors.wi_lr_pct}
         loading={loading}
       />
 

@@ -1,14 +1,15 @@
 import React from 'react';
 import { NumberCell } from '../../components/table/NumberCell';
 import { YearCell } from '../../components/table/YearCell';
+import { formatNumberDisplay } from '../../lib/formatUtils';
 
 export interface TriangulationTableProps {
   title: string;
   years: Array<number | null>;
   devMonths: number[];
   values: Array<Array<number | null>>;
-  onYearChange: (rowIndex: number, value: number | null) => void;
-  onValueChange: (rowIndex: number, devMonth: number, value: number | null) => void;
+  onYearChange?: (rowIndex: number, value: number | null) => void;
+  onValueChange?: (rowIndex: number, devMonth: number, value: number | null) => void;
   onAddRow?: () => void;
   onRemoveRow?: (rowIndex: number) => void;
   onPaste?: () => void;
@@ -19,6 +20,9 @@ export interface TriangulationTableProps {
   yearErrors?: Record<number, string>;
   cellErrors?: Record<number, { months?: Record<number, string> }>;
   loading?: boolean;
+  readOnly?: boolean;
+  badge?: string;
+  valueFormatter?: (value: number | null) => string;
 }
 
 const MONTH_LABEL = (months: number) => `${months} months`;
@@ -42,20 +46,40 @@ export function TriangulationTable({
   yearErrors,
   cellErrors,
   loading,
+  readOnly = false,
+  badge,
+  valueFormatter,
 }: TriangulationTableProps) {
   const rowCount = Math.max(years.length, values.length);
-  const hasActions = Boolean(onRemoveRow);
+  const hasActions = !readOnly && Boolean(onRemoveRow);
   const disableRemove = rowCount <= 1;
+  const canEditYears = !readOnly && typeof onYearChange === 'function';
+  const canEditValues = !readOnly && typeof onValueChange === 'function';
+
+  const formatValue = (value: number | null) => {
+    if (valueFormatter) return valueFormatter(value);
+    return formatNumberDisplay(value, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals,
+    });
+  };
 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+            {badge && (
+              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                {badge}
+              </span>
+            )}
+          </div>
           {loading && <p className="text-xs text-gray-500">Loading…</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-          {onPaste && (
+          {!readOnly && onPaste && (
             <button
               type="button"
               onClick={onPaste}
@@ -64,7 +88,7 @@ export function TriangulationTable({
               Paste from Excel
             </button>
           )}
-          {onImportCsv && (
+          {!readOnly && onImportCsv && (
             <button
               type="button"
               onClick={onImportCsv}
@@ -96,11 +120,26 @@ export function TriangulationTable({
               return (
                 <tr key={rowIndex} className="border-t border-gray-200 dark:border-gray-700">
                   <td className={`${baseCellClasses} whitespace-normal break-words`}>
-                    <YearCell
-                      value={years[rowIndex] ?? null}
-                      onChange={(val) => onYearChange(rowIndex, val)}
-                      errorMessage={yearErrors?.[rowIndex]}
-                    />
+                    {canEditYears ? (
+                      <YearCell
+                        value={years[rowIndex] ?? null}
+                        onChange={(val) => onYearChange?.(rowIndex, val)}
+                        errorMessage={yearErrors?.[rowIndex]}
+                      />
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="rounded px-3 py-2 text-left text-sm text-gray-900 dark:text-gray-100">
+                          {years[rowIndex] ?? (
+                            <span className="text-gray-400 dark:text-gray-500">—</span>
+                          )}
+                        </div>
+                        {yearErrors?.[rowIndex] && (
+                          <div className="text-xs text-red-600" role="alert">
+                            {yearErrors[rowIndex]}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   {devMonths.map((devMonth, colIndex) => {
                     const errorMessage = cellErrors?.[rowIndex]?.months?.[devMonth];
@@ -109,13 +148,22 @@ export function TriangulationTable({
                         key={devMonth}
                         className={`${baseCellClasses} whitespace-nowrap text-right`}
                       >
-                        <NumberCell
-                          value={monthRow[colIndex] ?? null}
-                          onChange={(val) => onValueChange(rowIndex, devMonth, val)}
-                          decimals={decimals}
-                          className="w-full"
-                        />
-                        {errorMessage && (
+                        {canEditValues ? (
+                          <NumberCell
+                            value={monthRow[colIndex] ?? null}
+                            onChange={(val) => onValueChange?.(rowIndex, devMonth, val)}
+                            decimals={decimals}
+                            className="w-full"
+                          />
+                        ) : (
+                          <div className="rounded px-3 py-2 text-right text-sm text-gray-900 dark:text-gray-100">
+                            {(() => {
+                              const formatted = formatValue(monthRow[colIndex] ?? null);
+                              return formatted || <span className="text-gray-400 dark:text-gray-500">—</span>;
+                            })()}
+                          </div>
+                        )}
+                        {errorMessage && canEditValues && (
                           <div className="mt-1 text-xs text-red-600" role="alert">
                             {errorMessage}
                           </div>
@@ -156,7 +204,7 @@ export function TriangulationTable({
         </table>
       </div>
 
-      {onAddRow && (
+      {onAddRow && !readOnly && (
         <div className="flex items-center justify-between">
           <button
             type="button"
