@@ -12,6 +12,21 @@
       "excelColumns": {}
     },
     {
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "risk-profile",
+      "sheetName": "Risk Profile",
+      "excelColumns": {}
+    },
+    {
+      "tabKey": "triangulation",
+      "sheetName": "Triangulation",
+      "excelColumns": {}
+    },
+    {
       "tabKey": "treaty-stats-prop",
       "sheetName": "Treaty Statistics (Prop)",
       "excelColumns": {}
@@ -24,21 +39,6 @@
     {
       "tabKey": "top-20-risks",
       "sheetName": "Top 20 Risks",
-      "excelColumns": {}
-    },
-    {
-      "tabKey": "climate-exposure",
-      "sheetName": "Climate change exposure",
-      "excelColumns": {}
-    },
-    {
-      "tabKey": "uw-limit",
-      "sheetName": "UW Limit",
-      "excelColumns": {}
-    },
-    {
-      "tabKey": "risk-profile",
-      "sheetName": "Risk Profile",
       "excelColumns": {}
     },
     {
@@ -57,13 +57,13 @@
       "excelColumns": {}
     },
     {
-      "tabKey": "triangulation",
-      "sheetName": "Triangulation",
+      "tabKey": "cresta-zone-control",
+      "sheetName": "Cresta Zone Control",
       "excelColumns": {}
     },
     {
-      "tabKey": "cresta-zone-control",
-      "sheetName": "Cresta Zone Control",
+      "tabKey": "climate-exposure",
+      "sheetName": "Climate change exposure",
       "excelColumns": {}
     },
     {

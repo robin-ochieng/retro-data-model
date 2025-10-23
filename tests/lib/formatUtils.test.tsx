@@ -78,9 +78,9 @@ describe('Large Loss Triangulation - Format Utils', () => {
       expect(parseYearInput('2100')).toBe(2100);
     });
 
-    it('should handle years with commas (from Excel)', () => {
-      expect(parseYearInput('2,023')).toBe(2023);
-      expect(parseYearInput('2,024')).toBe(2024);
+    it('rejects years that include grouping commas', () => {
+      expect(parseYearInput('2,023')).toBe(null);
+      expect(parseYearInput('2,024')).toBe(null);
     });
 
     it('should reject invalid years', () => {

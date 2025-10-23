@@ -5,7 +5,7 @@ import StepIntro from './steps/StepIntro';
 import StepEpiSummary from './steps/StepEpiSummary';
 import { WizardHeader } from '../../components/layout/WizardHeader';
 import { useAuth } from '../../auth/AuthContext';
-import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, propertyTabs, SheetTab } from '../../config/lobConfig';
+import { casualtyTabs, getFirstTabKey, getTabIndex, getTabsForLob, LobKey, SheetTab } from '../../config/lobConfig';
 import StepTreatyStatsProp from './steps/StepTreatyStatsProp';
 import StepLargeLossList from './steps/StepLargeLossList';
 import CasualtyLargeLossList from './steps/casualty/StepLargeLossList';
@@ -38,6 +38,30 @@ import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
 import { SubmissionMetaProvider, useSubmissionMeta } from './SubmissionMetaContext';
 import { TAB_ICONS } from '../../components/icons/TabIcons';
 
+const LEGACY_PROPERTY_ORDER: readonly string[] = [
+  'header',
+  'epi-summary',
+  'treaty-stats-prop',
+  'treaty-stats-nonprop',
+  'top-20-risks',
+  'climate-exposure',
+  'uw-limit',
+  'risk-profile',
+  'large-loss-list',
+  'large-loss-triangulation',
+  'cat-loss-list',
+  'triangulation',
+  'cresta-zone-control',
+  'submit',
+];
+
+const LEGACY_PROPERTY_SLUG_MAP: Record<string, string> = {
+  'top-risks': 'top-20-risks',
+  'climate-change-exposure': 'climate-exposure',
+  'treaty-stats-non-prop': 'treaty-stats-nonprop',
+  'triangles-aggregate': 'triangulation',
+};
+
 export default function Wizard() {
   return (
     <ProtectedRoute>
@@ -61,7 +85,36 @@ function WizardShell() {
   // Determine tabKey from the trailing path segment
   const pathSegments = (rest ?? '').split('/').filter(Boolean);
   const tabKey = pathSegments[0];
-  const currentIndex = useMemo(() => getTabIndex(tabs, tabKey), [tabs, tabKey]);
+  const normalizedTabKey = useMemo(() => {
+    if (!tabKey) return undefined;
+    if (tabs.some((t) => t.key === tabKey)) return tabKey;
+
+    if (normalizedLob === 'property') {
+      const slugMatch = LEGACY_PROPERTY_SLUG_MAP[tabKey];
+      if (slugMatch && tabs.some((t) => t.key === slugMatch)) {
+        return slugMatch;
+      }
+
+      const legacyIndex = Number.parseInt(tabKey, 10);
+      if (!Number.isNaN(legacyIndex)) {
+        const candidate = LEGACY_PROPERTY_ORDER[legacyIndex];
+        if (candidate && tabs.some((t) => t.key === candidate)) {
+          return candidate;
+        }
+      }
+    }
+
+    return tabKey;
+  }, [tabKey, tabs, normalizedLob]);
+
+  React.useEffect(() => {
+    if (!normalizedTabKey || tabKey === normalizedTabKey) {
+      return;
+    }
+    navigate(`${basePath}/${normalizedTabKey}`, { replace: true });
+  }, [basePath, navigate, normalizedTabKey, tabKey]);
+
+  const currentIndex = useMemo(() => getTabIndex(tabs, normalizedTabKey), [tabs, normalizedTabKey]);
 
   // If no tabKey, redirect to first tab
   if (!tabKey) {

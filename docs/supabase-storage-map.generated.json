@@ -1,6 +1,6 @@
 {
   "lob": "Property",
-  "generatedAt": "2025-10-23T09:29:26.571Z",
+  "generatedAt": "2025-10-23T16:38:42.531Z",
   "tabs": [
     {
       "tabKey": "header",
@@ -63,131 +63,6 @@
         {
           "type": "table",
           "table": "epi_summary",
-          "op": "insert"
-        }
-      ]
-    },
-    {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics (Prop)",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
-      "tabKey": "treaty-stats-nonprop",
-      "sheetName": "Treaty Statistics (Non-Prop)",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
-      "tabKey": "top-20-risks",
-      "sheetName": "Top 20 Risks",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "op": "insert"
-        }
-      ]
-    },
-    {
-      "tabKey": "climate-exposure",
-      "sheetName": "Climate change exposure",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": [
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "op": "insert"
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "op": "deleteInsert",
-          "deleteWhere": [
-            "submission_id = :submissionId"
-          ],
-          "insertAugment": {
-            "submission_id": ":submissionId"
-          }
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
           "op": "insert"
         }
       ]
@@ -378,6 +253,87 @@
       ]
     },
     {
+      "tabKey": "triangulation",
+      "sheetName": "Triangulation",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": []
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics (Prop)",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": []
+    },
+    {
+      "tabKey": "treaty-stats-nonprop",
+      "sheetName": "Treaty Statistics (Non-Prop)",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": []
+    },
+    {
+      "tabKey": "top-20-risks",
+      "sheetName": "Top 20 Risks",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "op": "insert"
+        }
+      ]
+    },
+    {
       "tabKey": "large-loss-list",
       "sheetName": "Large Loss List",
       "autosave": {
@@ -456,20 +412,64 @@
       ]
     },
     {
-      "tabKey": "triangulation",
-      "sheetName": "Triangulation",
-      "autosave": {
-        "strategy": "debounced"
-      },
-      "operations": []
-    },
-    {
       "tabKey": "cresta-zone-control",
       "sheetName": "Cresta Zone Control",
       "autosave": {
         "strategy": "debounced"
       },
       "operations": []
+    },
+    {
+      "tabKey": "climate-exposure",
+      "sheetName": "Climate change exposure",
+      "autosave": {
+        "strategy": "debounced"
+      },
+      "operations": [
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "insert"
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "deleteInsert",
+          "deleteWhere": [
+            "submission_id = :submissionId"
+          ],
+          "insertAugment": {
+            "submission_id": ":submissionId"
+          }
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "op": "insert"
+        }
+      ]
     },
     {
       "tabKey": "submit",

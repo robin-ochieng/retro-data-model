@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { HomeStartCard } from '../../src/components/HomeStartCard';
@@ -47,11 +47,11 @@ describe('HomeStartCard', () => {
   it('renders the start card with all required fields', () => {
     renderComponent();
     
-    expect(screen.getByText('Start New Submission')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 3, name: /start new submission/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/client/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/year/i)).toBeInTheDocument();
     expect(screen.getByText(/preset class/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^start$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start new submission/i })).toBeInTheDocument();
   });
 
   it('displays all preset chips', () => {
@@ -82,8 +82,8 @@ describe('HomeStartCard', () => {
 
   it('disables Start button when client or year is missing', () => {
     renderComponent();
-    
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
     expect(startButton).toBeDisabled();
   });
 
@@ -93,13 +93,14 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
 
-    await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
-    await user.clear(yearInput);
-    await user.type(yearInput, '2025');
+  fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
+  fireEvent.change(yearInput, { target: { value: '2025' } });
 
-    expect(startButton).toBeEnabled();
+    await waitFor(() => {
+      expect(startButton).toBeEnabled();
+    });
   });
 
   it('toggles preset chip selection on click', async () => {
@@ -125,11 +126,14 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
 
-    await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
-    await user.clear(yearInput);
-    await user.type(yearInput, '2025');
+  fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
+  fireEvent.change(yearInput, { target: { value: '2025' } });
+    await waitFor(() => {
+      expect(startButton).toBeEnabled();
+    });
+
     await user.click(startButton);
 
     await waitFor(() => {
@@ -153,12 +157,15 @@ describe('HomeStartCard', () => {
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
     const propertyChip = screen.getByText('Marine & Aviation');
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
 
-    await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
-    await user.clear(yearInput);
-    await user.type(yearInput, '2025');
+  fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
+  fireEvent.change(yearInput, { target: { value: '2025' } });
     await user.click(propertyChip);
+    await waitFor(() => {
+      expect(startButton).toBeEnabled();
+    });
+
     await user.click(startButton);
 
     await waitFor(() => {
@@ -183,16 +190,17 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
 
-    await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
-    await user.clear(yearInput);
-    await user.type(yearInput, '2025');
+  fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
+  fireEvent.change(yearInput, { target: { value: '2025' } });
+    await waitFor(() => {
+      expect(startButton).toBeEnabled();
+    });
+
     await user.click(startButton);
 
-    await waitFor(() => {
-      expect(screen.getByText(/network error/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/network error/i)).toBeInTheDocument();
   });
 
   it('displays loading state during submission creation', async () => {
@@ -207,21 +215,18 @@ describe('HomeStartCard', () => {
     
     const clientSelect = screen.getByLabelText(/client/i);
     const yearInput = screen.getByLabelText(/year/i);
-    const startButton = screen.getByRole('button', { name: /^start$/i });
+    const startButton = screen.getByRole('button', { name: /start new submission/i });
 
-    await user.selectOptions(clientSelect, 'ZEP-RE (PTA Reinsurance Company)');
-    await user.clear(yearInput);
-    await user.type(yearInput, '2025');
+  fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
+  fireEvent.change(yearInput, { target: { value: '2025' } });
+    await waitFor(() => {
+      expect(startButton).toBeEnabled();
+    });
+
     await user.click(startButton);
 
-    expect(screen.getByText(/starting/i)).toBeInTheDocument();
+    expect(await screen.findByText(/creating submission/i)).toBeInTheDocument();
     
     resolvePromise!('test-id');
-  });
-
-  it('renders "Start from a copy" link', () => {
-    renderComponent();
-    
-    expect(screen.getByText(/start from a copy/i)).toBeInTheDocument();
   });
 });

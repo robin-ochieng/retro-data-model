@@ -41,20 +41,17 @@ export type SheetTab = {
 export const propertyTabs: SheetTab[] = [
   { key: 'header', label: 'Client Details', component: 'PropertyHeader' },
   { key: 'epi-summary', label: 'EPI Summary', table: 'epi_summary', component: 'EpiSummary' },
-  { key: 'treaty-stats-prop', label: 'Treaty Statistics (Prop)', table: 'treaty_stats_prop', component: 'TreatyStatsProp' },
-  { key: 'treaty-stats-nonprop', label: 'Treaty Statistics (Non-Prop)', component: 'TreatyStatsNonProp' },
-  // Move Top 20 Risks and Climate change exposure just above UW Limit
-  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
-  { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
   { key: 'uw-limit', label: 'UW Limit', component: 'UwLimit' },
   { key: 'risk-profile', label: 'Risk Profile', component: 'RiskProfile' },
+  { key: 'triangulation', label: 'Triangulation', component: 'Triangulation' },
+  { key: 'treaty-stats-prop', label: 'Treaty Statistics (Prop)', table: 'treaty_stats_prop', component: 'TreatyStatsProp' },
+  { key: 'treaty-stats-nonprop', label: 'Treaty Statistics (Non-Prop)', component: 'TreatyStatsNonProp' },
+  { key: 'top-20-risks', label: 'Top 20 Risks', component: 'Top20Risks' },
   { key: 'large-loss-list', label: 'Large Loss List', table: 'large_loss_list_prop', component: 'LargeLossList' },
-  // Place Large Loss Triangulation immediately after Large Loss List
   { key: 'large-loss-triangulation', label: 'Large Loss Triangulation', component: 'LargeLossTriangulation' },
   { key: 'cat-loss-list', label: 'Cat Loss List', component: 'CatLossList' },
-  // Newly added Property tabs (order for left nav)
-  { key: 'triangulation', label: 'Triangulation', component: 'Triangulation' },
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
+  { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
   { key: 'submit', label: 'Submit', component: 'Submit' },
 ];
 

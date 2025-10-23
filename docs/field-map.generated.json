@@ -43,83 +43,6 @@
       ]
     },
     {
-      "tabKey": "treaty-stats-prop",
-      "sheetName": "Treaty Statistics (Prop)",
-      "storage": []
-    },
-    {
-      "tabKey": "treaty-stats-nonprop",
-      "sheetName": "Treaty Statistics (Non-Prop)",
-      "storage": []
-    },
-    {
-      "tabKey": "top-20-risks",
-      "sheetName": "Top 20 Risks",
-      "storage": [
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "top_risks",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
-      "tabKey": "climate-exposure",
-      "sheetName": "Climate change exposure",
-      "storage": [
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "rowSchema": {}
-        },
-        {
-          "type": "table",
-          "table": "climate_exposure",
-          "rowSchema": {}
-        }
-      ]
-    },
-    {
       "tabKey": "uw-limit",
       "sheetName": "UW Limit",
       "storage": []
@@ -221,6 +144,57 @@
       ]
     },
     {
+      "tabKey": "triangulation",
+      "sheetName": "Triangulation",
+      "storage": []
+    },
+    {
+      "tabKey": "treaty-stats-prop",
+      "sheetName": "Treaty Statistics (Prop)",
+      "storage": []
+    },
+    {
+      "tabKey": "treaty-stats-nonprop",
+      "sheetName": "Treaty Statistics (Non-Prop)",
+      "storage": []
+    },
+    {
+      "tabKey": "top-20-risks",
+      "sheetName": "Top 20 Risks",
+      "storage": [
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "top_risks",
+          "rowSchema": {}
+        }
+      ]
+    },
+    {
       "tabKey": "large-loss-list",
       "sheetName": "Large Loss List",
       "storage": []
@@ -272,14 +246,40 @@
       ]
     },
     {
-      "tabKey": "triangulation",
-      "sheetName": "Triangulation",
-      "storage": []
-    },
-    {
       "tabKey": "cresta-zone-control",
       "sheetName": "Cresta Zone Control",
       "storage": []
+    },
+    {
+      "tabKey": "climate-exposure",
+      "sheetName": "Climate change exposure",
+      "storage": [
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        },
+        {
+          "type": "table",
+          "table": "climate_exposure",
+          "rowSchema": {}
+        }
+      ]
     },
     {
       "tabKey": "submit",

@@ -50,6 +50,61 @@
       }
     },
     {
+      "tabKey": "uw-limit",
+      "sheetName": "UW Limit",
+      "excelColumns": {
+        "table:uw_limits": [
+          "Risk Code",
+          "Limits"
+        ],
+        "table:uw_limit_meta": [
+          "Additional Comments"
+        ]
+      },
+      "_meta": {
+        "source": "multiple_tables",
+        "tables": ["uw_limits", "uw_limit_meta"],
+        "spacing": {
+          "between_tables": 2,
+          "before_comments": 2
+        }
+      }
+    },
+    {
+      "tabKey": "risk-profile",
+      "sheetName": "Risk Profile",
+      "excelColumns": {
+        "table:risk_profile_bands": [
+          "Segment",
+          "Band Label",
+          "Exposure",
+          "Premium",
+          "Claims",
+          "Frequency",
+          "Severity"
+        ],
+        "sheet_blobs": {
+          "fields": {
+            "retention": "Retention",
+            "additional_comments": "Additional Comments"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "triangulation",
+      "sheetName": "Aggregate Triangle",
+      "excelColumns": {
+        "table:property_aggregate_triangle_values": [
+          "Measure",
+          "UW Year",
+          "Development (Months)",
+          "Value"
+        ]
+      },
+      "_meta": {"source": "property_aggregate_triangle_values"}
+    },
+    {
       "tabKey": "treaty-stats-prop",
       "sheetName": "Treaty Statistics_Prop",
       "excelColumns": {
@@ -75,13 +130,13 @@
       }
     },
     {
-      "tabKey": "treaty-stats-non-prop",
+      "tabKey": "treaty-stats-nonprop",
       "sheetName": "Treaty Statistics_Non-Prop",
       "excelColumns": {
         "sheet_blobs": {
           "array:overall": [
             "Treaty Year",
-            "Limit", 
+            "Limit",
             "Excess",
             "GNRPI",
             "Premium Rate",
@@ -96,7 +151,7 @@
           "array:cat_layer1": [
             "Treaty Year",
             "Limit",
-            "Excess", 
+            "Excess",
             "GNRPI",
             "Premium Rate",
             "Minimum Premium",
@@ -111,7 +166,7 @@
             "Treaty Year",
             "Limit",
             "Excess",
-            "GNRPI", 
+            "GNRPI",
             "Premium Rate",
             "Minimum Premium",
             "Earned Premium",
@@ -141,7 +196,7 @@
       }
     },
     {
-      "tabKey": "top-risks",
+      "tabKey": "top-20-risks",
       "sheetName": "Top 20 Risks",
       "excelColumns": {
         "table:top_risks": [
@@ -159,120 +214,6 @@
           "Surplus Premium"
         ]
       }
-    },
-    {
-      "tabKey": "climate-change-exposure",
-      "sheetName": "Climate Change Exposure",
-      "excelColumns": {
-        "table:climate_exposure": [
-          "Policy Inception Date",
-          "Policy Expiry Date",
-          "Insured",
-          "Policy Category",
-          "Policy Description",
-          "Nature of Risk",
-          "Gross Exposure (TSI)",
-          "Cedants Exposure (TSI)",
-          "EML/MPL Limit Applied",
-          "EML/MPL Limit",
-          "Ceded to Proportional Reinsurance (Exposure)",
-          "Net of Inuring Proportional Reinsurance (Exposure)",
-          "Gross Premium",
-          "Cedants Premium",
-          "Ceded to Proportional Reinsurance (Premium)",
-          "Net of Proportional Reinsurance (Premium)"
-        ]
-      }
-    },
-    {
-      "tabKey": "uw-limit",
-      "sheetName": "UW Limit",
-      "excelColumns": {
-        "table:uw_limits": [
-          "Risk Code",
-          "Limits"
-        ],
-        "table:uw_limit_meta": [
-          "Additional Comments"
-        ]
-      },
-      "_meta": {
-        "source": "multiple_tables",
-        "tables": ["uw_limits", "uw_limit_meta"],
-        "spacing": {
-          "between_tables": 2,
-          "before_comments": 2
-        }
-      }
-    },
-    {
-      "tabKey": "sum-insured",
-      "sheetName": "Sum Insured",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=sum_insured": [
-          "Zone",
-          "Zone Description",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "sum_insured"}}
-    },
-    {
-      "tabKey": "personal",
-      "sheetName": "Personal Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=personal": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "personal"}}
-    },
-    {
-      "tabKey": "commercial",
-      "sheetName": "Commercial Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=commercial": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "commercial"}}
-    },
-    {
-      "tabKey": "industrial",
-      "sheetName": "Industrial Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=industrial": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "industrial"}}
-    },
-    {
-      "tabKey": "engineering",
-      "sheetName": "Engineering Lines",
-      "excelColumns": {
-        "table:property_cresta_zone_values:section=engineering": [
-          "Zone",
-          "Zone Description",
-          "Category",
-          "Gross (Net of Fac)",
-          "Net"
-        ]
-      },
-      "_meta": {"source": "property_cresta_zone_values", "filter": {"section": "engineering"}}
     },
     {
       "tabKey": "large-loss-list",
@@ -298,17 +239,120 @@
       }
     },
     {
-      "tabKey": "triangles-aggregate",
-      "sheetName": "Aggregate Triangle",
+      "tabKey": "large-loss-triangulation",
+      "sheetName": "Large Loss Triangulation",
       "excelColumns": {
-        "table:property_aggregate_triangle_values": [
-          "Measure",
-          "UW Year",
+        "table:large_loss_triangle_header_prop": [
+          "Loss Identifier",
+          "UW / Acc Year",
+          "Loss Description",
+          "Date of Loss",
+          "Threshold",
+          "Claim / Policy No.",
+          "Claim Status"
+        ],
+        "table:large_loss_triangle_paid_prop": [
+          "Loss Identifier",
           "Development (Months)",
-          "Value"
+          "Paid Amount"
+        ],
+        "table:large_loss_triangle_reserved_prop": [
+          "Loss Identifier",
+          "Development (Months)",
+          "Reserved Amount"
+        ],
+        "table:large_loss_triangle_incurred_prop": [
+          "Loss Identifier",
+          "Development (Months)",
+          "Incurred Amount"
+        ]
+      }
+    },
+    {
+      "tabKey": "cat-loss-list",
+      "sheetName": "Cat Loss List",
+      "excelColumns": {
+        "table:cat_loss_list": [
+          "Event Date",
+          "Event Name",
+          "UW Year",
+          "Gross Incurred",
+          "Paid to Date",
+          "Gross Outstanding",
+          "Currency",
+          "Notes"
+        ],
+        "sheet_blobs": {
+          "fields": {
+            "additional_comments": "Additional Comments"
+          }
+        }
+      }
+    },
+    {
+      "tabKey": "cresta-zone-control",
+      "sheetName": "Cresta Zone Control",
+      "excelColumns": {
+        "table:property_cresta_zone_values:section=sum_insured": [
+          "Zone",
+          "Zone Description",
+          "Gross (Net of Fac)",
+          "Net"
+        ],
+        "table:property_cresta_zone_values:section=personal": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ],
+        "table:property_cresta_zone_values:section=commercial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ],
+        "table:property_cresta_zone_values:section=industrial": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
+        ],
+        "table:property_cresta_zone_values:section=engineering": [
+          "Zone",
+          "Zone Description",
+          "Category",
+          "Gross (Net of Fac)",
+          "Net"
         ]
       },
-      "_meta": {"source": "property_aggregate_triangle_values"}
+      "_meta": {"source": "property_cresta_zone_values", "sections": ["sum_insured", "personal", "commercial", "industrial", "engineering"]}
+    },
+    {
+      "tabKey": "climate-exposure",
+      "sheetName": "Climate Change Exposure",
+      "excelColumns": {
+        "table:climate_exposure": [
+          "Policy Inception Date",
+          "Policy Expiry Date",
+          "Insured",
+          "Policy Category",
+          "Policy Description",
+          "Nature of Risk",
+          "Gross Exposure (TSI)",
+          "Cedants Exposure (TSI)",
+          "EML/MPL Limit Applied",
+          "EML/MPL Limit",
+          "Ceded to Proportional Reinsurance (Exposure)",
+          "Net of Inuring Proportional Reinsurance (Exposure)",
+          "Gross Premium",
+          "Cedants Premium",
+          "Ceded to Proportional Reinsurance (Premium)",
+          "Net of Proportional Reinsurance (Premium)"
+        ]
+      }
     }
   ]
 }

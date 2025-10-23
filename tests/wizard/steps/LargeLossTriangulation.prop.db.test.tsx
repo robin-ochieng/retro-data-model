@@ -88,8 +88,19 @@ describe('Property Large Loss Triangulation — header + grids', () => {
   const lossDesc = await screen.findByLabelText('Loss Description');
   await user.type(lossDesc as HTMLInputElement, 'Fire at Plant');
 
-  const dateInput = screen.getByLabelText('Date of Loss', { selector: 'input' }) as HTMLInputElement | null;
-  if (dateInput) await user.type(dateInput, '2025-03-10');
+  const headerRow = lossDesc.closest('tr');
+  const dateCellTrigger = headerRow?.querySelector('td:nth-child(3) div');
+  expect(dateCellTrigger).toBeTruthy();
+  await user.dblClick(dateCellTrigger as HTMLElement);
+
+  let dateInput: HTMLInputElement | null = null;
+  await waitFor(() => {
+    dateInput = headerRow?.querySelector('input[type="date"]') as HTMLInputElement | null;
+    expect(dateInput).toBeTruthy();
+  });
+  await user.clear(dateInput!);
+  await user.type(dateInput!, '2025-03-10');
+  await user.keyboard('{Enter}');
 
   const claimPolicy = screen.getByLabelText('Claim / Policy No.', { selector: 'input' }) as HTMLInputElement | null;
   if (claimPolicy) await user.type(claimPolicy, 'CLM-123');
