@@ -199,8 +199,18 @@ describe('Header tab DB wiring', () => {
   it('autosaves changes via upsert after debounce and shows saved indicator', async () => {
     const user = userEvent.setup();
     renderWithProviders(<StepHeader />);
+    
+    // First select a country
+    const countrySelect = await screen.findByLabelText('Country');
+    await user.selectOptions(countrySelect, 'Kenya');
+    
+    // Wait for company dropdown to be enabled
     const nameSelect = await screen.findByLabelText('Name of Company');
-    // Use a valid reinsurer from the new list
+    await waitFor(() => {
+      expect(nameSelect).not.toBeDisabled();
+    });
+    
+    // Now select a reinsurer from Kenya's list
     await user.selectOptions(nameSelect, 'Kenya Reinsurance Corporation');
 
   await waitFor(() => {
@@ -232,6 +242,7 @@ describe('Header tab DB wiring', () => {
     expect(rec.sheet_name).toBe('Header');
     expect(rec.payload).toMatchObject({
       name_of_company: 'Kenya Reinsurance Corporation',
+      country: 'Kenya',
       treaty_type: 'Quota Share Treaty',
       currency_std_units: 'USD',
     });

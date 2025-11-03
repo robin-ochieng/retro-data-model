@@ -6,66 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { useSubmissionMeta } from '../../SubmissionMetaContext';
-import { CLIENT_OPTIONS, DEFAULT_CLIENT, type ClientOption } from '../../../../data/clients';
+import { REINSURERS_BY_COUNTRY, DEFAULT_CLIENT, getCountries, getReinsurersForCountry } from '../../../../data/reinsurersByCountry';
 const OTHER = '__OTHER__';
 
-// Allowed countries for dropdown (African countries)
-const COUNTRIES = [
-  'Algeria',
-  'Angola',
-  'Benin',
-  'Botswana',
-  'Burkina Faso',
-  'Burundi',
-  'Cabo Verde',
-  'Cameroon',
-  'Central African Republic',
-  'Chad',
-  'Comoros',
-  'Congo',
-  'Democratic Republic of the Congo',
-  'Djibouti',
-  'Egypt',
-  'Equatorial Guinea',
-  'Eritrea',
-  'Eswatini',
-  'Ethiopia',
-  'Gabon',
-  'Gambia',
-  'Ghana',
-  'Guinea',
-  'Guinea-Bissau',
-  'Ivory Coast',
-  'Kenya',
-  'Lesotho',
-  'Liberia',
-  'Libya',
-  'Madagascar',
-  'Malawi',
-  'Mali',
-  'Mauritania',
-  'Mauritius',
-  'Morocco',
-  'Mozambique',
-  'Namibia',
-  'Niger',
-  'Nigeria',
-  'Rwanda',
-  'Sao Tome and Principe',
-  'Senegal',
-  'Seychelles',
-  'Sierra Leone',
-  'Somalia',
-  'South Africa',
-  'South Sudan',
-  'Sudan',
-  'Tanzania',
-  'Togo',
-  'Tunisia',
-  'Uganda',
-  'Zambia',
-  'Zimbabwe',
-];
+// Get sorted country list from mapping
+const COUNTRIES = getCountries();
 
 // Supported currencies shown as a dropdown (value stored as 3-letter code)
 const CURRENCIES: { code: string; name: string }[] = [
@@ -279,15 +224,9 @@ export default function StepHeader() {
   const [linesIsOther, setLinesIsOther] = useState(false);
   const [treatyIsOther, setTreatyIsOther] = useState(false);
 
-  // Sort client options: default first, then A→Z
-  const sortedClientOptions = useMemo(() => {
-    const defaultOption = CLIENT_OPTIONS.find(o => o === DEFAULT_CLIENT);
-    const remaining = CLIENT_OPTIONS
-      .filter(o => o !== DEFAULT_CLIENT)
-      .slice()
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    return defaultOption ? [defaultOption, ...remaining] : remaining;
-  }, []);
+  // Local state for controlled country/company
+  const [country, setCountry] = useState<string>('');
+  const [company, setCompany] = useState<string>('');
 
   const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
@@ -397,6 +336,32 @@ export default function StepHeader() {
 
   const values = watch();
   const selectedClass = values.class_of_business as (typeof CLASSES_OF_BUSINESS)[number] | '';
+  
+  // Compute available reinsurers based on selected country
+  const companyOptions = useMemo(() => {
+    if (!country || countryIsOther) return [];
+    return getReinsurersForCountry(country);
+  }, [country, countryIsOther]);
+
+  // When country changes, reset company if not in filtered list
+  useEffect(() => {
+    const list = companyOptions;
+    if (!list.includes(company)) {
+      // Prefer ZEP-RE if present; else first in list; else blank
+      const next = list.includes(DEFAULT_CLIENT) ? DEFAULT_CLIENT : (list[0] ?? '');
+      setCompany(next);
+      setValue('name_of_company', next, { shouldDirty: true });
+    }
+  }, [country, companyOptions, company, setValue]);
+
+  // Sync local state with form values on load
+  useEffect(() => {
+    if (!loading) {
+      setCountry(values.country || '');
+      setCompany(values.name_of_company || '');
+    }
+  }, [loading, values.country, values.name_of_company]);
+
   // Ensure lines of business resets if the current selection no longer matches the selected class
   useEffect(() => {
     const lines = selectedClass ? LINES_BY_CLASS[selectedClass] ?? [] : [];
@@ -516,19 +481,6 @@ export default function StepHeader() {
   return (
     <div className="rounded-xl border shadow-sm p-4 sm:p-6">
       <form className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Field label="Name of Company" error={errors.name_of_company?.message}>
-          <select 
-            className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} 
-            {...register('name_of_company')}
-          >
-            <option value="">Select a reinsurer</option>
-            {sortedClientOptions.map((client) => (
-              <option key={client} value={client}>
-                {client}
-              </option>
-            ))}
-          </select>
-        </Field>
         <Field label="Country" error={errors.country?.message}>
       <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
@@ -537,10 +489,12 @@ export default function StepHeader() {
               const v = e.target.value;
               if (v === OTHER) {
         setCountryIsOther(true);
-        setValue('country', '');
+        setCountry('');
+        setValue('country', '', { shouldDirty: true });
               } else {
         setCountryIsOther(false);
-        setValue('country', v);
+        setCountry(v);
+        setValue('country', v, { shouldDirty: true });
               }
             }}
           >
@@ -555,8 +509,38 @@ export default function StepHeader() {
             <option value={OTHER}>Other…</option>
           </select>
           {(countrySelectValue === OTHER || countryIsOther) && (
-            <input className="input mt-2" placeholder="Enter other country" {...register('country')} />
+            <input 
+              className="input mt-2" 
+              placeholder="Enter other country" 
+              value={country}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCountry(v);
+                setValue('country', v, { shouldDirty: true });
+              }}
+            />
           )}
+        </Field>
+        <Field label="Name of Company" error={errors.name_of_company?.message}>
+          <select 
+            className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+            value={company}
+            disabled={!country || countryIsOther}
+            onChange={(e) => {
+              const v = e.target.value;
+              setCompany(v);
+              setValue('name_of_company', v, { shouldDirty: true });
+            }}
+          >
+            <option value="" disabled>
+              {country && !countryIsOther ? 'Select a reinsurer' : 'Select a country first'}
+            </option>
+            {companyOptions.map((reinsurer) => (
+              <option key={reinsurer} value={reinsurer}>
+                {reinsurer}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="Currency (in std. units)" error={errors.currency_std_units?.message}>
       <select

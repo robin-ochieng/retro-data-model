@@ -48,7 +48,8 @@ describe('HomeStartCard', () => {
     renderComponent();
     
   expect(screen.getByRole('heading', { level: 3, name: /start new submission/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/client/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/name of company/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/year/i)).toBeInTheDocument();
     expect(screen.getByText(/preset class/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start new submission/i })).toBeInTheDocument();
@@ -80,23 +81,27 @@ describe('HomeStartCard', () => {
     });
   });
 
-  it('disables Start button when client or year is missing', () => {
+  it('disables Start button when country or client is missing', () => {
     renderComponent();
 
-    // Now that default client is selected, button should be enabled with year pre-filled
+    // Without selecting a country, button should be disabled (client will be empty)
     const startButton = screen.getByRole('button', { name: /start new submission/i });
-    // Button is enabled since both client (default ZEP-RE) and year (current year) are pre-filled
-    expect(startButton).not.toBeDisabled();
+    expect(startButton).toBeDisabled();
   });
 
-  it('enables Start button when client and year are provided', async () => {
+  it('enables Start button when country, client and year are provided', async () => {
     const user = userEvent.setup();
     renderComponent();
     
-    const clientSelect = screen.getByLabelText(/client/i);
+    const countrySelect = screen.getByLabelText(/country/i);
+    const clientSelect = screen.getByLabelText(/name of company/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
+  fireEvent.change(countrySelect, { target: { value: 'Kenya' } });
+  await waitFor(() => {
+    expect(clientSelect).not.toBeDisabled();
+  });
   fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
   fireEvent.change(yearInput, { target: { value: '2025' } });
 
@@ -126,10 +131,15 @@ describe('HomeStartCard', () => {
     
     renderComponent();
     
-    const clientSelect = screen.getByLabelText(/client/i);
+    const countrySelect = screen.getByLabelText(/country/i);
+    const clientSelect = screen.getByLabelText(/name of company/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
+  fireEvent.change(countrySelect, { target: { value: 'Kenya' } });
+  await waitFor(() => {
+    expect(clientSelect).not.toBeDisabled();
+  });
   fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
   fireEvent.change(yearInput, { target: { value: '2025' } });
     await waitFor(() => {
@@ -156,11 +166,16 @@ describe('HomeStartCard', () => {
     
     renderComponent();
     
-    const clientSelect = screen.getByLabelText(/client/i);
+    const countrySelect = screen.getByLabelText(/country/i);
+    const clientSelect = screen.getByLabelText(/name of company/i);
     const yearInput = screen.getByLabelText(/year/i);
     const propertyChip = screen.getByText('Marine & Aviation');
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
+  fireEvent.change(countrySelect, { target: { value: 'Kenya' } });
+  await waitFor(() => {
+    expect(clientSelect).not.toBeDisabled();
+  });
   fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
   fireEvent.change(yearInput, { target: { value: '2025' } });
     await user.click(propertyChip);
@@ -190,10 +205,15 @@ describe('HomeStartCard', () => {
     
     renderComponent();
     
-    const clientSelect = screen.getByLabelText(/client/i);
+    const countrySelect = screen.getByLabelText(/country/i);
+    const clientSelect = screen.getByLabelText(/name of company/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
+  fireEvent.change(countrySelect, { target: { value: 'Kenya' } });
+  await waitFor(() => {
+    expect(clientSelect).not.toBeDisabled();
+  });
   fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
   fireEvent.change(yearInput, { target: { value: '2025' } });
     await waitFor(() => {
@@ -215,10 +235,15 @@ describe('HomeStartCard', () => {
     
     renderComponent();
     
-    const clientSelect = screen.getByLabelText(/client/i);
+    const countrySelect = screen.getByLabelText(/country/i);
+    const clientSelect = screen.getByLabelText(/name of company/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
+  fireEvent.change(countrySelect, { target: { value: 'Kenya' } });
+  await waitFor(() => {
+    expect(clientSelect).not.toBeDisabled();
+  });
   fireEvent.change(clientSelect, { target: { value: 'ZEP-RE (PTA Reinsurance Company)' } });
   fireEvent.change(yearInput, { target: { value: '2025' } });
     await waitFor(() => {

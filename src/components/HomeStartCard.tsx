@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSubmission } from '../lib/supabase';
 import { useAuth } from '../auth/AuthContext';
-import { CLIENT_OPTIONS, DEFAULT_CLIENT, type ClientOption } from '../data/clients';
+import { REINSURERS_BY_COUNTRY, DEFAULT_CLIENT, getCountries, getReinsurersForCountry } from '../data/reinsurersByCountry';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 
 const PRESETS = [
@@ -28,21 +28,31 @@ type Preset = typeof PRESETS[number];
 export function HomeStartCard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [client, setClient] = useState<ClientOption | ''>(DEFAULT_CLIENT);
+  const [country, setCountry] = useState<string>('');
+  const [client, setClient] = useState<string>('');
   const [year, setYear] = useState<number | ''>(new Date().getFullYear());
   const [presetCob, setPresetCob] = useState<Preset | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sort options: default first, then A→Z with accent-aware collation
-  const sortedOptions = useMemo(() => {
-    const defaultOption = CLIENT_OPTIONS.find(o => o === DEFAULT_CLIENT);
-    const remaining = CLIENT_OPTIONS
-      .filter(o => o !== DEFAULT_CLIENT)
-      .slice()
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    return defaultOption ? [defaultOption, ...remaining] : remaining;
-  }, []);
+  // Get sorted country options
+  const countryOptions = useMemo(() => getCountries(), []);
+  
+  // Compute available reinsurers based on selected country
+  const companyOptions = useMemo(() => {
+    if (!country) return [];
+    return getReinsurersForCountry(country);
+  }, [country]);
+
+  // When country changes, reset company if not in filtered list
+  useEffect(() => {
+    const list = companyOptions;
+    if (!list.includes(client)) {
+      // Prefer ZEP-RE if present; else first in list; else blank
+      const next = list.includes(DEFAULT_CLIENT) ? DEFAULT_CLIENT : (list[0] ?? '');
+      setClient(next);
+    }
+  }, [country, companyOptions, client]);
 
   async function onStart() {
     if (!client || !year) return;
@@ -87,19 +97,44 @@ export function HomeStartCard() {
           Start New Submission
         </h3>
 
-      {/* Client */}
-      <label htmlFor="client-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Client
+      {/* Country */}
+      <label htmlFor="country-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Country
       </label>
       <select
-        id="client-select"
-        value={client}
-        onChange={(e) => setClient(e.target.value as ClientOption | '')}
+        id="country-select"
+        value={country}
+        onChange={(e) => setCountry(e.target.value)}
         className="mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         required
         disabled={loading}
       >
-        {sortedOptions.map((opt) => (
+        <option value="" disabled className="text-gray-900 dark:text-gray-100">
+          Select a country
+        </option>
+        {countryOptions.map((c) => (
+          <option key={c} value={c} className="text-gray-900 dark:text-gray-100">
+            {c}
+          </option>
+        ))}
+      </select>
+
+      {/* Client */}
+      <label htmlFor="client-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Name of Company
+      </label>
+      <select
+        id="client-select"
+        value={client}
+        onChange={(e) => setClient(e.target.value)}
+        className="mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        required
+        disabled={loading || !country}
+      >
+        <option value="" disabled className="text-gray-900 dark:text-gray-100">
+          {country ? 'Select a reinsurer' : 'Select a country first'}
+        </option>
+        {companyOptions.map((opt) => (
           <option key={opt} value={opt} className="text-gray-900 dark:text-gray-100">
             {opt}
           </option>
