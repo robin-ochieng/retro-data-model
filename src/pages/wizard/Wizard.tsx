@@ -123,11 +123,43 @@ function WizardShell() {
   }
 
   const onNext = () => {
-    const next = currentIndex + 1;
-    if (next < tabs.length) {
-  const t = tabs[next];
-  if (t) navigate(`${basePath}/${t.key}`, { replace: false });
-    }
+    // Before navigating away from header, ensure Claims Period is valid
+    const validateAndNavigate = async () => {
+      if (normalizedTabKey === 'header') {
+        try {
+          const { data, error } = await supabase
+            .from('sheet_blobs')
+            .select('payload')
+            .eq('submission_id', submissionId)
+            .eq('sheet_name', 'Header')
+            .maybeSingle();
+          if (error) throw error;
+          const payload = (data?.payload || {}) as any;
+          const s = payload.claims_period_start || '';
+          const e = payload.claims_period_end || '';
+          if (!s || !e) {
+            alert('Please provide both Claims Period start and end dates before continuing.');
+            return;
+          }
+          const sd = new Date(s);
+          const ed = new Date(e);
+          if (!sd || !ed || Number.isNaN(sd.getTime()) || Number.isNaN(ed.getTime()) || ed < sd) {
+            alert('Claims Period end date must be after or equal to the start date. Please correct it before continuing.');
+            return;
+          }
+        } catch (err: any) {
+          console.warn('Header validation failed', err);
+          alert('Unable to validate header claims period. Please try again.');
+          return;
+        }
+      }
+      const next = currentIndex + 1;
+      if (next < tabs.length) {
+        const t = tabs[next];
+        if (t) navigate(`${basePath}/${t.key}`, { replace: false });
+      }
+    };
+    void validateAndNavigate();
   };
   const onPrev = () => {
     const prev = currentIndex - 1;
@@ -141,6 +173,34 @@ function WizardShell() {
 
   async function onSubmitFinal() {
     if (!submissionId) return;
+    // Validate header claims period before final submit
+    try {
+      const { data, error } = await supabase
+        .from('sheet_blobs')
+        .select('payload')
+        .eq('submission_id', submissionId)
+        .eq('sheet_name', 'Header')
+        .maybeSingle();
+      if (error) throw error;
+  const payload = (data?.payload || {}) as any;
+  const s = payload.claims_period_start || '';
+  const e = payload.claims_period_end || '';
+      if (!s || !e) {
+        alert('Please provide both Claims Period start and end dates before submitting.');
+        return;
+      }
+      const sd = new Date(s);
+      const ed = new Date(e);
+      if (!sd || !ed || Number.isNaN(sd.getTime()) || Number.isNaN(ed.getTime()) || ed < sd) {
+        alert('Claims Period end date must be after or equal to the start date. Please correct it before submitting.');
+        return;
+      }
+    } catch (err: any) {
+      console.warn('Header validation failed', err);
+      alert('Unable to validate header claims period. Please try again.');
+      return;
+    }
+
     const upd = await supabase.from('submissions').update({ status: 'submitted' }).eq('id', submissionId);
     if (upd.error) {
       alert(`Error: ${upd.error.message}`);

@@ -457,11 +457,18 @@ export default function StepHeader() {
       setError('Claims Period: End date must be after start date');
       return; // Block save
     }
+    // Ensure we include a combined `claims_period` string for legacy Excel mapping
+    const combinedClaimsPeriod = (val.claims_period_start && val.claims_period_end)
+      ? `${val.claims_period_start} to ${val.claims_period_end}`
+      : (val.claims_period_start || val.claims_period_end || '');
+
+    const payloadToSave = { ...val, claims_period: combinedClaimsPeriod } as any;
+
     // Upsert by (submission_id, sheet_name) with robust fallback when PK is missing
     const res = await supabase
       .from('sheet_blobs')
       .upsert(
-        [{ submission_id: submissionId, sheet_name: SHEET, payload: val }],
+        [{ submission_id: submissionId, sheet_name: SHEET, payload: payloadToSave }],
         { onConflict: 'submission_id,sheet_name' }
       );
     if (res.error && /no unique or exclusion constraint/i.test(String(res.error.message))) {
@@ -576,23 +583,32 @@ export default function StepHeader() {
           <input className={`input ${errors.expiry_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('expiry_date')} />
         </Field>
         <Field label="Claims Period" hint="Select a start and end date">
-          <div className="flex gap-2 items-center">
-            <input
-              type="date"
-              className={`input ${errors.claims_period_start ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
-              {...register('claims_period_start')}
-            />
-            <span className="text-gray-500">to</span>
-            <input
-              type="date"
-              className={`input ${errors.claims_period_end ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
-              {...register('claims_period_end')}
-            />
+          <div className="grid grid-cols-2 gap-2 items-start">
+            <label className="block">
+              <span className="block text-xs text-gray-600 mb-1">from</span>
+              <input
+                type="date"
+                className={`input ${errors.claims_period_start ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+                {...register('claims_period_start')}
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs text-gray-600 mb-1">to</span>
+              <input
+                type="date"
+                className={`input ${errors.claims_period_end ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+                {...register('claims_period_end')}
+              />
+            </label>
           </div>
           {(errors.claims_period_start || errors.claims_period_end) && (
             <div className="text-xs text-red-600 mt-1">
               {errors.claims_period_start?.message || errors.claims_period_end?.message}
             </div>
+          )}
+          {/* Additional inline helper when end < start (Zod adds message to claims_period_end) */}
+          {errors.claims_period_end && (
+            <div className="text-xs text-red-700 mt-1">{errors.claims_period_end.message}</div>
           )}
         </Field>
         <Field label="Class of Business">
