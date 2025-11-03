@@ -200,7 +200,8 @@ describe('Header tab DB wiring', () => {
     const user = userEvent.setup();
     renderWithProviders(<StepHeader />);
     const nameSelect = await screen.findByLabelText('Name of Company');
-    await user.selectOptions(nameSelect, 'APA Insurance Kenya Limited');
+    // Use a valid reinsurer from the new list
+    await user.selectOptions(nameSelect, 'Kenya Reinsurance Corporation');
 
   await waitFor(() => {
       const saved = screen.getByText(/Saved at/i);
@@ -218,7 +219,7 @@ describe('Header tab DB wiring', () => {
     const match = allCalls.find((args) => {
       const recs = (args?.[0] ?? []) as Array<any>;
       const rec = recs[0] ?? {};
-      return rec?.payload?.name_of_company === 'APA Insurance Kenya Limited';
+      return rec?.payload?.name_of_company === 'Kenya Reinsurance Corporation';
     });
     expect(match, 'expected an upsert call with updated company name').toBeTruthy();
     const records = (match?.[0] ?? []) as Array<any>;
@@ -230,7 +231,7 @@ describe('Header tab DB wiring', () => {
     expect(rec.submission_id).toBe('TEST-ID');
     expect(rec.sheet_name).toBe('Header');
     expect(rec.payload).toMatchObject({
-      name_of_company: 'APA Insurance Kenya Limited',
+      name_of_company: 'Kenya Reinsurance Corporation',
       treaty_type: 'Quota Share Treaty',
       currency_std_units: 'USD',
     });

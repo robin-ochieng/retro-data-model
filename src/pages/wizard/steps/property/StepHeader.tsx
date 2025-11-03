@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { useSubmissionMeta } from '../../SubmissionMetaContext';
-import { CLIENT_OPTIONS, type ClientOption } from '../../../../data/clients';
+import { CLIENT_OPTIONS, DEFAULT_CLIENT, type ClientOption } from '../../../../data/clients';
 const OTHER = '__OTHER__';
 
 // Allowed countries for dropdown (African countries)
@@ -279,6 +279,16 @@ export default function StepHeader() {
   const [linesIsOther, setLinesIsOther] = useState(false);
   const [treatyIsOther, setTreatyIsOther] = useState(false);
 
+  // Sort client options: default first, then A→Z
+  const sortedClientOptions = useMemo(() => {
+    const defaultOption = CLIENT_OPTIONS.find(o => o === DEFAULT_CLIENT);
+    const remaining = CLIENT_OPTIONS
+      .filter(o => o !== DEFAULT_CLIENT)
+      .slice()
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return defaultOption ? [defaultOption, ...remaining] : remaining;
+  }, []);
+
   const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<FormValues>({
     resolver: zodResolver(Schema),
     mode: 'onChange',
@@ -511,8 +521,8 @@ export default function StepHeader() {
             className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`} 
             {...register('name_of_company')}
           >
-            <option value="">ZEP-RE (PTA Reinsurance Company)</option>
-            {CLIENT_OPTIONS.map((client) => (
+            <option value="">Select a reinsurer</option>
+            {sortedClientOptions.map((client) => (
               <option key={client} value={client}>
                 {client}
               </option>

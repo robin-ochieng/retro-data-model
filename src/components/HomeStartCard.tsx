@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSubmission } from '../lib/supabase';
 import { useAuth } from '../auth/AuthContext';
-import { CLIENT_OPTIONS, type ClientOption } from '../data/clients';
+import { CLIENT_OPTIONS, DEFAULT_CLIENT, type ClientOption } from '../data/clients';
 import { getFirstTabKey, type LobKey } from '../config/lobConfig';
 
 const PRESETS = [
@@ -28,11 +28,21 @@ type Preset = typeof PRESETS[number];
 export function HomeStartCard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [client, setClient] = useState<ClientOption | ''>('');
+  const [client, setClient] = useState<ClientOption | ''>(DEFAULT_CLIENT);
   const [year, setYear] = useState<number | ''>(new Date().getFullYear());
   const [presetCob, setPresetCob] = useState<Preset | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sort options: default first, then A→Z with accent-aware collation
+  const sortedOptions = useMemo(() => {
+    const defaultOption = CLIENT_OPTIONS.find(o => o === DEFAULT_CLIENT);
+    const remaining = CLIENT_OPTIONS
+      .filter(o => o !== DEFAULT_CLIENT)
+      .slice()
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return defaultOption ? [defaultOption, ...remaining] : remaining;
+  }, []);
 
   async function onStart() {
     if (!client || !year) return;
@@ -85,18 +95,11 @@ export function HomeStartCard() {
         id="client-select"
         value={client}
         onChange={(e) => setClient(e.target.value as ClientOption | '')}
-        className={`mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-          client === '' 
-            ? 'text-gray-400 dark:text-gray-500' 
-            : 'text-gray-900 dark:text-gray-100'
-        }`}
+        className="mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         required
         disabled={loading}
       >
-        <option value="" disabled className="text-gray-400 dark:text-gray-500">
-          ZEP-RE (PTA Reinsurance Company)
-        </option>
-        {CLIENT_OPTIONS.map((opt) => (
+        {sortedOptions.map((opt) => (
           <option key={opt} value={opt} className="text-gray-900 dark:text-gray-100">
             {opt}
           </option>
