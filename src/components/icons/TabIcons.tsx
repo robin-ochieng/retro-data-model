@@ -15,6 +15,7 @@ import {
   SquareStack,
   ListChecks,
   CircleDollarSign,
+  FileText,
 } from 'lucide-react';
 
 // Map wizard tab keys to Lucide icons.
@@ -45,6 +46,7 @@ export const TAB_ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVG
   'motor-rate-development': TrendingUp,
   'max-uw-limit-dev': SquareStack,
   'number-of-risks-dev': ListChecks,
+  'reinsurance-certificate': FileText,
 };
 
 // Minimal inline Sun icon to avoid pulling another package
