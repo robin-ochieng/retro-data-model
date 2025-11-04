@@ -130,8 +130,9 @@ describe('StepReinsuranceCertificate', () => {
       });
     });
 
-    it('rejects invalid file types', async () => {
+    it('displays error message when upload fails with validation error', async () => {
       const user = userEvent.setup();
+      // Mock uploadCertificate to return error (simulating server-side validation)
       (uploadCertModule.uploadCertificate as any).mockResolvedValue({
         success: false,
         error: 'Invalid file type. Only PDF, DOC, and DOCX files are allowed.',
@@ -143,13 +144,16 @@ describe('StepReinsuranceCertificate', () => {
         </BrowserRouter>
       );
 
-      const file = new File(['mock content'], 'certificate.txt', { type: 'text/plain' });
+      // Use a valid file extension that passes client-side accept attribute
+      // but simulates server-side rejection
+      const file = new File(['mock content'], 'certificate.pdf', { type: 'application/pdf' });
       const input = screen.getByLabelText(/browse files/i).closest('label')?.querySelector('input');
       
       if (input) {
         await user.upload(input, file);
       }
 
+      // Wait for error message to appear
       await waitFor(() => {
         expect(screen.getByText(/invalid file type/i)).toBeInTheDocument();
       });

@@ -15,11 +15,12 @@ const EXPECTED_PROPERTY_KEYS = [
   'cat-loss-list',
   'cresta-zone-control',
   'climate-exposure',
+  'reinsurance-certificate',
   'submit',
 ] as const;
 
 describe('property tab ordering', () => {
-  it('matches the required 13-step sequence with submit preserved last', () => {
+  it('matches the required 14-step sequence with submit preserved last', () => {
     expect(propertyTabs.map((tab) => tab.key)).toEqual(EXPECTED_PROPERTY_KEYS);
   });
 

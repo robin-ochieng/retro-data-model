@@ -132,14 +132,16 @@ describe('Wizard property routing', () => {
 
     const activeLink = screen.getByRole('link', { current: 'page' });
     expect(activeLink).toHaveAttribute('href', '/wizard/property/123/triangulation');
-    expect(screen.getByText('Progress: 36%')).toBeInTheDocument();
+    // Updated to reflect 14 tabs instead of 13 (added Reinsurance Certificate tab)
+    expect(screen.getByText('Progress: 33%')).toBeInTheDocument();
 
     const navLabels = screen
       .getAllByRole('link')
       .map((link) => link.textContent?.trim())
       .filter(Boolean);
 
-    expect(navLabels.slice(0, 13)).toEqual([
+    // Updated to include new Reinsurance Certificate tab (14 tabs total)
+    expect(navLabels.slice(0, 14)).toEqual([
       'Client Details',
       'EPI Summary',
       'UW Limit',
@@ -153,6 +155,7 @@ describe('Wizard property routing', () => {
       'Cat Loss List',
       'Cresta Zone Control',
       'Climate change exposure',
+      'Reinsurance Certificate',
     ]);
   });
 
