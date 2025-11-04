@@ -42,11 +42,11 @@ describe('getVisibleTabs', () => {
     expect(visible).toHaveLength(MOCK_PROPERTY_TABS.length - 1);
   });
 
-  it('Facultative Obligatory hides BOTH stats tabs', () => {
+  it('Facultative Obligatory shows BOTH stats tabs', () => {
     const visible = getVisibleTabs(TREATY.FAC_OBLIG, MOCK_PROPERTY_TABS);
-    expect(visible.find(t => t.key === 'treaty-stats-nonprop')).toBeUndefined();
-    expect(visible.find(t => t.key === 'treaty-stats-prop')).toBeUndefined();
-    expect(visible).toHaveLength(MOCK_PROPERTY_TABS.length - 2);
+    expect(visible.find(t => t.key === 'treaty-stats-nonprop')).toBeDefined();
+    expect(visible.find(t => t.key === 'treaty-stats-prop')).toBeDefined();
+    expect(visible).toHaveLength(MOCK_PROPERTY_TABS.length);
   });
 
   it('XL hides Prop stats only', () => {

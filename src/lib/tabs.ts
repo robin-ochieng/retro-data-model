@@ -7,7 +7,7 @@ import { PROP_TREATIES, NONPROP_TREATIES } from '../constants/treaties';
  * Rules:
  * - Quota Share or Surplus → hide "Treaty Statistics (Non-Prop)"
  * - CAT XOL, XL, or Stop Loss → hide "Treaty Statistics (Prop)"
- * - Facultative Obligatory → hides BOTH stats tabs
+ * - Facultative Obligatory → shows BOTH stats tabs (no hiding)
  * 
  * @param treatyType - The selected treaty type from Client Details
  * @param allTabs - The full list of tabs for the current LOB

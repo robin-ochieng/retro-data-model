@@ -18,7 +18,6 @@ export type TreatyType = typeof TREATY[keyof typeof TREATY];
 export const PROP_TREATIES: readonly string[] = [
   TREATY.QUOTA_SHARE,
   TREATY.SURPLUS,
-  TREATY.FAC_OBLIG,
 ] as const;
 
 /**
@@ -28,5 +27,4 @@ export const NONPROP_TREATIES: readonly string[] = [
   TREATY.CAT_XOL,
   TREATY.XL,
   TREATY.STOP_LOSS,
-  TREATY.FAC_OBLIG,
 ] as const;
