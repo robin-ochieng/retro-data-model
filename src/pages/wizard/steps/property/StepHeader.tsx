@@ -73,6 +73,7 @@ const TREATY_TYPES = [
   'Surplus Treaty',
   'Facultative Obligatory',
   'Excess of Loss (XL) Treaty',
+  'CAT XOL (Catastrophe XL)',
   'Stop Loss Treaty',
 ];
 
@@ -681,11 +682,7 @@ export default function StepHeader() {
             {TREATY_TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
-            <option value={OTHER}>Other…</option>
           </select>
-          {(treatySelectValue === OTHER || treatyIsOther) && (
-            <input className="input mt-2" placeholder="Enter other treaty type" {...register('treaty_type')} />
-          )}
         </Field>
         <div className="md:col-span-2">
           <Field label="Additional Comments">
