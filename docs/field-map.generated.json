@@ -282,6 +282,11 @@
       ]
     },
     {
+      "tabKey": "reinsurance-certificate",
+      "sheetName": "Reinsurance Certificate",
+      "storage": []
+    },
+    {
       "tabKey": "submit",
       "sheetName": "Submit",
       "storage": []

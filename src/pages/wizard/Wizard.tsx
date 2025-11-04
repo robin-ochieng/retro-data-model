@@ -31,6 +31,7 @@ import StepTriangulation from './steps/property/StepTriangulation';
 import StepCrestaZoneControl from './steps/property/StepCrestaZoneControl';
 import StepTop20Risks from './steps/property/StepTop20Risks';
 import StepClimateExposure from './steps/property/StepClimateExposure';
+import { StepReinsuranceCertificate } from './steps/StepReinsuranceCertificate';
 import CasualtyLargeLossTriangulation from './steps/casualty/StepLargeLossTriangulation';
 import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriangulation';
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
@@ -416,6 +417,8 @@ function WizardContent({
                     <StepTop20Risks />
                   ) : t.component === 'ClimateExposure' ? (
                     <StepClimateExposure />
+                  ) : t.component === 'ReinsuranceCertificate' ? (
+                    <StepReinsuranceCertificate />
                   ) : t.component === 'CasualtyTreatyStatsProp' ? (
                     <CasualtyTreatyStatsProp />
                   ) : t.component === 'CasualtyTreatyStatsPropCC' ? (

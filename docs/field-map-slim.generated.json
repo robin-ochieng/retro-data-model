@@ -67,6 +67,11 @@
       "excelColumns": {}
     },
     {
+      "tabKey": "reinsurance-certificate",
+      "sheetName": "Reinsurance Certificate",
+      "excelColumns": {}
+    },
+    {
       "tabKey": "submit",
       "sheetName": "Submit",
       "excelColumns": {}

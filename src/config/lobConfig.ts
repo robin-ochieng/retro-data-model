@@ -16,6 +16,7 @@ export type SheetComponentKey =
   | 'CrestaZoneControl'
   | 'Top20Risks'
   | 'ClimateExposure'
+  | 'ReinsuranceCertificate'
   // Casualty-specific components
   | 'CasualtyTreatyStatsProp'
   | 'CasualtyTreatyStatsPropCC'
@@ -52,6 +53,7 @@ export const propertyTabs: SheetTab[] = [
   { key: 'cat-loss-list', label: 'Cat Loss List', component: 'CatLossList' },
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
   { key: 'climate-exposure', label: 'Climate change exposure', component: 'ClimateExposure' },
+  { key: 'reinsurance-certificate', label: 'Reinsurance Certificate', component: 'ReinsuranceCertificate' },
   { key: 'submit', label: 'Submit', component: 'Submit' },
 ];
 
@@ -75,6 +77,7 @@ export const casualtyTabs: SheetTab[] = [
   { key: 'aggregate-triangulation', label: 'Aggregate Triangulation', component: 'CasualtyAggregateTriangulation' },
   { key: 'cat-loss-triangulation', label: 'CAT Loss Triangulation', component: 'CasualtyCatLossTriangulation' },
   { key: 'cresta-zone-control', label: 'Cresta Zone Control', component: 'CrestaZoneControl' },
+  { key: 'reinsurance-certificate', label: 'Reinsurance Certificate', component: 'ReinsuranceCertificate' },
   { key: 'submit', label: 'Submit', component: 'Submit' },
 ];
 
