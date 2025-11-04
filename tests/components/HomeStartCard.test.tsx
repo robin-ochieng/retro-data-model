@@ -49,7 +49,7 @@ describe('HomeStartCard', () => {
     
   expect(screen.getByRole('heading', { level: 3, name: /start new submission/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/country/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/name of company/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/name of reinsurer/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/year/i)).toBeInTheDocument();
     expect(screen.getByText(/preset class/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start new submission/i })).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe('HomeStartCard', () => {
     renderComponent();
     
     const countrySelect = screen.getByLabelText(/country/i);
-    const clientSelect = screen.getByLabelText(/name of company/i);
+    const clientSelect = screen.getByLabelText(/name of reinsurer/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
@@ -132,7 +132,7 @@ describe('HomeStartCard', () => {
     renderComponent();
     
     const countrySelect = screen.getByLabelText(/country/i);
-    const clientSelect = screen.getByLabelText(/name of company/i);
+    const clientSelect = screen.getByLabelText(/name of reinsurer/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
@@ -167,7 +167,7 @@ describe('HomeStartCard', () => {
     renderComponent();
     
     const countrySelect = screen.getByLabelText(/country/i);
-    const clientSelect = screen.getByLabelText(/name of company/i);
+    const clientSelect = screen.getByLabelText(/name of reinsurer/i);
     const yearInput = screen.getByLabelText(/year/i);
     const propertyChip = screen.getByText('Marine & Aviation');
     const startButton = screen.getByRole('button', { name: /start new submission/i });
@@ -206,7 +206,7 @@ describe('HomeStartCard', () => {
     renderComponent();
     
     const countrySelect = screen.getByLabelText(/country/i);
-    const clientSelect = screen.getByLabelText(/name of company/i);
+    const clientSelect = screen.getByLabelText(/name of reinsurer/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 
@@ -236,7 +236,7 @@ describe('HomeStartCard', () => {
     renderComponent();
     
     const countrySelect = screen.getByLabelText(/country/i);
-    const clientSelect = screen.getByLabelText(/name of company/i);
+    const clientSelect = screen.getByLabelText(/name of reinsurer/i);
     const yearInput = screen.getByLabelText(/year/i);
     const startButton = screen.getByRole('button', { name: /start new submission/i });
 

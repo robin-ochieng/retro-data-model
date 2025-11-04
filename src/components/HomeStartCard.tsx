@@ -121,7 +121,7 @@ export function HomeStartCard() {
 
       {/* Client */}
       <label htmlFor="client-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Name of Company
+        Name of Reinsurer
       </label>
       <select
         id="client-select"
@@ -130,6 +130,7 @@ export function HomeStartCard() {
         className="mb-3 w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         required
         disabled={loading || !country}
+        aria-label="Name of Reinsurer"
       >
         <option value="" disabled className="text-gray-900 dark:text-gray-100">
           {country ? 'Select a reinsurer' : 'Select a country first'}

@@ -205,7 +205,7 @@ describe('Header tab DB wiring', () => {
     await user.selectOptions(countrySelect, 'Kenya');
     
     // Wait for company dropdown to be enabled
-    const nameSelect = await screen.findByLabelText('Name of Company');
+    const nameSelect = await screen.findByLabelText('Name of Reinsurer');
     await waitFor(() => {
       expect(nameSelect).not.toBeDisabled();
     });

@@ -522,11 +522,12 @@ export default function StepHeader() {
             />
           )}
         </Field>
-        <Field label="Name of Company" error={errors.name_of_company?.message}>
+        <Field label="Name of Reinsurer" error={errors.name_of_company?.message}>
           <select 
             className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={company}
             disabled={!country || countryIsOther}
+            aria-label="Name of Reinsurer"
             onChange={(e) => {
               const v = e.target.value;
               setCompany(v);
