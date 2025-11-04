@@ -37,6 +37,7 @@ import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulat
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
 import { SubmissionMetaProvider, useSubmissionMeta } from './SubmissionMetaContext';
 import { TAB_ICONS } from '../../components/icons/TabIcons';
+import { getVisibleTabs, isTabVisible, getFirstVisibleTabKey } from '../../lib/tabs';
 
 const LEGACY_PROPERTY_ORDER: readonly string[] = [
   'header',
@@ -254,7 +255,26 @@ function WizardContent({
   user: any;
   signOut: () => void;
 }) {
-  const { classOfBusiness, lineOfBusiness, isReadOnly } = useSubmissionMeta();
+  const { classOfBusiness, lineOfBusiness, isReadOnly, treatyType } = useSubmissionMeta();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Compute visible tabs based on treaty type
+  const visibleTabs = React.useMemo(() => getVisibleTabs(treatyType, tabs), [treatyType, tabs]);
+  
+  // Get current tab key from location
+  const currentTabKey = React.useMemo(() => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    return pathSegments[pathSegments.length - 1];
+  }, [location.pathname]);
+  
+  // Auto-navigate to first visible tab if current tab becomes hidden
+  React.useEffect(() => {
+    if (!isTabVisible(currentTabKey, visibleTabs)) {
+      const firstVisible = getFirstVisibleTabKey(visibleTabs);
+      navigate(`${basePath}/${firstVisible}`, { replace: true });
+    }
+  }, [currentTabKey, visibleTabs, basePath, navigate]);
   
   // Fetch submission status from context or default to 'in_progress'
   const [submissionStatus, setSubmissionStatus] = React.useState<string>('in_progress');
@@ -312,7 +332,7 @@ function WizardContent({
         {/* Left tabs */}
         <aside className="md:sticky md:top-20 self-start">
           <nav className="flex md:block gap-2 overflow-x-auto pb-2 md:pb-0">
-      {tabs.map((t) => (
+      {visibleTabs.map((t) => (
               <NavLink
                 key={t.key}
         to={`${basePath}/${t.key}`}
