@@ -9,6 +9,7 @@ import { NumberCell } from '../../../../components/table/NumberCell';
 import { PercentCell } from '../../../../components/table/PercentCell';
 import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
 import { parseNumericInput, parsePercentInput } from '../../../../lib/numberFormat';
+import { useViewMode } from '../../../../context/ViewMode';
 
 // Column schema matching the Excel screenshots
 // Allow negatives for all numeric fields
@@ -47,6 +48,7 @@ const defaultRow: Band = {
 
 export default function StepRiskProfile() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   type Section = 'gross_pml' | 'gross_turnover' | 'net_pml' | 'net_turnover';
   
   // Table refs for auto-sizing
@@ -308,13 +310,15 @@ export default function StepRiskProfile() {
     return (
       <div className="space-y-3">
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onPaste}
-            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-          >
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button
+              type="button"
+              onClick={onPaste}
+              className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Paste from Excel
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto w-full">
           <table
@@ -343,6 +347,7 @@ export default function StepRiskProfile() {
                       value={row.lower_limit}
                       onChange={(v) => onChange(section)(idx, 'lower_limit', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -350,6 +355,7 @@ export default function StepRiskProfile() {
                       value={row.upper_limit}
                       onChange={(v) => onChange(section)(idx, 'upper_limit', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -357,6 +363,7 @@ export default function StepRiskProfile() {
                       value={row.number_of_risk_items}
                       onChange={(v) => onChange(section)(idx, 'number_of_risk_items', v ?? 0)}
                       decimals={0}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -364,6 +371,7 @@ export default function StepRiskProfile() {
                       value={row.total_sum_insured_ex_vat}
                       onChange={(v) => onChange(section)(idx, 'total_sum_insured_ex_vat', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -371,6 +379,7 @@ export default function StepRiskProfile() {
                       value={row.total_annual_premiums_ex_vat}
                       onChange={(v) => onChange(section)(idx, 'total_annual_premiums_ex_vat', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -378,6 +387,7 @@ export default function StepRiskProfile() {
                       value={row.average_sum_insured_ex_vat}
                       onChange={(v) => onChange(section)(idx, 'average_sum_insured_ex_vat', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -385,6 +395,7 @@ export default function StepRiskProfile() {
                       value={row.average_premium_ex_vat}
                       onChange={(v) => onChange(section)(idx, 'average_premium_ex_vat', v ?? 0)}
                       decimals={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -392,17 +403,20 @@ export default function StepRiskProfile() {
                       value={row.average_rate}
                       onChange={(v) => onChange(section)(idx, 'average_rate', v ?? 0)}
                       digits={2}
+                      readOnly={isViewMode}
                     />
                   </td>
                   <td className="px-2 py-1">
-                    <button
-                      type="button"
-                      onClick={() => onRemoveRow(section)(idx)}
-                      disabled={rows.length === 1}
-                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Remove
-                    </button>
+                    {!isViewMode && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveRow(section)(idx)}
+                        disabled={rows.length === 1}
+                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -410,13 +424,15 @@ export default function StepRiskProfile() {
           </table>
         </div>
         <div className="flex justify-between items-center">
-          <button
-            type="button"
-            onClick={onAddRow(section)}
-            className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Add Row
-          </button>
+          {!isViewMode && (
+            <button
+              type="button"
+              onClick={onAddRow(section)}
+              className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Add Row
+            </button>
+          )}
         </div>
       </div>
     );
@@ -467,11 +483,11 @@ export default function StepRiskProfile() {
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800 grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Retention</span>
-          <input type="text" className="input" placeholder="e.g. 5% or 1.5M" value={state.retention} onChange={(e) => setState(prev => ({ ...prev, retention: e.target.value }))} />
+          <input type="text" className="input" placeholder="e.g. 5% or 1.5M" value={state.retention} onChange={(e) => setState(prev => ({ ...prev, retention: e.target.value }))} disabled={isViewMode} />
         </label>
         <label className="block md:col-span-2">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
-          <textarea className="input" value={state.additional_comments} onChange={(e) => setState(prev => ({ ...prev, additional_comments: e.target.value }))} />
+          <textarea className="input" value={state.additional_comments} onChange={(e) => setState(prev => ({ ...prev, additional_comments: e.target.value }))} disabled={isViewMode} />
         </label>
         <div className="md:col-span-2 text-right text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
       </div>

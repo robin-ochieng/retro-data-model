@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { useViewMode } from '../../../../context/ViewMode';
 import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { NumberCell } from '../../../../components/table/NumberCell';
@@ -19,6 +20,7 @@ const SHEET = 'UW Limit';
 
 export default function StepUwLimit() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [rows, setRows] = useState<Row[]>([{ risk_code: '', limit: null }]);
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [additionalComments, setAdditionalComments] = useState('');
@@ -165,9 +167,11 @@ export default function StepUwLimit() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">UW Limit</h3>
           <div className="flex gap-2 items-center">
-            <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowPaste(true)}>
-              Paste from Excel
-            </button>
+            {!isViewMode && (
+              <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowPaste(true)}>
+                Paste from Excel
+              </button>
+            )}
             <div className="text-xs text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
           </div>
         </div>
@@ -193,6 +197,7 @@ export default function StepUwLimit() {
                         onChange={(e) => onChange(idx, 'risk_code', e.target.value)}
                         placeholder="Risk Code"
                         className="px-2 py-1 border rounded w-full"
+                        disabled={isViewMode}
                       />
                       {errors[idx]?.risk_code && (
                         <div className="text-xs text-red-600 mt-1">{errors[idx]!.risk_code}</div>
@@ -206,6 +211,7 @@ export default function StepUwLimit() {
                         onChange={(newValue) => onChange(idx, 'limit', newValue)}
                         decimals={2}
                         className="w-full"
+                        readOnly={isViewMode}
                       />
                       {errors[idx]?.limit && (
                         <div className="text-xs text-red-600 mt-1">{errors[idx]!.limit}</div>
@@ -213,14 +219,16 @@ export default function StepUwLimit() {
                     </div>
                   </td>
                   <td className="px-2 py-1">
-                    <button
-                      type="button"
-                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                      onClick={() => onRemoveRow(idx)}
-                      disabled={rows.length <= 1}
-                    >
-                      Remove
-                    </button>
+                    {!isViewMode && (
+                      <button
+                        type="button"
+                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        onClick={() => onRemoveRow(idx)}
+                        disabled={rows.length <= 1}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -229,19 +237,21 @@ export default function StepUwLimit() {
         </div>
 
         <div className="flex justify-between items-center mt-3">
-          <button
-            type="button"
-            className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
-            onClick={onAddRow}
-          >
-            Add Row
-          </button>
+          {!isViewMode && (
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+              onClick={onAddRow}
+            >
+              Add Row
+            </button>
+          )}
         </div>
       </div>
       <div className="rounded shadow p-4 bg-white dark:bg-gray-800">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
-          <textarea className="input" placeholder="Notes…" value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} />
+          <textarea className="input" placeholder="Notes…" value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} disabled={isViewMode} />
         </label>
         <div className="text-right text-sm text-gray-500 mt-2">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
       </div>

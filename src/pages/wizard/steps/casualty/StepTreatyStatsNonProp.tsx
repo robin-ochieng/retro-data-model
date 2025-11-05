@@ -9,6 +9,7 @@ import PasteModal from '../../../../components/PasteModal';
 import { NumberCell } from '../../../../components/table/NumberCell';
 import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
 import { parseNumericInput } from '../../../../lib/numberFormat';
+import { useViewMode } from '../../../../context/ViewMode';
 
 const RowSchema = z.object({
   year: z.number().int().min(1900).max(2100).optional(), // 4-digit year validation
@@ -48,6 +49,7 @@ const blankRow: z.infer<typeof RowSchema> = {
 
 export default function StepTreatyStatsNonPropCasualty() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const { control, register, reset, watch, setValue } = useForm<FormValues>({
@@ -155,7 +157,9 @@ export default function StepTreatyStatsNonPropCasualty() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Treaty Statistics (Non-Prop)</h2>
-        <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>Paste from Excel</button>
+        {!isViewMode && (
+          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>Paste from Excel</button>
+        )}
       </div>
       <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
         <div className={autoColumnClasses.container}>
@@ -188,6 +192,7 @@ export default function StepTreatyStatsNonPropCasualty() {
                             step="1"
                             pattern="^\d{4}$"
                             title="Enter a 4-digit year (1900-2100)"
+                            disabled={isViewMode}
                           />
                         </td>
                       );
@@ -202,6 +207,7 @@ export default function StepTreatyStatsNonPropCasualty() {
                             {...register(fieldName)}
                             className="px-2 py-1 border rounded w-full"
                             placeholder="Layer"
+                            disabled={isViewMode}
                           />
                         </td>
                       );
@@ -217,12 +223,15 @@ export default function StepTreatyStatsNonPropCasualty() {
                           }}
                           decimals={2}
                           className="w-full"
+                          readOnly={isViewMode}
                         />
                       </td>
                     );
                   })}
                   <td className="px-2 py-1">
-                    <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
+                    {!isViewMode && (
+                      <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => fa.remove(idx)} disabled={fa.fields.length <= 1}>Remove</button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -230,14 +239,16 @@ export default function StepTreatyStatsNonPropCasualty() {
           </table>
         </div>
         <div className="flex justify-between items-center mt-3">
-          <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => fa.append(blankRow)}>Add Row</button>
+          {!isViewMode && (
+            <button type="button" className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700" onClick={() => fa.append(blankRow)}>Add Row</button>
+          )}
           <div className="text-sm text-gray-500">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Autosaving…'}</div>
         </div>
       </div>
       <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
-          <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+          <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} disabled={isViewMode} />
         </label>
       </div>
   <PasteModal open={pasteOpen} onClose={() => setPasteOpen(false)} onApply={applyPaste} expectedColumns={13} title="Paste from Excel — Treaty Statistics (Non-Prop)" />
