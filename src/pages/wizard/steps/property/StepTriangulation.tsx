@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PasteModal from '../../../../components/PasteModal';
+import { useViewMode } from '../../../../context/ViewMode';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { parseCsv } from '../../../../utils/csv';
 import { parseNumericInput, parseYearInput } from '../../../../lib/formatUtils';
@@ -142,6 +143,7 @@ function diffGrids(existing: SectionGrid, computed: SectionGrid): GridDiff {
 
 export default function StepTriangulation() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [years, setYears] = useState<Array<number | null>>([]);
   const [sections, setSections] = useState(createEmptySectionState);
   const [sectionErrors, setSectionErrors] = useState<SectionErrorsState>(createEmptyErrorState);
@@ -602,12 +604,12 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.written_premium}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('written_premium', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('written_premium')}
-        onImportCsv={() => handleImportCsv('written_premium')}
+        onYearChange={isViewMode ? undefined : handleYearChange}
+        onValueChange={isViewMode ? undefined : (rowIdx, devMonth, value) => handleValueChange('written_premium', rowIdx, devMonth, value)}
+        onAddRow={isViewMode ? undefined : handleAddRow}
+        onRemoveRow={isViewMode ? undefined : handleRemoveRow}
+        onPaste={isViewMode ? undefined : () => setPasteOpenFor('written_premium')}
+        onImportCsv={isViewMode ? undefined : () => handleImportCsv('written_premium')}
         isSaving={isSaving}
         lastSavedAt={lastSaved}
         yearErrors={yearErrors}
@@ -619,12 +621,12 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.number_of_losses}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('number_of_losses', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('number_of_losses')}
-        onImportCsv={() => handleImportCsv('number_of_losses')}
+        onYearChange={isViewMode ? undefined : handleYearChange}
+        onValueChange={isViewMode ? undefined : (rowIdx, devMonth, value) => handleValueChange('number_of_losses', rowIdx, devMonth, value)}
+        onAddRow={isViewMode ? undefined : handleAddRow}
+        onRemoveRow={isViewMode ? undefined : handleRemoveRow}
+        onPaste={isViewMode ? undefined : () => setPasteOpenFor('number_of_losses')}
+        onImportCsv={isViewMode ? undefined : () => handleImportCsv('number_of_losses')}
         isSaving={isSaving}
         lastSavedAt={lastSaved}
         yearErrors={yearErrors}
@@ -636,12 +638,12 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.paid_losses}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('paid_losses', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('paid_losses')}
-        onImportCsv={() => handleImportCsv('paid_losses')}
+        onYearChange={isViewMode ? undefined : handleYearChange}
+        onValueChange={isViewMode ? undefined : (rowIdx, devMonth, value) => handleValueChange('paid_losses', rowIdx, devMonth, value)}
+        onAddRow={isViewMode ? undefined : handleAddRow}
+        onRemoveRow={isViewMode ? undefined : handleRemoveRow}
+        onPaste={isViewMode ? undefined : () => setPasteOpenFor('paid_losses')}
+        onImportCsv={isViewMode ? undefined : () => handleImportCsv('paid_losses')}
         isSaving={isSaving}
         lastSavedAt={lastSaved}
         yearErrors={yearErrors}
@@ -653,12 +655,12 @@ export default function StepTriangulation() {
         years={years}
         devMonths={DEV_MONTHS_VALUES}
         values={sections.loss_reserves}
-        onYearChange={handleYearChange}
-        onValueChange={(rowIdx, devMonth, value) => handleValueChange('loss_reserves', rowIdx, devMonth, value)}
-        onAddRow={handleAddRow}
-        onRemoveRow={handleRemoveRow}
-        onPaste={() => setPasteOpenFor('loss_reserves')}
-        onImportCsv={() => handleImportCsv('loss_reserves')}
+        onYearChange={isViewMode ? undefined : handleYearChange}
+        onValueChange={isViewMode ? undefined : (rowIdx, devMonth, value) => handleValueChange('loss_reserves', rowIdx, devMonth, value)}
+        onAddRow={isViewMode ? undefined : handleAddRow}
+        onRemoveRow={isViewMode ? undefined : handleRemoveRow}
+        onPaste={isViewMode ? undefined : () => setPasteOpenFor('loss_reserves')}
+        onImportCsv={isViewMode ? undefined : () => handleImportCsv('loss_reserves')}
         isSaving={isSaving}
         lastSavedAt={lastSaved}
         yearErrors={yearErrors}
