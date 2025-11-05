@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../lib/supabase';
 import { getEpiGwpSplit, getEpiSummaryMeta, upsertEpiSummaryMeta, replaceEpiGwpSplit } from '../../../lib/epi';
 import { useAutosave } from '../../../hooks/useAutosave';
+import { useViewMode } from '../../../context/ViewMode';
 import PasteModal from '../../../components/PasteModal';
 import { useSubmissionMeta } from '../SubmissionMetaContext';
 import { NumberCell } from '../../../components/table/NumberCell';
@@ -38,6 +39,7 @@ type FormValues = z.infer<typeof FormSchema>;
 export default function StepEpiSummary() {
   const { submissionId, lob } = useParams();
   const { treatyType, isReadOnly } = useSubmissionMeta();
+  const isViewMode = useViewMode();
   const lobLower = (lob ?? '').toLowerCase();
   const epiTableRef = useAutoColumnSize();
   const gwpTableRef = useAutoColumnSize();
@@ -227,13 +229,15 @@ export default function StepEpiSummary() {
       <div className={`${autoColumnClasses.container} bg-white dark:bg-gray-800 rounded shadow p-4`}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">Premium Summary (EPI)</h3>
-          <button
-            type="button"
-            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-            onClick={() => setPasteEpiOpen(true)}
-          >
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button
+              type="button"
+              className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+              onClick={() => setPasteEpiOpen(true)}
+            >
+              Paste from Excel
+            </button>
+          )}
         </div>
         <table ref={epiTableRef} className={`${autoColumnClasses.table} border rounded`}>
           <thead className="bg-gray-100 dark:bg-gray-700">
@@ -266,6 +270,7 @@ export default function StepEpiSummary() {
                   <input
                     {...register(`rows.${idx}.estimate_type`)}
                     className="px-2 py-1 border rounded w-full"
+                    disabled={isViewMode}
                   />
                   {errors.rows?.[idx]?.estimate_type && (
                     <span className="text-red-600 text-xs block mt-1">{errors.rows[idx].estimate_type.message}</span>
@@ -275,6 +280,7 @@ export default function StepEpiSummary() {
                   <input
                     {...register(`rows.${idx}.period_label`)}
                     className="px-2 py-1 border rounded w-full"
+                    disabled={isViewMode}
                   />
                 </td>
                 <td className={autoColumnClasses.tdNumeric}>
@@ -283,6 +289,7 @@ export default function StepEpiSummary() {
                     onChange={(val) => setValue(`rows.${idx}.epi_value`, val ?? 0, { shouldDirty: true })}
                     decimals={2}
                     disabled={isReadOnly}
+                    readOnly={isViewMode}
                     ariaLabel={`EPI Value for row ${idx + 1}`}
                   />
                   {errors.rows?.[idx]?.epi_value && (
@@ -290,14 +297,16 @@ export default function StepEpiSummary() {
                   )}
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={() => remove(idx)}
-                    disabled={fields.length <= 1}
-                  >
-                    Remove
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      type="button"
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      onClick={() => remove(idx)}
+                      disabled={fields.length <= 1}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -305,13 +314,15 @@ export default function StepEpiSummary() {
         </table>
       </div>
   <div className="flex justify-between items-center mt-4">
-        <button
-          type="button"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0 })}
-        >
-          Add Row
-        </button>
+        {!isViewMode && (
+          <button
+            type="button"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => append({ treaty_type: treatyType || 'Quota Share Treaty', programme: treatyType || 'Quota Share Treaty', estimate_type: '', period_label: '', epi_value: 0 })}
+          >
+            Add Row
+          </button>
+        )}
         <span className="text-gray-500 text-sm">
           {saveError ? (
             <span className="text-red-600">{saveError}</span>
@@ -327,13 +338,15 @@ export default function StepEpiSummary() {
       <div className={`${autoColumnClasses.container} bg-white dark:bg-gray-800 rounded shadow p-4`}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">GWP Split Per Section</h3>
-          <button
-            type="button"
-            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-            onClick={() => setPasteGwpOpen(true)}
-          >
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button
+              type="button"
+              className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+              onClick={() => setPasteGwpOpen(true)}
+            >
+              Paste from Excel
+            </button>
+          )}
         </div>
         <table ref={gwpTableRef} className={`${autoColumnClasses.table} border rounded`}>
           <thead className="bg-gray-100 dark:bg-gray-700">
@@ -347,7 +360,7 @@ export default function StepEpiSummary() {
             {gwpFields.map((field, idx) => (
               <tr key={field.id}>
                 <td className={autoColumnClasses.tdText}>
-                  <input {...register(`gwp_split.${idx}.section`)} className="px-2 py-1 border rounded w-full" />
+                  <input {...register(`gwp_split.${idx}.section`)} className="px-2 py-1 border rounded w-full" disabled={isViewMode} />
                   {errors.gwp_split?.[idx]?.section && (
                     <span className="text-red-600 text-xs block mt-1">{errors.gwp_split[idx].section?.message}</span>
                   )}
@@ -358,6 +371,7 @@ export default function StepEpiSummary() {
                     onChange={(val) => setValue(`gwp_split.${idx}.premium`, val ?? 0, { shouldDirty: true })}
                     decimals={2}
                     disabled={isReadOnly}
+                    readOnly={isViewMode}
                     ariaLabel={`Premium for ${watchedGwp?.[idx]?.section || `row ${idx + 1}`}`}
                   />
                   {errors.gwp_split?.[idx]?.premium && (
@@ -365,19 +379,23 @@ export default function StepEpiSummary() {
                   )}
                 </td>
                 <td className={autoColumnClasses.tdText}>
-                  <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => gwpRemove(idx)} disabled={gwpFields.length <= 1}>
-                    Remove
-                  </button>
+                  {!isViewMode && (
+                    <button type="button" className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600" onClick={() => gwpRemove(idx)} disabled={gwpFields.length <= 1}>
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="flex justify-between items-center mt-4">
-          <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => gwpAppend({ id: crypto.randomUUID(), section: '', premium: 0 })}>
-            Add Section
-          </button>
-        </div>
+        {!isViewMode && (
+          <div className="flex justify-between items-center mt-4">
+            <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => gwpAppend({ id: crypto.randomUUID(), section: '', premium: 0 })}>
+              Add Section
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Additional Comments */}
@@ -387,6 +405,7 @@ export default function StepEpiSummary() {
           <textarea
             className="input"
             placeholder="Any notes or guidance for this submission…"
+            disabled={isViewMode}
             {...register('additional_comments')}
           />
         </label>

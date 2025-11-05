@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAutosave } from '../../../hooks/useAutosave';
+import { useViewMode } from '../../../context/ViewMode';
 import { supabase } from '../../../lib/supabase';
 import FormTable from '../../../components/FormTable';
 import { z } from 'zod';
@@ -33,6 +34,7 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function StepTreatyStatsProp() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const { control, register, reset, formState, watch, setValue } = useForm<FormValues>({
@@ -178,13 +180,15 @@ export default function StepTreatyStatsProp() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Treaty Statistics (Prop)</h2>
-        <button
-          type="button"
-          className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
-          onClick={() => setPasteOpen(true)}
-        >
-          Paste from Excel
-        </button>
+        {!isViewMode && (
+          <button
+            type="button"
+            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            onClick={() => setPasteOpen(true)}
+          >
+            Paste from Excel
+          </button>
+        )}
       </div>
       <div className={autoColumnClasses.container}>
         <table ref={tableRef} className={`${autoColumnClasses.table} min-w-full border rounded`}>
@@ -215,6 +219,7 @@ export default function StepTreatyStatsProp() {
                             type="number"
                             {...register(name, { valueAsNumber: true })}
                             className="px-2 py-1 border rounded w-full"
+                            disabled={isViewMode}
                             min={1900}
                             max={2100}
                             step="1"
@@ -232,6 +237,7 @@ export default function StepTreatyStatsProp() {
                             onChange={handleChange}
                             digits={2}
                             className="w-full"
+                            readOnly={isViewMode}
                           />
                         );
                       }
@@ -243,40 +249,45 @@ export default function StepTreatyStatsProp() {
                           onChange={handleChange}
                           decimals={2}
                           className="w-full"
+                          readOnly={isViewMode}
                         />
                       );
                     })()}
                   </td>
                 ))}
                 <td className="px-2 py-1">
-                  <button
-                    type="button"
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={() => remove(idx)}
-                    disabled={fields.length <= 1}
-                  >
-                    Remove
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      type="button"
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      onClick={() => remove(idx)}
+                      disabled={fields.length <= 1}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-between items-center mt-4">
-        <button
-          type="button"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => append({ uw_year: new Date().getFullYear(), written_premium: 0 } as Row)}
-        >
-          Add Year
-        </button>
-        <span className="text-gray-500 text-sm">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'All changes are autosaved'}</span>
-      </div>
+      {!isViewMode && (
+        <div className="flex justify-between items-center mt-4">
+          <button
+            type="button"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            onClick={() => append({ uw_year: new Date().getFullYear(), written_premium: 0 } as Row)}
+          >
+            Add Year
+          </button>
+          <span className="text-gray-500 text-sm">{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'All changes are autosaved'}</span>
+        </div>
+      )}
       <div className="mt-6 bg-white dark:bg-gray-800 rounded shadow p-4">
         <label className="block">
           <span className="block text-sm font-medium mb-1">Additional Comments</span>
-          <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+          <textarea className="input" placeholder="Any notes or guidance for this submission…" disabled={isViewMode} {...register('additional_comments')} />
         </label>
       </div>
       <PasteModal

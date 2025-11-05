@@ -16,6 +16,8 @@ interface PercentCellProps {
   placeholder?: string;
   /** Disable editing */
   disabled?: boolean;
+  /** Read-only mode (prevents editing) */
+  readOnly?: boolean;
   /** Additional aria-label for accessibility */
   ariaLabel?: string;
 }
@@ -38,6 +40,7 @@ export function PercentCell({
   autoFocusOnAdd = false,
   placeholder = '0%',
   disabled = false,
+  readOnly = false,
   ariaLabel,
 }: PercentCellProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -63,7 +66,7 @@ export function PercentCell({
 
   // Enter edit mode
   const handleClick = () => {
-    if (disabled) return;
+    if (disabled || readOnly) return;
     setEditValue(formatPercentForEdit(value));
     setValidationError(null);
     setIsEditing(true);
