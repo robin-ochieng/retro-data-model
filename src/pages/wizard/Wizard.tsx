@@ -37,6 +37,7 @@ import CasualtyAggregateTriangulation from './steps/casualty/StepAggregateTriang
 import CasualtyCatLossTriangulation from './steps/casualty/StepCatLossTriangulation';
 import CasualtyMotorFleetList from './steps/casualty/StepMotorFleetList';
 import { SubmissionMetaProvider, useSubmissionMeta } from './SubmissionMetaContext';
+import { ViewModeProvider } from '../../context/ViewMode';
 import { TAB_ICONS } from '../../components/icons/TabIcons';
 import { getVisibleTabs, isTabVisible, getFirstVisibleTabKey } from '../../lib/tabs';
 
@@ -296,7 +297,8 @@ function WizardContent({
   }, [submissionId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <ViewModeProvider isViewMode={isReadOnly}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <WizardHeader
         submissionId={submissionId}
         status={submissionStatus}
@@ -481,5 +483,6 @@ function WizardContent({
         </section>
       </div>
     </div>
+    </ViewModeProvider>
   );
 }

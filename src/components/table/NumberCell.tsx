@@ -16,6 +16,8 @@ interface NumberCellProps {
   placeholder?: string;
   /** Disable editing */
   disabled?: boolean;
+  /** Read-only mode (prevents editing) */
+  readOnly?: boolean;
   /** Additional aria-label for accessibility */
   ariaLabel?: string;
 }
@@ -37,6 +39,7 @@ export function NumberCell({
   autoFocusOnAdd = false,
   placeholder = '0',
   disabled = false,
+  readOnly = false,
   ariaLabel,
 }: NumberCellProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -62,7 +65,7 @@ export function NumberCell({
 
   // Enter edit mode
   const handleClick = () => {
-    if (disabled) return;
+    if (disabled || readOnly) return;
     setEditValue(formatNumberForEdit(value));
     setValidationError(null);
     setIsEditing(true);

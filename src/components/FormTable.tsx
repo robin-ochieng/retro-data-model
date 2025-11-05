@@ -29,6 +29,7 @@ type FormTableProps<T> = {
   onExportCsv?: () => void;
   isSaving?: boolean;
   lastSavedAt?: Date | null;
+  readOnly?: boolean;
 };
 
 export function FormTable<T extends Record<string, any>>({
@@ -45,6 +46,7 @@ export function FormTable<T extends Record<string, any>>({
   onExportCsv,
   isSaving,
   lastSavedAt,
+  readOnly = false,
 }: FormTableProps<T>) {
   const scrollerRef = React.useRef<HTMLDivElement | null>(null);
   const scrollLeftRef = React.useRef(0);
@@ -82,12 +84,12 @@ export function FormTable<T extends Record<string, any>>({
     <div ref={scrollerRef} className="overflow-x-auto overscroll-contain" style={{ scrollbarGutter: 'stable both-edges' }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex gap-2">
-          {onPaste && (
+          {!readOnly && onPaste && (
             <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={onPaste}>
               Paste from Excel
             </button>
           )}
-          {onImportCsv && (
+          {!readOnly && onImportCsv && (
             <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={onImportCsv}>
               Import CSV
             </button>
@@ -137,6 +139,7 @@ export function FormTable<T extends Record<string, any>>({
                         onChange={(value) => onChange(idx, col.key as keyof T, value === null ? '' : value)}
                         decimals={col.decimals ?? 2}
                         ariaLabel={col.label}
+                        readOnly={readOnly}
                       />
                       {errors?.[idx]?.[col.key as keyof T] && (
                         <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
@@ -152,6 +155,7 @@ export function FormTable<T extends Record<string, any>>({
                         value={row[col.key]}
                         onChange={(value) => onChange(idx, col.key as keyof T, value)}
                         onCommit={() => {/* autosave will handle */}}
+                        readOnly={readOnly}
                       />
                       {errors?.[idx]?.[col.key as keyof T] && (
                         <div className="text-xs text-red-600 mt-1">{String(errors[idx]![col.key as keyof T])}</div>
@@ -169,6 +173,7 @@ export function FormTable<T extends Record<string, any>>({
                       min={col.min}
                       aria-label={col.label}
                       value={row[col.key] ?? ''}
+                      disabled={readOnly}
                       onChange={e => {
                         const value = col.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value;
                         onChange(idx, col.key as keyof T, value);
@@ -184,7 +189,7 @@ export function FormTable<T extends Record<string, any>>({
               {(onAddRow || onRemoveRow || actions) && (
                 <td className="px-2 py-1 whitespace-nowrap">
                   <div className="flex gap-2">
-                    {onRemoveRow && (
+                    {onRemoveRow && !readOnly && (
                       <button
                         type="button"
                         className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
@@ -211,7 +216,7 @@ export function FormTable<T extends Record<string, any>>({
           </tfoot>
         )}
       </table>
-      {onAddRow && (
+      {onAddRow && !readOnly && (
         <div className="flex justify-between items-center mt-4">
           <button
             type="button"

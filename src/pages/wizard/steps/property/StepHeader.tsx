@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
 import { useSubmissionMeta } from '../../SubmissionMetaContext';
+import { useViewMode } from '../../../../context/ViewMode';
 import { REINSURERS_BY_COUNTRY, DEFAULT_CLIENT, getCountries, getReinsurersForCountry } from '../../../../data/reinsurersByCountry';
 const OTHER = '__OTHER__';
 
@@ -214,6 +215,7 @@ export default function StepHeader() {
   const [searchParams] = useSearchParams();
   const meta = useSubmissionMeta();
   const { isReadOnly } = meta;
+  const isViewMode = useViewMode();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -486,6 +488,7 @@ export default function StepHeader() {
       <select
             className={`input ${errors.country ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={countrySelectValue}
+            disabled={isViewMode}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
@@ -514,6 +517,7 @@ export default function StepHeader() {
               className="input mt-2" 
               placeholder="Enter other country" 
               value={country}
+              disabled={isViewMode}
               onChange={(e) => {
                 const v = e.target.value;
                 setCountry(v);
@@ -526,7 +530,7 @@ export default function StepHeader() {
           <select 
             className={`input ${errors.name_of_company ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={company}
-            disabled={!country || countryIsOther}
+            disabled={isViewMode || !country || countryIsOther}
             aria-label="Name of Reinsurer"
             onChange={(e) => {
               const v = e.target.value;
@@ -548,6 +552,7 @@ export default function StepHeader() {
       <select
             className={`input ${errors.currency_std_units ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
             value={currencySelectValue}
+            disabled={isViewMode}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
@@ -568,15 +573,15 @@ export default function StepHeader() {
             <option value={OTHER}>Other…</option>
           </select>
           {(currencySelectValue === OTHER || currencyIsOther) && (
-            <input className="input mt-2" placeholder="Enter other currency (code or name)" {...register('currency_std_units')} />
+            <input className="input mt-2" placeholder="Enter other currency (code or name)" disabled={isViewMode} {...register('currency_std_units')} />
           )}
         </Field>
   {/* Client Manager and Underwriter removed per requirements */}
         <Field label="Inception Date" hint="e.g., 01/01/2022" error={errors.inception_date?.message}>
-          <input className={`input ${errors.inception_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('inception_date')} />
+          <input className={`input ${errors.inception_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" disabled={isViewMode} {...register('inception_date')} />
         </Field>
         <Field label="Expiry Date" hint="e.g., 31/12/2022" error={errors.expiry_date?.message}>
-          <input className={`input ${errors.expiry_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" {...register('expiry_date')} />
+          <input className={`input ${errors.expiry_date ? 'focus:ring-red-200 focus:border-red-500' : ''}`} type="date" disabled={isViewMode} {...register('expiry_date')} />
         </Field>
         <Field label="Claims Period" hint="Select a start and end date">
           <div className="grid grid-cols-2 gap-2 items-start">
@@ -585,6 +590,7 @@ export default function StepHeader() {
               <input
                 type="date"
                 className={`input ${errors.claims_period_start ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+                disabled={isViewMode}
                 {...register('claims_period_start')}
               />
             </label>
@@ -593,6 +599,7 @@ export default function StepHeader() {
               <input
                 type="date"
                 className={`input ${errors.claims_period_end ? 'focus:ring-red-200 focus:border-red-500' : ''}`}
+                disabled={isViewMode}
                 {...register('claims_period_end')}
               />
             </label>
@@ -611,6 +618,7 @@ export default function StepHeader() {
       <select
             className="input"
             value={classSelectValue}
+            disabled={isViewMode}
             onChange={(e) => {
               const v = e.target.value as string;
               if (v === OTHER) {
@@ -631,7 +639,7 @@ export default function StepHeader() {
             <option value={OTHER}>Other…</option>
           </select>
       {(classSelectValue === OTHER || classIsOther) && (
-            <input className="input mt-2" placeholder="Enter other class" {...register('class_of_business')} />
+            <input className="input mt-2" placeholder="Enter other class" disabled={isViewMode} {...register('class_of_business')} />
           )}
         </Field>
         <Field label="Line/s of Business">
@@ -648,7 +656,7 @@ export default function StepHeader() {
         setValue('lines_of_business', v);
               }
             }}
-            disabled={!selectedClass || classSelectValue === OTHER}
+            disabled={isViewMode || !selectedClass || classSelectValue === OTHER}
           >
             <option value="" disabled>
               {selectedClass && classSelectValue !== OTHER ? 'Select a line' : 'Select a class first'}
@@ -659,13 +667,14 @@ export default function StepHeader() {
             {selectedClass && classSelectValue !== OTHER && <option value={OTHER}>Other…</option>}
           </select>
       {(classIsOther || linesIsOther || (values.lines_of_business && !linesList.includes(values.lines_of_business ?? ''))) && (
-            <input className="input mt-2" placeholder="Enter other line" {...register('lines_of_business')} />
+            <input className="input mt-2" placeholder="Enter other line" disabled={isViewMode} {...register('lines_of_business')} />
           )}
         </Field>
         <Field label="Treaty Type">
       <select
             className="input"
             value={treatySelectValue}
+            disabled={isViewMode}
             onChange={(e) => {
               const v = e.target.value;
               if (v === OTHER) {
@@ -687,7 +696,7 @@ export default function StepHeader() {
         </Field>
         <div className="md:col-span-2">
           <Field label="Additional Comments">
-            <textarea className="input" placeholder="Any notes or guidance for this submission…" {...register('additional_comments')} />
+            <textarea className="input" placeholder="Any notes or guidance for this submission…" disabled={isViewMode} {...register('additional_comments')} />
           </Field>
         </div>
         <div className="md:col-span-2 flex justify-end text-sm text-gray-500">

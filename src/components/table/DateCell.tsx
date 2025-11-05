@@ -6,6 +6,7 @@ interface DateCellProps {
   onChange: (value: string | null) => void;
   onCommit: () => void;
   className?: string;
+  readOnly?: boolean;
 }
 
 /**
@@ -18,7 +19,7 @@ interface DateCellProps {
  * - Uses native date picker for easier input
  * - Shows inline error for invalid dates
  */
-export function DateCell({ value, onChange, onCommit, className = '' }: DateCellProps) {
+export function DateCell({ value, onChange, onCommit, className = '', readOnly = false }: DateCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [showError, setShowError] = useState(false);
@@ -32,6 +33,7 @@ export function DateCell({ value, onChange, onCommit, className = '' }: DateCell
   }, [isEditing]);
 
   const handleDoubleClick = () => {
+    if (readOnly) return;
     // Convert ISO to YYYY-MM-DD for date input
     const parsed = parseDateInput(value);
     setEditValue(parsed || '');

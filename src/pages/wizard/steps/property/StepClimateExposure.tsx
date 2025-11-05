@@ -4,6 +4,7 @@ import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { useViewMode } from '../../../../context/ViewMode';
 import { toCsv } from '../../../../utils/csv';
 import { NumberCell } from '../../../../components/table/NumberCell';
 import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
@@ -26,6 +27,7 @@ interface PayloadShape { rows: Row[]; migrated?: boolean; }
 
 export default function StepClimateExposure() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [rows, setRows] = useState<Row[]>([emptyClimateExposureRow()]);
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -211,9 +213,11 @@ export default function StepClimateExposure() {
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold">Climate change exposure</h3>
         <div className="flex gap-2 items-center">
-          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
+              Paste from Excel
+            </button>
+          )}
           <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => {
             const exportRows = rows.map(r => {
               const out: Record<string, any> = {};
@@ -257,6 +261,7 @@ export default function StepClimateExposure() {
                             onChange={(newValue) => onChange(idx, colKey, newValue)}
                             decimals={2}
                             className="w-full"
+                            readOnly={isViewMode}
                           />
                           {error && (
                             <div className="text-xs text-red-600 mt-1">{error}</div>
@@ -267,6 +272,7 @@ export default function StepClimateExposure() {
                           <input
                             type="text"
                             value={value ?? ''}
+                            disabled={isViewMode}
                             onChange={(e) => onChange(idx, colKey, e.target.value)}
                             placeholder={col.placeholder}
                             className="px-2 py-1 border rounded w-full"
@@ -280,14 +286,16 @@ export default function StepClimateExposure() {
                   );
                 })}
                 <td className="px-2 py-1">
-                  <button
-                    type="button"
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={() => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)))}
-                    disabled={rows.length <= 1}
-                  >
-                    Remove
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      type="button"
+                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      onClick={() => setRows(prev => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)))}
+                      disabled={rows.length <= 1}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -302,15 +310,17 @@ export default function StepClimateExposure() {
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-3">
-        <button
-          type="button"
-          className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
-          onClick={() => setRows(prev => [...prev, emptyClimateExposureRow()])}
-        >
-          Add Row
-        </button>
-      </div>
+      {!isViewMode && (
+        <div className="flex justify-between items-center mt-3">
+          <button
+            type="button"
+            className="px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => setRows(prev => [...prev, emptyClimateExposureRow()])}
+          >
+            Add Row
+          </button>
+        </div>
+      )}
       <PasteModal open={pasteOpen} expectedColumns={csvHeaders.length} onClose={() => setPasteOpen(false)} onApply={(data) => {
         // Replacement-aware paste: fill existing leading empty placeholder rows before appending.
         setRows(prev => {
