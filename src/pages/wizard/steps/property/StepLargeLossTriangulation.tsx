@@ -17,6 +17,7 @@ import {
   validateNumeric
 } from '../../../../lib/formatUtils';
 import { ensureLossIdentifier, mergeLossHeadersByIdentifier } from '../../../../lib/ids';
+import { useViewMode } from '../../../../context/ViewMode';
 
 // Property Large Loss Triangulation
 // Replicates the Casualty structure: a header list and a multi-row development grid.
@@ -36,6 +37,7 @@ type HeaderRow = {
 
 export default function StepLargeLossTriangulation() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   // Initialize with a row that has a UUID identifier
   const [headers, setHeaders] = useState<HeaderRow[]>([
     ensureLossIdentifier({ year: '', loss_description: '', date_of_loss: '', threshold: '', claim_policy_no: '', claim_status: '' } as HeaderRow),
@@ -317,21 +319,26 @@ export default function StepLargeLossTriangulation() {
         onChange={onHeaderChange as any}
         onRemoveRow={removeHeader}
         onPaste={() => setPasteOpen(true)}
+        readOnly={isViewMode}
       />
 
       <div className="flex justify-between items-center mt-2">
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          type="button"
-          onClick={addHeader}
-        >
-          Add Row
-        </button>
+        {!isViewMode && (
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            type="button"
+            onClick={addHeader}
+          >
+            Add Row
+          </button>
+        )}
         <span className="text-gray-500 text-sm">All changes are autosaved</span>
       </div>
 
       <div className="flex items-center gap-2 mt-6">
-        <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m Column</button>
+        {!isViewMode && (
+          <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m Column</button>
+        )}
       </div>
 
       <TriangulationTable
@@ -342,6 +349,7 @@ export default function StepLargeLossTriangulation() {
         onRemoveRow={removeHeader}
         onPaste={() => { setPasteTarget('paid'); setPasteOpen(true); }}
         totals={totalsByCol(gridPaid)}
+        readonly={isViewMode}
       />
 
       <TriangulationTable
@@ -352,6 +360,7 @@ export default function StepLargeLossTriangulation() {
         onRemoveRow={removeHeader}
         onPaste={() => { setPasteTarget('reserved'); setPasteOpen(true); }}
         totals={totalsByCol(gridReserved)}
+        readonly={isViewMode}
       />
 
       <TriangulationTable
@@ -365,13 +374,15 @@ export default function StepLargeLossTriangulation() {
       />
 
       <div className="flex justify-between items-center mt-2">
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          type="button"
-          onClick={addHeader}
-        >
-          Add Row
-        </button>
+        {!isViewMode && (
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            type="button"
+            onClick={addHeader}
+          >
+            Add Row
+          </button>
+        )}
         <span className="text-gray-500 text-sm">All changes are autosaved</span>
       </div>
 

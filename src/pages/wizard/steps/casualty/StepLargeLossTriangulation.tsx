@@ -4,6 +4,7 @@ import FormTable from '../../../../components/FormTable';
 import PasteModal from '../../../../components/PasteModal';
 import { supabase } from '../../../../lib/supabase';
 import { useAutosave } from '../../../../hooks/useAutosave';
+import { useViewMode } from '../../../../context/ViewMode';
 // CSV import removed per requirements
 
 // Casualty Large Loss Triangulation
@@ -24,6 +25,7 @@ type Measure = 'paid' | 'reserved' | 'incurred';
 
 export default function StepLargeLossTriangulationCasualty() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [headers, setHeaders] = useState<HeaderRow[]>([{ year: '', loss_description: '', date_of_loss: '', threshold: '', claim_no: '', claim_status: '' }]);
   const [measure, setMeasure] = useState<Measure>('paid');
   const [devMonths, setDevMonths] = useState<number[]>([12,24,36,48,60,72,84]);
@@ -143,17 +145,20 @@ export default function StepLargeLossTriangulationCasualty() {
         onChange={onHeaderChange as any}
         onRemoveRow={removeHeader}
   onPaste={() => setPasteOpen(true)}
+        readOnly={isViewMode}
       />
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold">Development Grid</h3>
-          <select className="border rounded px-2 py-1" value={measure} onChange={(e) => setMeasure(e.target.value as Measure)}>
+          <select className="border rounded px-2 py-1" value={measure} onChange={(e) => setMeasure(e.target.value as Measure)} disabled={isViewMode}>
             <option value="paid">Paid</option>
             <option value="reserved">Reserved</option>
             <option value="incurred">Incurred</option>
           </select>
-          <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m</button>
+          {!isViewMode && (
+            <button className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={addDev}>Add 12m</button>
+          )}
         </div>
         <div className="text-xs text-gray-500">Totals: {totalsByCol.map((t) => t.toLocaleString()).join(' | ')}</div>
       </div>
@@ -164,6 +169,7 @@ export default function StepLargeLossTriangulationCasualty() {
         onChange={onGridChange as any}
         onRemoveRow={removeHeader}
   onPaste={() => setPasteOpen(true)}
+        readOnly={isViewMode}
       />
 
       <PasteModal
