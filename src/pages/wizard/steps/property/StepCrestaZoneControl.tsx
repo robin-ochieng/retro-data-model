@@ -6,6 +6,7 @@ import { getCresta, replaceCrestaSection, upsertCrestaCell } from '../../../../l
 import PasteModal from '../../../../components/PasteModal';
 import { NumberCell } from '../../../../components/table/NumberCell';
 import { parseNumericInput } from '../../../../lib/formatUtils';
+import { useViewMode } from '../../../../context/ViewMode';
 
 type Pair = { gross: number; net: number };
 type Row = { zone: number | 'Unallocated'; zone_description: string; values: Record<string, Pair> };
@@ -75,6 +76,7 @@ function makeSimpleRows(): SimpleRow[] {
 
 export default function StepCrestaZoneControl() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [state, setState] = useState<State>({
     sum_insured: makeSimpleRows(),
     personal: makeDefaultRows(PERSONAL_CATEGORIES),
@@ -379,7 +381,7 @@ export default function StepCrestaZoneControl() {
       <div className="overflow-x-auto overscroll-contain bg-white dark:bg-gray-800 rounded shadow p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold">{def.title}</h4>
-          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget(def.key)}>Paste from Excel</button>
+          {!isViewMode && <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget(def.key)}>Paste from Excel</button>}
         </div>
         <table className="w-full table-auto border" style={{ tableLayout: 'auto' }}>
           <thead>
@@ -415,7 +417,8 @@ export default function StepCrestaZoneControl() {
                   <input 
                     className="w-full min-w-0 border rounded px-3 py-2" 
                     value={r.zone_description} 
-                    onChange={(e) => setZoneDesc(def.key, i, e.target.value)} 
+                    onChange={(e) => setZoneDesc(def.key, i, e.target.value)}
+                    disabled={isViewMode}
                   />
                 </td>
                 {def.categories.map((c) => (
@@ -425,6 +428,7 @@ export default function StepCrestaZoneControl() {
                         value={r.values[c.key]?.gross ?? 0}
                         onChange={(v) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'gross', v ?? 0)}
                         decimals={2}
+                        readOnly={isViewMode}
                       />
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap align-top">
@@ -432,6 +436,7 @@ export default function StepCrestaZoneControl() {
                         value={r.values[c.key]?.net ?? 0}
                         onChange={(v) => setCell(def.key as Exclude<keyof State, 'sum_insured'>, i, c.key, 'net', v ?? 0)}
                         decimals={2}
+                        readOnly={isViewMode}
                       />
                     </td>
                   </React.Fragment>
@@ -462,7 +467,7 @@ export default function StepCrestaZoneControl() {
       <div className="overflow-x-auto overscroll-contain bg-white dark:bg-gray-800 rounded shadow p-3">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold">Sum Insured</h4>
-          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget('sum_insured')}>Paste from Excel</button>
+          {!isViewMode && <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteTarget('sum_insured')}>Paste from Excel</button>}
         </div>
         <table className="w-full table-auto border" style={{ tableLayout: 'auto' }}>
           <thead>
@@ -486,7 +491,8 @@ export default function StepCrestaZoneControl() {
                   <input 
                     className="w-full min-w-0 border rounded px-3 py-2" 
                     value={r.zone_description} 
-                    onChange={(e) => setSimpleDesc(i, e.target.value)} 
+                    onChange={(e) => setSimpleDesc(i, e.target.value)}
+                    disabled={isViewMode}
                   />
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap align-top">
@@ -494,6 +500,7 @@ export default function StepCrestaZoneControl() {
                     value={r.gross}
                     onChange={(v) => setSimpleCell(i, 'gross', v ?? 0)}
                     decimals={2}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap align-top">
@@ -501,6 +508,7 @@ export default function StepCrestaZoneControl() {
                     value={r.net}
                     onChange={(v) => setSimpleCell(i, 'net', v ?? 0)}
                     decimals={2}
+                    readOnly={isViewMode}
                   />
                 </td>
               </tr>
