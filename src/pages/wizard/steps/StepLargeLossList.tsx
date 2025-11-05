@@ -10,6 +10,7 @@ import { useAutoColumnSize, autoColumnClasses } from '../../../components/table/
 import { z } from 'zod';
 import { humanizeHeader } from '../../../lib/headerFormat';
 import { parseNumericInput, parseYearInput, parseDateInput, formatNumberDisplay } from '../../../lib/numberFormat';
+import { useViewMode } from '../../../context/ViewMode';
 
 const RowSchema = z.object({
   loss_id: z.number().int().optional(), // UI only
@@ -33,6 +34,7 @@ type Row = z.infer<typeof RowSchema>;
 
 export default function StepLargeLossList() {
   const { submissionId } = useParams();
+  const isViewMode = useViewMode();
   const [rows, setRows] = useState<Row[]>([
     { loss_id: 1, uw_year: undefined, name: '', dol: undefined, type_of_loss: '', gross_sum_insured: 0, gross_incurred: 0, paid_to_date: 0, gross_outstanding: 0, fac_amount: 0, net_of_fac: 0, surplus_cession: 0, qs_cession: 0, net_of_proportional: 0, xol_payment: 0 },
   ]);
@@ -322,12 +324,14 @@ export default function StepLargeLossList() {
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Large Loss List</h2>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowPaste(true)}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button
+              onClick={() => setShowPaste(true)}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Paste from Excel
+            </button>
+          )}
           <div className="text-xs text-gray-500">
             {saveError ? `Error: ${saveError}` : saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : ''}
           </div>
@@ -364,6 +368,7 @@ export default function StepLargeLossList() {
                   <YearCell
                     value={row.uw_year ?? null}
                     onChange={(val) => onChange(idx, 'uw_year', val)}
+                    disabled={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-normal break-words">
@@ -372,6 +377,7 @@ export default function StepLargeLossList() {
                     value={row.name || ''}
                     onChange={(e) => onChange(idx, 'name', e.target.value)}
                     className="w-full min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    disabled={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap">
@@ -379,6 +385,7 @@ export default function StepLargeLossList() {
                     value={row.dol}
                     onChange={(val) => onChange(idx, 'dol', val)}
                     onCommit={() => {}}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-normal break-words">
@@ -387,76 +394,89 @@ export default function StepLargeLossList() {
                     value={row.type_of_loss || ''}
                     onChange={(e) => onChange(idx, 'type_of_loss', e.target.value)}
                     className="w-full min-w-0 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    disabled={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_sum_insured}
                     onChange={(val) => onChange(idx, 'gross_sum_insured', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_incurred}
                     onChange={(val) => onChange(idx, 'gross_incurred', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.paid_to_date}
                     onChange={(val) => onChange(idx, 'paid_to_date', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.gross_outstanding}
                     onChange={(val) => onChange(idx, 'gross_outstanding', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.fac_amount}
                     onChange={(val) => onChange(idx, 'fac_amount', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.net_of_fac}
                     onChange={(val) => onChange(idx, 'net_of_fac', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.surplus_cession}
                     onChange={(val) => onChange(idx, 'surplus_cession', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.qs_cession}
                     onChange={(val) => onChange(idx, 'qs_cession', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.net_of_proportional}
                     onChange={(val) => onChange(idx, 'net_of_proportional', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top whitespace-nowrap text-right">
                   <NumberCell
                     value={row.xol_payment}
                     onChange={(val) => onChange(idx, 'xol_payment', val)}
+                    readOnly={isViewMode}
                   />
                 </td>
                 <td className="px-2 py-1 align-top text-center whitespace-nowrap">
-                  <button
-                    onClick={() => onRemoveRow(idx)}
-                    disabled={rows.length <= 1}
-                    className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Remove
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      onClick={() => onRemoveRow(idx)}
+                      disabled={rows.length <= 1}
+                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -464,12 +484,14 @@ export default function StepLargeLossList() {
         </table>
       </div>
 
-      <button
-        onClick={onAddRow}
-        className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-      >
-        Add Row
-      </button>
+      {!isViewMode && (
+        <button
+          onClick={onAddRow}
+          className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Add Row
+        </button>
+      )}
 
       <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
         <div className="font-semibold mb-2">Totals:</div>
@@ -526,6 +548,7 @@ export default function StepLargeLossList() {
             value={additionalComments} 
             onChange={(e) => setAdditionalComments(e.target.value)}
             rows={4}
+            disabled={isViewMode}
           />
         </label>
       </div>

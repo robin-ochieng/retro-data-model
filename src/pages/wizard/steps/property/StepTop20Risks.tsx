@@ -11,6 +11,7 @@ import { humanizeHeader } from '../../../../lib/headerFormat';
 import { NumberCell } from '../../../../components/table/NumberCell';
 import { useAutoColumnSize, autoColumnClasses } from '../../../../components/table/useAutoColumnSize';
 import { parseNumericInput } from '../../../../lib/numberFormat';
+import { useViewMode } from '../../../../context/ViewMode';
 
 const RowSchema = z.object({
   rank: z.number().int().min(1),
@@ -30,6 +31,7 @@ type Row = z.infer<typeof RowSchema>;
 
 export default function StepTop20Risks() {
   const { submissionId, lob } = useParams();
+  const isViewMode = useViewMode();
   const [rows, setRows] = useState<Row[]>(Array.from({ length: 20 }, (_, i) => ({ rank: i + 1, insured: '', class_of_business: '', occupation: '', gross_sum_insured: 0, fac_sum_insured: 0, surplus_sum_insured: 0, quota_share_sum_insured: 0, net_sum_insured: 0, gross_premium: 0, fac_premium: 0, surplus_premium: 0 })));
   const [errors, setErrors] = useState<Record<number, Partial<Record<keyof Row, string>>>>({});
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -142,9 +144,11 @@ export default function StepTop20Risks() {
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold">Top 20 Risks</h3>
         <div className="flex gap-2 items-center">
-          <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
-            Paste from Excel
-          </button>
+          {!isViewMode && (
+            <button type="button" className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setPasteOpen(true)}>
+              Paste from Excel
+            </button>
+          )}
           {lob !== 'casualty' && (
             <button type="button" className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => {
               // Use human-friendly headers for CSV export
@@ -193,6 +197,7 @@ export default function StepTop20Risks() {
                           onChange={(newValue) => onChange(idx, colKey, newValue ?? 0)}
                           decimals={2}
                           className="w-full"
+                          readOnly={isViewMode}
                         />
                       </td>
                     );
@@ -212,6 +217,7 @@ export default function StepTop20Risks() {
                           onChange(idx, colKey, newValue);
                         }}
                         className="px-2 py-1 border rounded w-full"
+                        disabled={isViewMode}
                       />
                       {errors?.[idx]?.[colKey] && (
                         <div className="text-xs text-red-600 mt-1">{String(errors[idx]![colKey])}</div>
