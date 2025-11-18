@@ -34,10 +34,10 @@ export function GettingStarted() {
           </div>
           <div className="flex-1">
             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Pick a client &amp; year
+              Pick a Country, Reinsurer &amp; year
             </div>
             <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              Use the form on the left to create a new submission.
+              Use the form on the left to create a new submission. Start by selecting the country, then pick the reinsurer in the respective country, select the year, and choose a preset class.
             </p>
           </div>
         </li>
