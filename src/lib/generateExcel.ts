@@ -223,9 +223,14 @@ interface FieldMapSlim {
 
 // Fetch mapping JSON (served from /docs in dev via Vite static or adjust path)
 async function loadFieldMap(): Promise<FieldMapSlim> {
-  const res = await fetch('/docs/field-map-slim.json');
-  if (!res.ok) throw new Error('Failed to load field map');
-  return res.json();
+  if (import.meta.env.DEV) {
+    const res = await fetch('/docs/field-map-slim.json');
+    if (!res.ok) throw new Error('Failed to load field map');
+    return res.json();
+  }
+
+  const fieldMapModule = (await import('../../docs/field-map-slim.generated.json')) as { default: FieldMapSlim };
+  return fieldMapModule.default;
 }
 
 // Helper: convert snake_case or internal keys to header labels
